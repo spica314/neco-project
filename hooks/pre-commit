@@ -13,7 +13,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cargo test
+cargo test --offline
 
 if [ $? -ne 0 ]; then
     git stash pop

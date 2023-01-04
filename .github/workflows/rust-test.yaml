@@ -40,5 +40,5 @@ jobs:
           toolchain: nightly
           override: true
       - name: Test
-        run: cargo test --workspace
+        run: cargo test --workspace --offline
         working-directory: neco-rs

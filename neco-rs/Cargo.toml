@@ -1,4 +1,5 @@
 [workspace]
 members = [
     "neco",
+    "neco-core-expr",
 ]

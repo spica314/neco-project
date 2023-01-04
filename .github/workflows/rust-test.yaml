@@ -1,0 +1,44 @@
+name: tests for Rust code
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check_rust_format:
+    runs-on: ubuntu-latest
+    name: Check format by 'cargo fmt'
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: default
+          toolchain: nightly
+          override: true
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
+        working-directory: neco-rs
+
+  rust_test:
+    runs-on: ubuntu-latest
+    name: Test
+    needs:
+      - check_rust_format
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: default
+          toolchain: nightly
+          override: true
+      - name: Test
+        run: cargo test --workspace
+        working-directory: neco-rs

@@ -1,0 +1,24 @@
+#!/bin/bash
+
+REPOSITORY_PATH=$(git rev-parse --show-toplevel)
+
+git stash save -k
+
+cd $REPOSITORY_PATH/neco-rs
+
+cargo fmt --all -- --check
+
+if [ $? -ne 0 ]; then
+    git stash pop
+    exit 1
+fi
+
+cargo test
+
+if [ $? -ne 0 ]; then
+    git stash pop
+    exit 1
+fi
+
+git stash pop
+exit 0

@@ -49,13 +49,17 @@ fn skip_whitespaces(cs: &[char], i: &mut usize) {
     }
 }
 
+fn is_atom_char(c: char) -> bool {
+    c.is_ascii_alphanumeric() || c == '_' || c == '$'
+}
+
 fn parse_atom(cs: &[char], i: &mut usize) -> Result<String, ()> {
     let mut k = *i;
     if k >= cs.len() {
         return Err(());
     }
     let mut res = String::new();
-    while k < cs.len() && cs[k].is_ascii_alphanumeric() {
+    while k < cs.len() && is_atom_char(cs[k]) {
         res.push(cs[k]);
         k += 1;
     }
@@ -106,7 +110,7 @@ fn parse_core_expr(cs: &[char], i: &mut usize) -> Result<CoreExpr, ()> {
             let res = parse_node(cs, &mut k)?;
             *i = k;
             return Ok(res);
-        } else if cs[k].is_ascii_alphanumeric() {
+        } else if is_atom_char(cs[k]) {
             let res = parse_atom(cs, &mut k)?;
             *i = k;
             return Ok(CoreExpr::Atom(res));

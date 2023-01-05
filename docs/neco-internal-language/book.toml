@@ -1,0 +1,6 @@
+[book]
+authors = ["Masato Mori"]
+language = "ja"
+multilingual = true
+src = "src"
+title = "neco internal language doc"

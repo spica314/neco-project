@@ -1,4 +1,4 @@
-(module 
+'(module 
     (type And (A : Prop) (B : Prop) (
         (conj : A -> B -> And A B)
     ))
@@ -7,7 +7,7 @@
         (or_intror : B -> Or A B)
     ))
     (prop theorem1
-        (forall (A : Prop), forall (B : Prop), And A B -> OR A B)
+        (forall (A : Prop) forall (B : Prop) And A B -> OR A B)
     )
     (proof theorem1
         (fun (A : Prop) (B : Prop) (x : And A B) 

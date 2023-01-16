@@ -102,11 +102,11 @@ fn is_atom_char(c: char) -> bool {
 }
 
 fn is_ident_char(c: char) -> bool {
-    c.is_ascii_alphanumeric() || c == '_' || c == '$'
+    c.is_ascii_alphanumeric() || "_$.".contains(c)
 }
 
 fn is_single_symbol_char(c: char) -> bool {
-    c == ',' || c == ':'
+    ",:".contains(c)
 }
 
 fn is_multi_symbol_char(c: char) -> bool {
@@ -169,6 +169,10 @@ fn parse_node(cs: &[char], i: &mut usize) -> Result<CoreExpr, ()> {
 fn parse_core_expr(cs: &[char], i: &mut usize) -> Result<CoreExpr, ()> {
     let mut k = *i;
 
+    skip_whitespaces(cs, &mut k);
+    while k < cs.len() && cs[k] == '\'' {
+        k += 1;
+    }
     skip_whitespaces(cs, &mut k);
 
     if k < cs.len() {

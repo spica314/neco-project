@@ -11,4 +11,5 @@ fn main() {
     eprintln!("expr = {expr:?}");
     let context = generate_context(&expr);
     eprintln!("context = {context:?}");
+    // assert!(context.type_check());
 }

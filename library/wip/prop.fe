@@ -12,7 +12,7 @@
     (proof theorem1
         (fun (A : Prop) (B : Prop) (x : And A B) 
             (match x
-                (conj l r => or_intorl l)
+                ((conj l r) (or_introl l))
             )
         )
     )

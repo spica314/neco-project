@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{collections::HashMap, rc::Rc};
 
 use neco_core_expr::CoreExpr;
 
@@ -9,23 +9,33 @@ pub struct TypeDef {
     variants: Vec<Variant>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TypedIdent {
     name: String,
     ty: Type,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Variant {
     name: String,
     ty: Type,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
     Leaf(String),
     App(Rc<Type>, Vec<Type>),
     Map(Rc<Type>, Rc<Type>),
+    Forall(Rc<TypedIdent>, Rc<Type>),
+}
+
+impl Type {
+    pub fn is_leaf_of(&self, s: &str) -> bool {
+        match self {
+            Type::Leaf(t) => s == t,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -36,10 +46,46 @@ pub struct Context {
 }
 
 #[derive(Debug, Clone)]
-pub struct Prop {}
+pub struct Prop {
+    name: String,
+    ty: Type,
+}
 
 #[derive(Debug, Clone)]
-pub struct Proof {}
+pub struct Proof {
+    name: String,
+    function: Function,
+}
+
+#[derive(Debug, Clone)]
+pub struct Function {
+    args: Vec<TypedIdent>,
+    expr: Expr,
+}
+
+#[derive(Debug, Clone)]
+pub enum Expr {
+    Match(ExprMatch),
+    Atom(String),
+    App(ExprApp),
+}
+
+#[derive(Debug, Clone)]
+pub struct ExprApp {
+    exprs: Vec<Expr>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ExprMatch {
+    expr: Rc<Expr>,
+    arms: Vec<Arm>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Arm {
+    left: Vec<String>,
+    right: Expr,
+}
 
 impl Context {
     pub fn new() -> Context {
@@ -75,6 +121,13 @@ fn expr_to_typed_ident(expr: &CoreExpr) -> TypedIdent {
 }
 
 fn expr_to_type(exprs: &[CoreExpr]) -> Type {
+    // forall
+    if exprs.len() >= 2 && exprs[0].is_atom_of("forall") {
+        let typed = expr_to_typed_ident(&exprs[1]);
+        let inner = expr_to_type(&exprs[2..]);
+        return Type::Forall(Rc::new(typed), Rc::new(inner));
+    }
+
     let mut types = vec![];
     let mut ts = vec![];
     for expr in exprs {
@@ -141,10 +194,69 @@ fn expr_to_variant(expr: &CoreExpr) -> Variant {
 
 fn generate_context_prop(expr: &CoreExpr, context: &mut Context) {
     assert!(expr.node_tag() == Some("prop"));
+    let list = expr.list().unwrap();
+    let name = list[1].to_string();
+    let ty = expr_to_type(list[2].list().unwrap());
+    let prop = Prop { name, ty };
+    context.props.push(prop);
 }
 
 fn generate_context_proof(expr: &CoreExpr, context: &mut Context) {
     assert!(expr.node_tag() == Some("proof"));
+    let list = expr.list().unwrap();
+    let name = list[1].to_string();
+    let function = expr_to_function_definition(&list[2]);
+    let proof = Proof { name, function };
+    context.proofs.push(proof);
+}
+
+fn expr_to_function_definition(expr: &CoreExpr) -> Function {
+    assert!(expr.node_tag() == Some("fun"));
+    let list = expr.list().unwrap();
+    let args: Vec<_> = list[1..list.len() - 1]
+        .iter()
+        .map(expr_to_typed_ident)
+        .collect();
+    let expr = expr_to_expr(&list[list.len() - 1]);
+    Function { args, expr }
+}
+
+fn expr_to_expr(expr: &CoreExpr) -> Expr {
+    if expr.node_tag() == Some("match") {
+        let expr_match = expr_to_expr_match(expr);
+        return Expr::Match(expr_match);
+    }
+    if expr.is_atom() {
+        return Expr::Atom(expr.to_string());
+    }
+    let list = expr.list().unwrap();
+    let exprs: Vec<_> = list.iter().map(expr_to_expr).collect();
+    Expr::App(ExprApp { exprs })
+}
+
+fn expr_to_expr_match(expr: &CoreExpr) -> ExprMatch {
+    assert!(expr.node_tag() == Some("match"));
+    let list = expr.list().unwrap();
+    let expr = expr_to_expr(&list[1]);
+    let arms: Vec<_> = list[2..].iter().map(expr_to_arm).collect();
+    ExprMatch {
+        expr: Rc::new(expr),
+        arms,
+    }
+}
+
+fn expr_to_arm(expr: &CoreExpr) -> Arm {
+    let list = expr.list().unwrap();
+    let left_expr = &list[0];
+    let left: Vec<_> = left_expr
+        .list()
+        .unwrap()
+        .iter()
+        .map(|x| x.to_string())
+        .collect();
+    let right_expr = &list[1];
+    let right = expr_to_expr(&right_expr);
+    Arm { left, right }
 }
 
 pub fn generate_context(expr: &CoreExpr) -> Context {
@@ -153,4 +265,52 @@ pub fn generate_context(expr: &CoreExpr) -> Context {
         generate_context_module(&expr, &mut context);
     }
     context
+}
+
+impl Context {
+    pub fn type_check(&self) -> bool {
+        let mut typed_vars = HashMap::new();
+        // Todo: 型定義に使われているコンストラクタの型を入れる
+
+        for proof in &self.proofs {
+            let res_ty = self.expr_ty(&mut typed_vars, &proof.function.expr);
+        }
+        true
+    }
+    pub fn expr_ty(&self, typed_vars: &mut HashMap<String, Type>, expr: &Expr) -> Type {
+        match expr {
+            Expr::Match(expr_match) => {
+                let expr_ty = self.expr_ty(typed_vars, &expr_match.expr);
+                for type_def in &self.type_defs {
+                    if expr_ty.is_leaf_of(&type_def.name) {
+                        for arm in &expr_match.arms {
+                            unimplemented!()
+                        }
+                    }
+                }
+                panic!()
+            }
+            Expr::Atom(expr_atom) => typed_vars.get(expr_atom).unwrap().clone(),
+            Expr::App(expr_app) => {
+                let mut ty = Rc::new(self.expr_ty(typed_vars, &expr_app.exprs[0]));
+                for arg in &expr_app.exprs[1..] {
+                    let arg_ty = self.expr_ty(typed_vars, arg);
+                    let new_ty = match ty.as_ref() {
+                        Type::Leaf(_) => panic!(),
+                        Type::App(_, _) => panic!(),
+                        Type::Map(left, right) => {
+                            if &arg_ty == left.as_ref() {
+                                right
+                            } else {
+                                panic!()
+                            }
+                        }
+                        Type::Forall(_, _) => todo!(),
+                    };
+                    ty = new_ty.clone();
+                }
+                ty.as_ref().clone()
+            }
+        }
+    }
 }

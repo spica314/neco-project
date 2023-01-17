@@ -36,6 +36,16 @@ impl Type {
             _ => false,
         }
     }
+    pub fn is_head_of(&self, s: &str) -> bool {
+        match self {
+            Type::Leaf(t) => s == t,
+            Type::App(t, _) => match t.as_ref() {
+                Type::Leaf(t) => s == t,
+                _ => false,
+            },
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -271,26 +281,113 @@ impl Context {
     pub fn type_check(&self) -> bool {
         let mut typed_vars = HashMap::new();
         // Todo: 型定義に使われているコンストラクタの型を入れる
+        for type_def in &self.type_defs {
+            for variant in &type_def.variants {
+                eprintln!("{} : {:?}", variant.name.clone(), variant.ty.clone());
+                typed_vars.insert(variant.name.clone(), variant.ty.clone());
+            }
+        }
 
         for proof in &self.proofs {
-            let res_ty = self.expr_ty(&mut typed_vars, &proof.function.expr);
+            for prop in &self.props {
+                if proof.name != prop.name {
+                    continue;
+                }
+                eprintln!("-- {}", prop.name);
+                let mut delete_after_eval = vec![];
+                let mut prop_ty = Rc::new(prop.ty.clone());
+                for typed_ident in &proof.function.args {
+                    delete_after_eval.push(typed_ident.name.clone());
+                    eprintln!("{}: {:?}", typed_ident.name.clone(), typed_ident.ty.clone());
+                    typed_vars.insert(typed_ident.name.clone(), typed_ident.ty.clone());
+
+                    let (ty_ll, ty_lr, ty_r) = match prop_ty.as_ref() {
+                        Type::Forall(l, r) => {
+                            (Some(l.as_ref().name.clone()), l.as_ref().ty.clone(), r)
+                        }
+                        Type::Map(l, r) => (None, l.as_ref().clone(), r),
+                        _ => panic!(),
+                    };
+                    prop_ty = ty_r.clone();
+                    // eprintln!("typed_ident = {typed_ident:?}, ty_ll = {ty_ll:?}, ty_lr = {ty_lr:?}");
+                    if let Some(ty_ll) = ty_ll {
+                        if ty_ll != typed_ident.name {
+                            panic!();
+                        }
+                    }
+                    if typed_ident.ty != ty_lr {
+                        panic!();
+                    }
+                }
+
+                let res_ty = self.expr_ty(&mut typed_vars, &proof.function.expr);
+
+                for v in &delete_after_eval {
+                    typed_vars.remove(v);
+                }
+                if &res_ty != prop_ty.as_ref() {
+                    panic!();
+                }
+            }
         }
         true
     }
     pub fn expr_ty(&self, typed_vars: &mut HashMap<String, Type>, expr: &Expr) -> Type {
         match expr {
             Expr::Match(expr_match) => {
+                // eprintln!("expr_match = {expr_match:?}");
                 let expr_ty = self.expr_ty(typed_vars, &expr_match.expr);
+                // eprintln!("expr_ty = {expr_ty:?}");
+                let mut right_types = vec![];
+                // 各Typeについて
                 for type_def in &self.type_defs {
-                    if expr_ty.is_leaf_of(&type_def.name) {
+                    // expr_tyが単体の型で，type_defの型の場合
+                    if expr_ty.is_head_of(&type_def.name) {
+                        // matchの各armについて
                         for arm in &expr_match.arms {
-                            unimplemented!()
+                            let left = &arm.left;
+                            let right = &arm.right;
+                            let mut delete_after_eval = vec![];
+                            // 型定義の各variantについて
+                            for variant in &type_def.variants {
+                                // arm左の先頭がvariant名と同じならば
+                                if left[0] == variant.name {
+                                    // eprintln!("variant = {variant:?}");
+                                    let mut ty = Rc::new(variant.ty.clone());
+                                    for i in 1..left.len() {
+                                        let v = left[i].to_string();
+                                        let (ty_l, ty_r) = match ty.as_ref() {
+                                            Type::Map(l, r) => (l, r),
+                                            _ => panic!(),
+                                        };
+                                        delete_after_eval.push(v.clone());
+                                        eprintln!("{} : {:?}", v.clone(), ty_l.as_ref().clone());
+                                        typed_vars.insert(v.clone(), ty_l.as_ref().clone());
+                                        ty = ty_r.clone();
+                                    }
+                                    break;
+                                }
+                            }
+                            let right = self.expr_ty(typed_vars, right);
+                            right_types.push(right);
+                            for v in &delete_after_eval {
+                                typed_vars.remove(v);
+                            }
                         }
                     }
                 }
-                panic!()
+                eprintln!("match right-arm types: {right_types:?}");
+                for i in 1..right_types.len() {
+                    if right_types[0] != right_types[i] {
+                        panic!();
+                    }
+                }
+                right_types[0].clone()
             }
-            Expr::Atom(expr_atom) => typed_vars.get(expr_atom).unwrap().clone(),
+            Expr::Atom(expr_atom) => typed_vars
+                .get(expr_atom)
+                .unwrap_or_else(|| panic!("{expr_atom}"))
+                .clone(),
             Expr::App(expr_app) => {
                 let mut ty = Rc::new(self.expr_ty(typed_vars, &expr_app.exprs[0]));
                 for arg in &expr_app.exprs[1..] {

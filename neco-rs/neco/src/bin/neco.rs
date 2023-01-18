@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use neco::generate_context;
-use neco_core_expr::CoreExpr;
+use neco_core_expr::core_expr::CoreExpr;
 
 fn main() {
     let args: Vec<_> = std::env::args().collect();

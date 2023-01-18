@@ -1,6 +1,8 @@
+pub mod resolver;
+
 use std::{collections::HashMap, rc::Rc};
 
-use neco_core_expr::CoreExpr;
+use neco_core_expr::core_expr::CoreExpr;
 
 #[derive(Debug, Clone)]
 pub struct TypeDef {

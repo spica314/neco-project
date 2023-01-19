@@ -1,23 +1,23 @@
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
-pub struct Scope<T> {
+struct Scope<T> {
     map: HashMap<String, (usize, T)>,
 }
 
 impl<T> Scope<T> {
-    pub fn new() -> Scope<T> {
+    fn new() -> Scope<T> {
         Scope {
             map: HashMap::new(),
         }
     }
-    pub fn to_records(self) -> Vec<(String, T)> {
+    fn into_records(self) -> Vec<(String, T)> {
         let mut res: Vec<_> = self.map.into_iter().collect();
         res.sort_by(|x, y| x.1 .0.cmp(&y.1 .0));
         let res2: Vec<_> = res.into_iter().map(|x| (x.0, x.1 .1)).collect();
         res2
     }
-    pub fn record(&mut self, name: String, record: T) -> Result<(), ()> {
+    fn record(&mut self, name: String, record: T) -> Result<(), ()> {
         if self.map.contains_key(&name) {
             return Err(());
         }
@@ -25,8 +25,14 @@ impl<T> Scope<T> {
         self.map.insert(name, (i, record));
         Ok(())
     }
-    pub fn get(&self, name: &str) -> Option<&T> {
+    fn get(&self, name: &str) -> Option<&T> {
         self.map.get(name).map(|(_, t)| t)
+    }
+}
+
+impl<T> Default for Scope<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -47,7 +53,7 @@ impl<T> Resolver<T> {
     }
     pub fn leave_scope(&mut self) -> Vec<(String, T)> {
         let scope = self.scopes.pop().unwrap();
-        scope.to_records()
+        scope.into_records()
     }
     pub fn record(&mut self, name: String, record: T) -> Result<(), ()> {
         let top = self.scopes.last_mut().unwrap();
@@ -60,6 +66,12 @@ impl<T> Resolver<T> {
             }
         }
         None
+    }
+}
+
+impl<T> Default for Resolver<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

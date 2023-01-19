@@ -1,16 +1,8 @@
-use std::str::FromStr;
-
-use neco::generate_context;
-use neco_core_expr::core_expr::CoreExpr;
+use neco::{run_cli, CliContext};
 
 fn main() {
     let args: Vec<_> = std::env::args().collect();
     let filename = &args[1];
-    let s = std::fs::read_to_string(filename).unwrap();
-    let expr = CoreExpr::from_str(&s).unwrap();
-    // eprintln!("expr = {expr:?}");
-    let context = generate_context(&expr);
-    // eprintln!("context = {context:?}");
-    assert!(context.type_check());
-    eprintln!("type check passed!");
+    let context = CliContext::Compile(filename.to_string());
+    run_cli(context);
 }

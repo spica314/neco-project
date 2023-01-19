@@ -1,8 +1,9 @@
 pub mod resolver;
 
-use std::{collections::HashMap, rc::Rc};
+use std::{rc::Rc, str::FromStr};
 
 use neco_core_expr::core_expr::CoreExpr;
+use resolver::Resolver;
 
 #[derive(Debug, Clone)]
 pub struct TypeDef {
@@ -106,6 +107,12 @@ impl Context {
             props: vec![],
             proofs: vec![],
         }
+    }
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -267,26 +274,27 @@ fn expr_to_arm(expr: &CoreExpr) -> Arm {
         .map(|x| x.to_string())
         .collect();
     let right_expr = &list[1];
-    let right = expr_to_expr(&right_expr);
+    let right = expr_to_expr(right_expr);
     Arm { left, right }
 }
 
 pub fn generate_context(expr: &CoreExpr) -> Context {
     let mut context = Context::new();
     if expr.node_tag() == Some("module") {
-        generate_context_module(&expr, &mut context);
+        generate_context_module(expr, &mut context);
     }
     context
 }
 
 impl Context {
     pub fn type_check(&self) -> bool {
-        let mut typed_vars = HashMap::new();
-        // Todo: 型定義に使われているコンストラクタの型を入れる
+        let mut var_type = Resolver::<Type>::new();
         for type_def in &self.type_defs {
             for variant in &type_def.variants {
                 eprintln!("{} : {:?}", variant.name.clone(), variant.ty.clone());
-                typed_vars.insert(variant.name.clone(), variant.ty.clone());
+                var_type
+                    .record(variant.name.clone(), variant.ty.clone())
+                    .unwrap();
             }
         }
 
@@ -296,12 +304,16 @@ impl Context {
                     continue;
                 }
                 eprintln!("-- {}", prop.name);
+                var_type.enter_scope();
+
                 let mut delete_after_eval = vec![];
                 let mut prop_ty = Rc::new(prop.ty.clone());
                 for typed_ident in &proof.function.args {
                     delete_after_eval.push(typed_ident.name.clone());
                     eprintln!("{}: {:?}", typed_ident.name.clone(), typed_ident.ty.clone());
-                    typed_vars.insert(typed_ident.name.clone(), typed_ident.ty.clone());
+                    var_type
+                        .record(typed_ident.name.clone(), typed_ident.ty.clone())
+                        .unwrap();
 
                     let (ty_ll, ty_lr, ty_r) = match prop_ty.as_ref() {
                         Type::Forall(l, r) => {
@@ -311,7 +323,6 @@ impl Context {
                         _ => panic!(),
                     };
                     prop_ty = ty_r.clone();
-                    // eprintln!("typed_ident = {typed_ident:?}, ty_ll = {ty_ll:?}, ty_lr = {ty_lr:?}");
                     if let Some(ty_ll) = ty_ll {
                         if ty_ll != typed_ident.name {
                             panic!();
@@ -322,11 +333,9 @@ impl Context {
                     }
                 }
 
-                let res_ty = self.expr_ty(&mut typed_vars, &proof.function.expr);
+                let res_ty = self.expr_ty(&mut var_type, &proof.function.expr);
 
-                for v in &delete_after_eval {
-                    typed_vars.remove(v);
-                }
+                var_type.leave_scope();
                 if &res_ty != prop_ty.as_ref() {
                     panic!();
                 }
@@ -334,11 +343,11 @@ impl Context {
         }
         true
     }
-    pub fn expr_ty(&self, typed_vars: &mut HashMap<String, Type>, expr: &Expr) -> Type {
+    pub fn expr_ty(&self, var_type: &mut Resolver<Type>, expr: &Expr) -> Type {
         match expr {
             Expr::Match(expr_match) => {
                 // eprintln!("expr_match = {expr_match:?}");
-                let expr_ty = self.expr_ty(typed_vars, &expr_match.expr);
+                let expr_ty = self.expr_ty(var_type, &expr_match.expr);
                 // eprintln!("expr_ty = {expr_ty:?}");
                 let mut right_types = vec![];
                 // 各Typeについて
@@ -350,31 +359,30 @@ impl Context {
                             let left = &arm.left;
                             let right = &arm.right;
                             let mut delete_after_eval = vec![];
+                            var_type.enter_scope();
                             // 型定義の各variantについて
                             for variant in &type_def.variants {
                                 // arm左の先頭がvariant名と同じならば
                                 if left[0] == variant.name {
                                     // eprintln!("variant = {variant:?}");
                                     let mut ty = Rc::new(variant.ty.clone());
-                                    for i in 1..left.len() {
-                                        let v = left[i].to_string();
+                                    for v in left.iter().skip(1) {
+                                        let v = v.to_string();
                                         let (ty_l, ty_r) = match ty.as_ref() {
                                             Type::Map(l, r) => (l, r),
                                             _ => panic!(),
                                         };
                                         delete_after_eval.push(v.clone());
                                         eprintln!("{} : {:?}", v.clone(), ty_l.as_ref().clone());
-                                        typed_vars.insert(v.clone(), ty_l.as_ref().clone());
+                                        var_type.record(v.clone(), ty_l.as_ref().clone()).unwrap();
                                         ty = ty_r.clone();
                                     }
                                     break;
                                 }
                             }
-                            let right = self.expr_ty(typed_vars, right);
+                            let right = self.expr_ty(var_type, right);
                             right_types.push(right);
-                            for v in &delete_after_eval {
-                                typed_vars.remove(v);
-                            }
+                            var_type.leave_scope();
                         }
                     }
                 }
@@ -386,14 +394,14 @@ impl Context {
                 }
                 right_types[0].clone()
             }
-            Expr::Atom(expr_atom) => typed_vars
+            Expr::Atom(expr_atom) => var_type
                 .get(expr_atom)
                 .unwrap_or_else(|| panic!("{expr_atom}"))
                 .clone(),
             Expr::App(expr_app) => {
-                let mut ty = Rc::new(self.expr_ty(typed_vars, &expr_app.exprs[0]));
+                let mut ty = Rc::new(self.expr_ty(var_type, &expr_app.exprs[0]));
                 for arg in &expr_app.exprs[1..] {
-                    let arg_ty = self.expr_ty(typed_vars, arg);
+                    let arg_ty = self.expr_ty(var_type, arg);
                     let new_ty = match ty.as_ref() {
                         Type::Leaf(_) => panic!(),
                         Type::App(_, _) => panic!(),
@@ -410,6 +418,25 @@ impl Context {
                 }
                 ty.as_ref().clone()
             }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum CliContext {
+    Compile(String),
+}
+
+pub fn run_cli(context: CliContext) {
+    match context {
+        CliContext::Compile(filename) => {
+            let s = std::fs::read_to_string(filename).unwrap();
+            let expr = CoreExpr::from_str(&s).unwrap();
+            // eprintln!("expr = {expr:?}");
+            let context = generate_context(&expr);
+            // eprintln!("context = {context:?}");
+            assert!(context.type_check());
+            eprintln!("type check passed!");
         }
     }
 }

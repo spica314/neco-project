@@ -14,9 +14,9 @@ impl CoreExpr {
         match self {
             CoreExpr::Atom(_) => None,
             CoreExpr::Node(xs) => {
-                if xs.len() >= 1 {
+                if !xs.is_empty() {
                     match &xs[0] {
-                        CoreExpr::Atom(x) => Some(&x),
+                        CoreExpr::Atom(x) => Some(x),
                         CoreExpr::Node(_) => None,
                     }
                 } else {
@@ -28,7 +28,7 @@ impl CoreExpr {
     pub fn list(&self) -> Option<&[CoreExpr]> {
         match self {
             CoreExpr::Atom(_) => None,
-            CoreExpr::Node(xs) => Some(&xs),
+            CoreExpr::Node(xs) => Some(xs),
         }
     }
     pub fn tail(&self) -> Option<&[CoreExpr]> {
@@ -77,7 +77,7 @@ impl ToString for CoreExpr {
             CoreExpr::Node(xs) => {
                 let mut res = String::new();
                 res.push('(');
-                if xs.len() >= 1 {
+                if !xs.is_empty() {
                     res.push_str(&xs[0].to_string());
                 }
                 for x in xs.iter().skip(1) {

@@ -2,8 +2,10 @@
 members = [
     "neco",
     "neco-core-expr",
+    "felis-syn",
 ]
 
 [workspace.dependencies]
 neco = { path = "./neco" }
 neco-core-expr = { path = "./neco-core-expr" }
+felis-syn = { path = "./felis-syn" }

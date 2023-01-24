@@ -3,6 +3,10 @@
 version = 3
 
 [[package]]
+name = "felis-syn"
+version = "0.1.0"
+
+[[package]]
 name = "neco"
 version = "0.1.0"
 dependencies = [

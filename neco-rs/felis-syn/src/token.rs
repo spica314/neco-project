@@ -1,3 +1,5 @@
+use crate::Parse;
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Token {
     Ident(TokenIdent),
@@ -52,10 +54,38 @@ pub struct TokenIdent {
     ident: String,
 }
 
+impl Parse for TokenIdent {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<TokenIdent>, ()> {
+        if *i >= tokens.len() {
+            return Err(());
+        }
+        if let Token::Ident(token_ident) = tokens[*i].clone() {
+            *i += 1;
+            Ok(Some(token_ident))
+        } else {
+            Err(())
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenKeyword {
-    span: Span,
-    keyword: String,
+    pub span: Span,
+    pub keyword: String,
+}
+
+impl Parse for TokenKeyword {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<TokenKeyword>, ()> {
+        if *i >= tokens.len() {
+            return Err(());
+        }
+        if let Token::Keyword(token_keyword) = tokens[*i].clone() {
+            *i += 1;
+            Ok(Some(token_keyword))
+        } else {
+            Err(())
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -63,9 +93,21 @@ pub struct TokenLParen {
     span: Span,
 }
 
+impl Parse for TokenLParen {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        todo!()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenRParen {
     span: Span,
+}
+
+impl Parse for TokenRParen {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        todo!()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -73,14 +115,32 @@ pub struct TokenLBrace {
     span: Span,
 }
 
+impl Parse for TokenLBrace {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        todo!()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenRBrace {
     span: Span,
 }
 
+impl Parse for TokenRBrace {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        todo!()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenColon {
     span: Span,
+}
+
+impl Parse for TokenColon {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        unimplemented!();
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -133,6 +193,7 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
         if chars[i] == '#' {
             let begin = FilePos::new(r, c);
             let mut keyword = String::new();
+            keyword.push('#');
             i += 1;
             c += 1;
             while i < chars.len() && is_ident_char(chars[i]) {

@@ -1,0 +1,4 @@
+#type Or (A : Prop) (B : Prop) : Prop {
+    or_introl : A -> Or A B,
+    or_intror : B -> Or A B,
+}

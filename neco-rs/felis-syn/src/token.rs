@@ -17,7 +17,7 @@ pub enum Token {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct FileId(usize);
+pub struct FileId(pub(crate) usize);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FilePos {
@@ -50,8 +50,8 @@ impl Span {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenIdent {
-    span: Span,
-    ident: String,
+    pub span: Span,
+    pub ident: String,
 }
 
 impl Parse for TokenIdent {
@@ -95,7 +95,13 @@ pub struct TokenLParen {
 
 impl Parse for TokenLParen {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
-        todo!()
+        if *i >= tokens.len() {
+            return Ok(None);
+        }
+        if let Token::LParen(lparen) = &tokens[*i] {
+            return Ok(Some(lparen.clone()));
+        }
+        Ok(None)
     }
 }
 
@@ -106,7 +112,13 @@ pub struct TokenRParen {
 
 impl Parse for TokenRParen {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
-        todo!()
+        if *i >= tokens.len() {
+            return Err(());
+        }
+        if let Token::RParen(rparen) = &tokens[*i] {
+            return Ok(Some(rparen.clone()));
+        }
+        Ok(None)
     }
 }
 
@@ -117,7 +129,13 @@ pub struct TokenLBrace {
 
 impl Parse for TokenLBrace {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
-        todo!()
+        if *i >= tokens.len() {
+            return Err(());
+        }
+        if let Token::LBrace(lbrace) = &tokens[*i] {
+            return Ok(Some(lbrace.clone()));
+        }
+        Ok(None)
     }
 }
 
@@ -128,7 +146,13 @@ pub struct TokenRBrace {
 
 impl Parse for TokenRBrace {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
-        todo!()
+        if *i >= tokens.len() {
+            return Err(());
+        }
+        if let Token::RBrace(rbrace) = &tokens[*i] {
+            return Ok(Some(rbrace.clone()));
+        }
+        Ok(None)
     }
 }
 
@@ -139,7 +163,13 @@ pub struct TokenColon {
 
 impl Parse for TokenColon {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
-        unimplemented!();
+        if *i >= tokens.len() {
+            return Err(());
+        }
+        if let Token::Colon(colon) = &tokens[*i] {
+            return Ok(Some(colon.clone()));
+        }
+        Ok(None)
     }
 }
 
@@ -153,6 +183,18 @@ pub struct TokenCamma {
     span: Span,
 }
 
+impl Parse for TokenCamma {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        if *i >= tokens.len() {
+            return Err(());
+        }
+        if let Token::Camma(camma) = &tokens[*i] {
+            return Ok(Some(camma.clone()));
+        }
+        Ok(None)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenEq {
     span: Span,
@@ -161,6 +203,18 @@ pub struct TokenEq {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenArrow {
     span: Span,
+}
+
+impl Parse for TokenArrow {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        if *i >= tokens.len() {
+            return Ok(None);
+        }
+        if let Token::Arrow(arrow) = &tokens[*i] {
+            return Ok(Some(arrow.clone()));
+        }
+        Ok(None)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

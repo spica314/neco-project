@@ -98,24 +98,49 @@ pub enum SynType {
     Paren(SynTypeParen),
 }
 
+impl SynType {
+    pub fn to_felis_string(&self) -> String {
+        match self {
+            SynType::App(app) => {
+                format!(
+                    "{} {}",
+                    app.left.to_felis_string(),
+                    app.right.to_felis_string()
+                )
+            }
+            SynType::Atom(atom) => atom.ident.as_str().to_string(),
+            SynType::Map(map) => {
+                format!(
+                    "{} -> {}",
+                    map.from.to_felis_string(),
+                    map.to.to_felis_string()
+                )
+            }
+            SynType::Paren(paren) => {
+                format!("({})", paren.ty.to_felis_string())
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum SynTypeNoMapAndApp {
     Atom(SynTypeAtom),
     Paren(SynTypeParen),
 }
 
-impl Into<SynTypeNoMap> for SynTypeNoMapAndApp {
-    fn into(self) -> SynTypeNoMap {
-        match self {
+impl From<SynTypeNoMapAndApp> for SynTypeNoMap {
+    fn from(ty: SynTypeNoMapAndApp) -> SynTypeNoMap {
+        match ty {
             SynTypeNoMapAndApp::Atom(atom) => SynTypeNoMap::Atom(atom),
             SynTypeNoMapAndApp::Paren(paren) => SynTypeNoMap::Paren(paren),
         }
     }
 }
 
-impl Into<SynType> for SynTypeNoMapAndApp {
-    fn into(self) -> SynType {
-        match self {
+impl From<SynTypeNoMapAndApp> for SynType {
+    fn from(ty: SynTypeNoMapAndApp) -> SynType {
+        match ty {
             SynTypeNoMapAndApp::Atom(atom) => SynType::Atom(atom),
             SynTypeNoMapAndApp::Paren(paren) => SynType::Paren(paren),
         }
@@ -147,9 +172,9 @@ pub enum SynTypeNoMap {
     Paren(SynTypeParen),
 }
 
-impl Into<SynType> for SynTypeNoMap {
-    fn into(self) -> SynType {
-        match self {
+impl From<SynTypeNoMap> for SynType {
+    fn from(ty: SynTypeNoMap) -> SynType {
+        match ty {
             SynTypeNoMap::App(app) => SynType::App(app),
             SynTypeNoMap::Atom(atom) => SynType::Atom(atom),
             SynTypeNoMap::Paren(paren) => SynType::Paren(paren),
@@ -188,10 +213,9 @@ impl Parse for SynType {
         let mut res: SynType = res.into();
 
         if let Some(arrow) = TokenArrow::parse(tokens, &mut k)? {
-            let Some(to) = SynTypeNoMap::parse(tokens, &mut k)? else {
+            let Some(to) = SynType::parse(tokens, &mut k)? else {
                 return Err(());
             };
-            let to: SynType = to.into();
             res = SynType::Map(SynTypeMap {
                 from: Box::new(res),
                 arrow,
@@ -211,7 +235,7 @@ pub struct SynTypeApp {
 }
 
 impl Parse for SynTypeApp {
-    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+    fn parse(_tokens: &[Token], _i: &mut usize) -> Result<Option<Self>, ()> {
         todo!()
     }
 }
@@ -224,7 +248,7 @@ pub struct SynTypeMap {
 }
 
 impl Parse for SynTypeMap {
-    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+    fn parse(_tokens: &[Token], _i: &mut usize) -> Result<Option<Self>, ()> {
         todo!()
     }
 }
@@ -362,37 +386,60 @@ mod test {
         let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
-        match res {
-            SynType::App(app) => {
-                let left = &app.left;
-                let right = &app.right;
-                match left.as_ref() {
-                    SynType::App(app2) => {
-                        let left2 = &app2.left;
-                        let right2 = &app2.right;
-                        match left2.as_ref() {
-                            SynType::Atom(atom) => {
-                                assert_eq!(atom.ident.ident, "And".to_string());
-                            }
-                            _ => panic!(),
-                        }
-                        match right2.as_ref() {
-                            SynType::Atom(atom) => {
-                                assert_eq!(atom.ident.ident, "A".to_string());
-                            }
-                            _ => panic!(),
-                        }
-                    }
-                    _ => panic!(),
-                }
-                match right.as_ref() {
-                    SynType::Atom(atom) => {
-                        assert_eq!(atom.ident.ident, "B".to_string());
-                    }
-                    _ => panic!(),
-                }
-            }
-            _ => panic!(),
-        }
+        assert_eq!(res.to_felis_string(), "And A B");
+    }
+
+    #[test]
+    fn felis_syn_parse_test_2() {
+        let s = include_str!("../../../library/wip/and.fe");
+        let cs: Vec<_> = s.chars().collect();
+        let file_id = FileId(0);
+        let tokens = lex(file_id, &cs).unwrap();
+        eprintln!("tokens = {:?}", tokens);
+        let mut i = 0;
+        let res = SynTypeDef::parse(&tokens, &mut i);
+        assert!(res.is_ok());
+        let res = res.unwrap();
+        assert!(res.is_some());
+        let res = res.unwrap();
+        assert_eq!(i, tokens.len());
+        assert_eq!(res.name.as_str(), "And");
+        assert_eq!(res.args.len(), 2);
+        assert_eq!(res.args[0].name.as_str(), "A");
+        assert_eq!(res.args[0].ty.to_felis_string(), "Prop");
+        assert_eq!(res.args[1].name.as_str(), "B");
+        assert_eq!(res.args[1].ty.to_felis_string(), "Prop");
+        assert_eq!(res.ty_ty.to_felis_string(), "Prop");
+        assert_eq!(res.variants.len(), 1);
+        assert_eq!(res.variants[0].name.as_str(), "conj");
+        assert_eq!(res.variants[0].ty.to_felis_string(), "A -> B -> And A B");
+    }
+
+    #[test]
+    fn felis_syn_parse_test_3() {
+        let s = include_str!("../../../library/wip/or.fe");
+        let cs: Vec<_> = s.chars().collect();
+        let file_id = FileId(0);
+        let tokens = lex(file_id, &cs).unwrap();
+        eprintln!("tokens = {:?}", tokens);
+        let mut i = 0;
+        let res = SynTypeDef::parse(&tokens, &mut i);
+        assert!(res.is_ok());
+        let res = res.unwrap();
+        assert!(res.is_some());
+        let res = res.unwrap();
+        assert_eq!(i, tokens.len());
+        assert_eq!(res.name.as_str(), "Or");
+        assert_eq!(res.args.len(), 2);
+        assert_eq!(res.args[0].name.as_str(), "A");
+        assert_eq!(res.args[0].ty.to_felis_string(), "Prop");
+        assert_eq!(res.args[1].name.as_str(), "B");
+        assert_eq!(res.args[1].ty.to_felis_string(), "Prop");
+        assert_eq!(res.ty_ty.to_felis_string(), "Prop");
+        assert_eq!(res.variants.len(), 2);
+        assert_eq!(res.variants[0].name.as_str(), "or_introl");
+        assert_eq!(res.variants[0].ty.to_felis_string(), "A -> Or A B");
+        assert_eq!(res.variants[1].name.as_str(), "or_intror");
+        assert_eq!(res.variants[1].ty.to_felis_string(), "B -> Or A B");
     }
 }

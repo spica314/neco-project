@@ -54,6 +54,12 @@ pub struct TokenIdent {
     pub ident: String,
 }
 
+impl TokenIdent {
+    pub fn as_str(&self) -> &str {
+        &self.ident
+    }
+}
+
 impl Parse for TokenIdent {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<TokenIdent>, ()> {
         if *i >= tokens.len() {
@@ -63,7 +69,7 @@ impl Parse for TokenIdent {
             *i += 1;
             Ok(Some(token_ident))
         } else {
-            Err(())
+            Ok(None)
         }
     }
 }
@@ -99,6 +105,7 @@ impl Parse for TokenLParen {
             return Ok(None);
         }
         if let Token::LParen(lparen) = &tokens[*i] {
+            *i += 1;
             return Ok(Some(lparen.clone()));
         }
         Ok(None)
@@ -116,6 +123,7 @@ impl Parse for TokenRParen {
             return Err(());
         }
         if let Token::RParen(rparen) = &tokens[*i] {
+            *i += 1;
             return Ok(Some(rparen.clone()));
         }
         Ok(None)
@@ -133,6 +141,7 @@ impl Parse for TokenLBrace {
             return Err(());
         }
         if let Token::LBrace(lbrace) = &tokens[*i] {
+            *i += 1;
             return Ok(Some(lbrace.clone()));
         }
         Ok(None)
@@ -150,6 +159,7 @@ impl Parse for TokenRBrace {
             return Err(());
         }
         if let Token::RBrace(rbrace) = &tokens[*i] {
+            *i += 1;
             return Ok(Some(rbrace.clone()));
         }
         Ok(None)
@@ -167,6 +177,7 @@ impl Parse for TokenColon {
             return Err(());
         }
         if let Token::Colon(colon) = &tokens[*i] {
+            *i += 1;
             return Ok(Some(colon.clone()));
         }
         Ok(None)
@@ -189,6 +200,7 @@ impl Parse for TokenCamma {
             return Err(());
         }
         if let Token::Camma(camma) = &tokens[*i] {
+            *i += 1;
             return Ok(Some(camma.clone()));
         }
         Ok(None)
@@ -211,6 +223,7 @@ impl Parse for TokenArrow {
             return Ok(None);
         }
         if let Token::Arrow(arrow) = &tokens[*i] {
+            *i += 1;
             return Ok(Some(arrow.clone()));
         }
         Ok(None)

@@ -10,6 +10,7 @@ cargo fmt --all -- --check
 
 if [ $? -ne 0 ]; then
     git stash pop
+    echo -e "\033[31;1mpre-commit failed: cargo fmt\033[m"
     exit 1
 fi
 
@@ -17,8 +18,18 @@ cargo test --offline
 
 if [ $? -ne 0 ]; then
     git stash pop
+    echo -e "\033[31;1mpre-commit failed: cargo test\033[m"
+    exit 1
+fi
+
+cargo llvm-cov --fail-under-lines 80
+
+if [ $? -ne 0 ]; then
+    git stash pop
+    echo -e "\033[31;1mpre-commit failed: line coverage < 80%\033[m"
     exit 1
 fi
 
 git stash pop
+echo -e "\033[32;1mpre-commit: success\033[m"
 exit 0

@@ -1,4 +1,4 @@
-use crate::Parse;
+use crate::parse::Parse;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Token {
@@ -89,7 +89,7 @@ impl Parse for TokenKeyword {
             *i += 1;
             Ok(Some(token_keyword))
         } else {
-            Err(())
+            Ok(None)
         }
     }
 }
@@ -406,6 +406,6 @@ mod test {
         let file_id = FileId(0);
         let tokens = lex(file_id, &cs).unwrap();
         eprintln!("tokens = {tokens:#?}");
-        assert_eq!(tokens.len(), 122);
+        assert_eq!(tokens.len(), 119);
     }
 }

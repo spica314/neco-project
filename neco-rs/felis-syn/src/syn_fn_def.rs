@@ -1,5 +1,3 @@
-use std::f32::consts::E;
-
 use crate::{
     parse::Parse,
     syn_type::SynType,
@@ -228,7 +226,7 @@ impl Parse for SynExprMatchPattern {
 impl ToFelisString for SynExprMatchPattern {
     fn to_felis_string(&self) -> String {
         let mut s = String::new();
-        if self.idents.len() >= 1 {
+        if !self.idents.is_empty() {
             s.push_str(self.idents[0].as_str());
         }
         for x in &self.idents[1..] {
@@ -265,7 +263,7 @@ impl Parse for SynExpr {
             return Ok(Some(SynExpr::Ident(ident)));
         }
 
-        return Ok(None);
+        Ok(None)
     }
 }
 
@@ -273,8 +271,8 @@ impl ToFelisString for SynExpr {
     fn to_felis_string(&self) -> String {
         match self {
             SynExpr::Ident(expr_ident) => expr_ident.ident.as_str().to_string(),
-            SynExpr::Match(expr_match) => todo!(),
-            SynExpr::App(expr_app) => todo!(),
+            SynExpr::Match(_expr_match) => todo!(),
+            SynExpr::App(_expr_app) => todo!(),
         }
     }
 }

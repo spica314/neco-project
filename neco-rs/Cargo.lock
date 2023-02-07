@@ -11,8 +11,13 @@ name = "neco"
 version = "0.1.0"
 dependencies = [
  "neco-core-expr",
+ "neco-resolver",
 ]
 
 [[package]]
 name = "neco-core-expr"
+version = "0.1.0"
+
+[[package]]
+name = "neco-resolver"
 version = "0.1.0"

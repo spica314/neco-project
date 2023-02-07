@@ -1,9 +1,7 @@
-pub mod resolver;
-
 use std::{rc::Rc, str::FromStr};
 
 use neco_core_expr::core_expr::CoreExpr;
-use resolver::Resolver;
+use neco_resolver::Resolver;
 
 #[derive(Debug, Clone)]
 pub struct TypeDef {

@@ -235,8 +235,12 @@ pub struct TokenArrow2 {
     span: Span,
 }
 
-fn is_ident_char(c: char) -> bool {
-    c.is_ascii_alphanumeric() || c == '_'
+fn is_ident_head_char(c: char) -> bool {
+    c.is_ascii_alphanumeric() || "_".contains(c)
+}
+
+fn is_ident_tail_char(c: char) -> bool {
+    c.is_ascii_alphanumeric() || "-_".contains(c)
 }
 
 pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
@@ -263,7 +267,7 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
             keyword.push('#');
             i += 1;
             c += 1;
-            while i < chars.len() && is_ident_char(chars[i]) {
+            while i < chars.len() && is_ident_tail_char(chars[i]) {
                 keyword.push(chars[i]);
                 i += 1;
                 c += 1;
@@ -275,14 +279,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
             }));
             continue;
         }
-        if is_ident_char(chars[i]) {
+        if is_ident_head_char(chars[i]) {
+            eprintln!("i = {}", i);
             let begin = FilePos::new(r, c);
             let mut ident = String::new();
-            while i < chars.len() && is_ident_char(chars[i]) {
+            while i < chars.len() && is_ident_tail_char(chars[i]) {
                 ident.push(chars[i]);
                 i += 1;
                 c += 1;
             }
+            eprintln!("i = {}", i);
             let end = FilePos::new(r, c);
             res.push(Token::Ident(TokenIdent {
                 span: Span::new(file_id, begin, end),
@@ -407,5 +413,15 @@ mod test {
         let tokens = lex(file_id, &cs).unwrap();
         eprintln!("tokens = {tokens:#?}");
         assert_eq!(tokens.len(), 119);
+    }
+
+    #[test]
+    fn felis_syn_lex_test_2() {
+        let s = "test test_1 test-1 __test";
+        let cs: Vec<_> = s.chars().collect();
+        let file_id = FileId(0);
+        let tokens = lex(file_id, &cs).unwrap();
+        assert_eq!(tokens.len(), 4);
+        assert!(tokens.iter().all(|t| matches!(t, Token::Ident(_))));
     }
 }

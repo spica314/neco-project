@@ -63,7 +63,7 @@ impl TokenIdent {
 impl Parse for TokenIdent {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<TokenIdent>, ()> {
         if *i >= tokens.len() {
-            return Err(());
+            return Ok(None);
         }
         if let Token::Ident(token_ident) = tokens[*i].clone() {
             *i += 1;
@@ -83,7 +83,7 @@ pub struct TokenKeyword {
 impl Parse for TokenKeyword {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<TokenKeyword>, ()> {
         if *i >= tokens.len() {
-            return Err(());
+            return Ok(None);
         }
         if let Token::Keyword(token_keyword) = tokens[*i].clone() {
             *i += 1;
@@ -235,6 +235,21 @@ pub struct TokenArrow2 {
     span: Span,
 }
 
+impl Parse for TokenArrow2 {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        if *i >= tokens.len() {
+            return Err(());
+        }
+
+        if let Token::Arrow2(arrow2) = &tokens[*i] {
+            *i += 1;
+            return Ok(Some(arrow2.clone()));
+        }
+
+        Ok(None)
+    }
+}
+
 fn is_ident_head_char(c: char) -> bool {
     c.is_ascii_alphanumeric() || "_".contains(c)
 }
@@ -280,7 +295,6 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
             continue;
         }
         if is_ident_head_char(chars[i]) {
-            eprintln!("i = {}", i);
             let begin = FilePos::new(r, c);
             let mut ident = String::new();
             while i < chars.len() && is_ident_tail_char(chars[i]) {
@@ -288,7 +302,6 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
                 i += 1;
                 c += 1;
             }
-            eprintln!("i = {}", i);
             let end = FilePos::new(r, c);
             res.push(Token::Ident(TokenIdent {
                 span: Span::new(file_id, begin, end),
@@ -412,7 +425,7 @@ mod test {
         let file_id = FileId(0);
         let tokens = lex(file_id, &cs).unwrap();
         eprintln!("tokens = {tokens:#?}");
-        assert_eq!(tokens.len(), 119);
+        assert_eq!(tokens.len(), 120);
     }
 
     #[test]

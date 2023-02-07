@@ -5,7 +5,7 @@ use crate::{
     token::{Token, TokenColon, TokenIdent, TokenLParen, TokenRParen},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynTypedArg {
     pub lparen: TokenLParen,
     pub name: TokenIdent,

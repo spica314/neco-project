@@ -35,6 +35,12 @@ impl FilePos {
     }
 }
 
+impl Default for FilePos {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Span {
     file_id: FileId,

@@ -49,7 +49,7 @@ pub fn felis_type_check(file: &SynFile) -> Result<SynFile, ()> {
         }
     }
 
-    for (_, type_def) in &context.types {
+    for type_def in context.types.values() {
         for variant in &type_def.variants {
             context
                 .type_resolver
@@ -65,11 +65,11 @@ pub fn felis_type_check(file: &SynFile) -> Result<SynFile, ()> {
                 items.push(SynFileItem::TypeDef(type_def.clone()));
             }
             SynFileItem::FnDef(fn_def) => {
-                let t = felis_fn_type_check(&mut context, &fn_def)?;
+                let t = felis_fn_type_check(&mut context, fn_def)?;
                 items.push(SynFileItem::FnDef(t));
             }
             SynFileItem::TheoremDef(theorem_def) => {
-                let t = felis_theorem_def_type_check(&mut context, &theorem_def)?;
+                let t = felis_theorem_def_type_check(&mut context, theorem_def)?;
                 items.push(SynFileItem::TheoremDef(t));
             }
         }
@@ -77,8 +77,8 @@ pub fn felis_type_check(file: &SynFile) -> Result<SynFile, ()> {
     Ok(SynFile { items })
 }
 
-fn felis_theorem_def_type_check<'a>(
-    context: &mut Context<'a>,
+fn felis_theorem_def_type_check(
+    context: &mut Context,
     theorem_def: &SynTheoremDef,
 ) -> Result<SynTheoremDef, ()> {
     let mut res = theorem_def.clone();
@@ -87,7 +87,7 @@ fn felis_theorem_def_type_check<'a>(
     Ok(res)
 }
 
-fn felis_fn_type_check<'a>(context: &mut Context<'a>, fn_def: &SynFnDef) -> Result<SynFnDef, ()> {
+fn felis_fn_type_check(context: &mut Context, fn_def: &SynFnDef) -> Result<SynFnDef, ()> {
     context.type_resolver.enter_scope();
     for typed_arg in &fn_def.args {
         context
@@ -98,7 +98,7 @@ fn felis_fn_type_check<'a>(context: &mut Context<'a>, fn_def: &SynFnDef) -> Resu
 
     assert_eq!(fn_def.fn_block.statements.len(), 1);
     let SynStatement::Expr(expr) = &fn_def.fn_block.statements[0];
-    let t = felis_expr_type_check(context, &expr, &fn_def.res_ty)?;
+    let t = felis_expr_type_check(context, expr, &fn_def.res_ty)?;
     let mut res = fn_def.clone();
     res.fn_block.statements[0] = SynStatement::Expr(t);
 
@@ -106,8 +106,8 @@ fn felis_fn_type_check<'a>(context: &mut Context<'a>, fn_def: &SynFnDef) -> Resu
     Ok(res)
 }
 
-fn felis_expr_type_check<'a>(
-    context: &mut Context<'a>,
+fn felis_expr_type_check(
+    context: &mut Context,
     expr: &SynExpr,
     expected_ret_ty: &SynType,
 ) -> Result<SynExpr, ()> {
@@ -123,16 +123,15 @@ fn felis_expr_type_check<'a>(
                 let ty = context.type_resolver.get(&v_name).unwrap();
                 types.push(ty);
             }
-            eprintln!("types = {:?}", types);
-            for i in 1..types.len() {
+            eprintln!("types = {types:?}");
+            for ty2 in types.iter().skip(1) {
                 match ty {
                     SynType::Map(map) => {
                         let from = &map.from;
                         let to = &map.to;
-                        let ty2 = types[i];
-                        eprintln!("from = {:?}", from);
-                        eprintln!("to   = {:?}", to);
-                        eprintln!("ty2  = {:?}", ty2);
+                        eprintln!("from = {from:?}");
+                        eprintln!("to   = {to:?}");
+                        eprintln!("ty2  = {ty2:?}");
                         if from.as_ref().to_felis_string() == ty2.to_felis_string() {
                             ty = to.as_ref();
                         } else {
@@ -142,7 +141,7 @@ fn felis_expr_type_check<'a>(
                     _ => panic!(),
                 }
             }
-            eprintln!("ty = {:?}", ty);
+            eprintln!("ty = {ty:?}");
             if ty.to_felis_string() == expected_ret_ty.to_felis_string() {
                 Ok(expr.clone())
             } else {
@@ -151,7 +150,7 @@ fn felis_expr_type_check<'a>(
         }
         SynExpr::Match(expr_match) => {
             let t = felis_expr_match_type_check(context, expr_match, expected_ret_ty);
-            t.map(|x| SynExpr::Match(x))
+            t.map(SynExpr::Match)
         }
     }
 }
@@ -192,21 +191,21 @@ fn type_flatten_map(ty: &SynType) -> Option<Vec<SynType>> {
     }
 }
 
-fn felis_expr_match_type_check<'a>(
-    context: &mut Context<'a>,
+fn felis_expr_match_type_check(
+    context: &mut Context,
     expr_match: &SynExprMatch,
     expected_ret_ty: &SynType,
 ) -> Result<SynExprMatch, ()> {
     eprintln!("check expr_match");
-    eprintln!("expr_match = {:?}", expr_match);
-    eprintln!("expected_res_ty = {:?}", expected_ret_ty);
+    eprintln!("expr_match = {expr_match:?}");
+    eprintln!("expected_res_ty = {expected_ret_ty:?}");
     eprintln!();
     let expr_ident = expr_to_ident_name(&expr_match.expr).unwrap();
     let expr_ty = context.type_resolver.get(&expr_ident).unwrap();
-    eprintln!("expr_ty = {:?}", expr_ty);
-    let left = type_most_left_name(&expr_ty).unwrap();
+    eprintln!("expr_ty = {expr_ty:?}");
+    let left = type_most_left_name(expr_ty).unwrap();
     let type_def = context.get_type_def(&left).unwrap();
-    eprintln!("type_def = {:?}", type_def);
+    eprintln!("type_def = {type_def:?}");
     {
         let mut variant_names = vec![];
         let mut arm_names = vec![];
@@ -238,11 +237,11 @@ fn felis_expr_match_type_check<'a>(
         for i in 1..arm.pattern.idents.len() {
             let name = arm.pattern.idents[i].as_str().to_string();
             let ty = variant_types[i - 1].clone();
-            eprintln!("name = {}, ty = {:?}", name, ty);
+            eprintln!("name = {name}, ty = {ty:?}");
             context.type_resolver.record(name, ty).ok();
         }
         let expr = &arm.expr;
-        eprintln!("expr = {:?}", expr);
+        eprintln!("expr = {expr:?}");
         let _typed = felis_expr_type_check(context, expr, expected_ret_ty).unwrap();
         context.type_resolver.leave_scope();
     }

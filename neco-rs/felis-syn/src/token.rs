@@ -16,18 +16,22 @@ pub enum Token {
     Semicolon(TokenSemicolon),
 }
 
+// Todo: crate外から.0にアクセスさせないようにする
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct FileId(pub(crate) usize);
+pub struct FileId(pub usize);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct FilePos {
-    r: usize,
-    c: usize,
+pub enum FilePos {
+    None,
+    Pos { r: usize, c: usize },
 }
 
 impl FilePos {
-    pub fn new(r: usize, c: usize) -> FilePos {
-        FilePos { r, c }
+    pub fn new() -> FilePos {
+        FilePos::None
+    }
+    pub fn new_with_pos(r: usize, c: usize) -> FilePos {
+        FilePos::Pos { r, c }
     }
 }
 
@@ -290,7 +294,7 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
             continue;
         }
         if chars[i] == '#' {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             let mut keyword = String::new();
             keyword.push('#');
             i += 1;
@@ -300,7 +304,7 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
                 i += 1;
                 c += 1;
             }
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::Keyword(TokenKeyword {
                 span: Span::new(file_id, begin, end),
                 keyword,
@@ -308,14 +312,14 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
             continue;
         }
         if is_ident_head_char(chars[i]) {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             let mut ident = String::new();
             while i < chars.len() && is_ident_tail_char(chars[i]) {
                 ident.push(chars[i]);
                 i += 1;
                 c += 1;
             }
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::Ident(TokenIdent {
                 span: Span::new(file_id, begin, end),
                 ident,
@@ -323,100 +327,100 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
             continue;
         }
         if i + 1 < chars.len() && chars[i] == '-' && chars[i + 1] == '>' {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             i += 2;
             c += 2;
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::Arrow(TokenArrow {
                 span: Span::new(file_id, begin, end),
             }));
             continue;
         }
         if i + 1 < chars.len() && chars[i] == '=' && chars[i + 1] == '>' {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             i += 2;
             c += 2;
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::Arrow2(TokenArrow2 {
                 span: Span::new(file_id, begin, end),
             }));
             continue;
         }
         if chars[i] == '(' {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::LParen(TokenLParen {
                 span: Span::new(file_id, begin, end),
             }));
             continue;
         }
         if chars[i] == ')' {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::RParen(TokenRParen {
                 span: Span::new(file_id, begin, end),
             }));
             continue;
         }
         if chars[i] == '{' {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::LBrace(TokenLBrace {
                 span: Span::new(file_id, begin, end),
             }));
             continue;
         }
         if chars[i] == '}' {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::RBrace(TokenRBrace {
                 span: Span::new(file_id, begin, end),
             }));
             continue;
         }
         if chars[i] == ':' {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::Colon(TokenColon {
                 span: Span::new(file_id, begin, end),
             }));
             continue;
         }
         if chars[i] == ',' {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::Camma(TokenCamma {
                 span: Span::new(file_id, begin, end),
             }));
             continue;
         }
         if chars[i] == ';' {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::Camma(TokenCamma {
                 span: Span::new(file_id, begin, end),
             }));
             continue;
         }
         if chars[i] == '=' {
-            let begin = FilePos::new(r, c);
+            let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
-            let end = FilePos::new(r, c);
+            let end = FilePos::new_with_pos(r, c);
             res.push(Token::Eq(TokenEq {
                 span: Span::new(file_id, begin, end),
             }));

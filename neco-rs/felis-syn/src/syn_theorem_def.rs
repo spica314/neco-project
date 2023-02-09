@@ -5,6 +5,7 @@ use crate::{
     token::{Token, TokenEq, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynTheoremDef {
     pub keyword_theorem: TokenKeyword,
     pub name: TokenIdent,

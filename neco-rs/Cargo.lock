@@ -7,6 +7,14 @@ name = "felis-syn"
 version = "0.1.0"
 
 [[package]]
+name = "felis-type-check"
+version = "0.1.0"
+dependencies = [
+ "felis-syn",
+ "neco-resolver",
+]
+
+[[package]]
 name = "neco"
 version = "0.1.0"
 dependencies = [

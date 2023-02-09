@@ -212,6 +212,19 @@ pub struct TokenEq {
     span: Span,
 }
 
+impl Parse for TokenEq {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        if *i >= tokens.len() {
+            return Err(());
+        }
+        if let Token::Eq(eq) = &tokens[*i] {
+            *i += 1;
+            return Ok(Some(eq.clone()));
+        }
+        Ok(None)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenArrow {
     span: Span,

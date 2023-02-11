@@ -3,7 +3,6 @@ members = [
     "felis-syn",
     "felis-type-check",
     "neco",
-    "neco-core-expr",
     "neco-resolver",
 ]
 
@@ -12,4 +11,3 @@ felis-syn = { path = "./felis-syn" }
 felis-type-check = { path = "./felis-type-check" }
 neco = { path = "./neco" }
 neco-resolver = { path = "./neco-resolver" }
-neco-core-expr = { path = "./neco-core-expr" }

@@ -1,9 +1,10 @@
 use crate::{
     parse::Parse,
+    syn_ident::SynIdent,
     to_felis_string::ToFelisString,
     token::{
-        Token, TokenArrow2, TokenCamma, TokenIdent, TokenKeyword, TokenLBrace, TokenLParen,
-        TokenRBrace, TokenRParen,
+        Token, TokenArrow2, TokenCamma, TokenKeyword, TokenLBrace, TokenLParen, TokenRBrace,
+        TokenRParen,
     },
 };
 
@@ -95,7 +96,7 @@ impl Parse for SynExprMatchArm {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynExprMatchPattern {
-    pub idents: Vec<TokenIdent>,
+    pub idents: Vec<SynIdent>,
 }
 
 impl Parse for SynExprMatchPattern {
@@ -103,7 +104,7 @@ impl Parse for SynExprMatchPattern {
         let mut k = *i;
 
         let mut idents = vec![];
-        while let Some(ident) = TokenIdent::parse(tokens, &mut k)? {
+        while let Some(ident) = SynIdent::parse(tokens, &mut k)? {
             idents.push(ident);
         }
 
@@ -120,11 +121,11 @@ impl ToFelisString for SynExprMatchPattern {
     fn to_felis_string(&self) -> String {
         let mut s = String::new();
         if !self.idents.is_empty() {
-            s.push_str(self.idents[0].as_str());
+            s.push_str(self.idents[0].ident.as_str());
         }
         for x in &self.idents[1..] {
             s.push(' ');
-            s.push_str(x.as_str());
+            s.push_str(x.ident.as_str());
         }
         s
     }
@@ -159,7 +160,7 @@ impl Parse for SynExpr {
 impl ToFelisString for SynExpr {
     fn to_felis_string(&self) -> String {
         match self {
-            SynExpr::Ident(expr_ident) => expr_ident.ident.as_str().to_string(),
+            SynExpr::Ident(expr_ident) => expr_ident.ident.ident.as_str().to_string(),
             SynExpr::Match(_expr_match) => todo!(),
             SynExpr::App(_expr_app) => todo!(),
             SynExpr::Paren(_) => todo!(),
@@ -264,14 +265,14 @@ impl Parse for SynExprApp {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynExprIdent {
-    pub ident: TokenIdent,
+    pub ident: SynIdent,
 }
 
 impl Parse for SynExprIdent {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
-        let Some(ident) = TokenIdent::parse(tokens, &mut k)? else {
+        let Some(ident) = SynIdent::parse(tokens, &mut k)? else {
             return Ok(None);
         };
 
@@ -302,7 +303,7 @@ mod test {
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::Ident(_)));
         let SynExpr::Ident(ident) = res else { panic!() };
-        assert_eq!(ident.ident.as_str(), "x");
+        assert_eq!(ident.ident.ident.as_str(), "x");
     }
 
     #[test]

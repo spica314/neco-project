@@ -1,14 +1,15 @@
 use crate::{
     parse::Parse,
     syn_fn_def::SynFnDef,
+    syn_ident::SynIdent,
     syn_type::SynType,
-    token::{Token, TokenEq, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
+    token::{Token, TokenEq, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynTheoremDef {
     pub keyword_theorem: TokenKeyword,
-    pub name: TokenIdent,
+    pub name: SynIdent,
     pub eq: TokenEq,
     pub ty: SynType,
     pub lbrace: TokenLBrace,
@@ -27,7 +28,7 @@ impl Parse for SynTheoremDef {
             return Ok(None);
         }
 
-        let Some(name) = TokenIdent::parse(tokens, &mut k)? else {
+        let Some(name) = SynIdent::parse(tokens, &mut k)? else {
             return Err(());
         };
 
@@ -84,6 +85,6 @@ mod test {
         let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
-        assert_eq!(res.name.as_str(), "theorem1");
+        assert_eq!(res.name.ident.as_str(), "theorem1");
     }
 }

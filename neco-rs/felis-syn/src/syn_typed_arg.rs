@@ -1,14 +1,15 @@
 use crate::{
     parse::Parse,
+    syn_ident::SynIdent,
     syn_type::SynType,
     to_felis_string::ToFelisString,
-    token::{Token, TokenColon, TokenIdent, TokenLParen, TokenRParen},
+    token::{Token, TokenColon, TokenLParen, TokenRParen},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynTypedArg {
     pub lparen: TokenLParen,
-    pub name: TokenIdent,
+    pub name: SynIdent,
     pub colon: TokenColon,
     pub ty: SynType,
     pub rparen: TokenRParen,
@@ -18,7 +19,7 @@ impl ToFelisString for SynTypedArg {
     fn to_felis_string(&self) -> String {
         let mut s = String::new();
         s.push('(');
-        s.push_str(self.name.as_str());
+        s.push_str(self.name.ident.as_str());
         s.push_str(" : ");
         s.push_str(&self.ty.to_felis_string());
         s.push(')');
@@ -34,7 +35,7 @@ impl Parse for SynTypedArg {
             return Ok(None);
         };
 
-        let Some(name) = TokenIdent::parse(tokens, &mut k)? else {
+        let Some(name) = SynIdent::parse(tokens, &mut k)? else {
             return Err(());
         };
 

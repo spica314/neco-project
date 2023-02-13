@@ -1,19 +1,16 @@
 use crate::{
     parse::Parse,
     syn_expr::SynExpr,
+    syn_ident::SynIdent,
     syn_type::SynType,
     syn_typed_arg::SynTypedArg,
-    to_felis_string::ToFelisString,
-    token::{
-        Token, TokenArrow, TokenArrow2, TokenCamma, TokenIdent, TokenKeyword, TokenLBrace,
-        TokenRBrace,
-    },
+    token::{Token, TokenArrow, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynFnDef {
     pub keyword_fn: TokenKeyword,
-    pub name: TokenIdent,
+    pub name: SynIdent,
     pub args: Vec<SynTypedArg>,
     pub arrow: TokenArrow,
     pub res_ty: SynType,
@@ -31,7 +28,7 @@ impl Parse for SynFnDef {
             return Ok(None);
         };
 
-        let Some(name) = TokenIdent::parse(tokens, &mut k)? else {
+        let Some(name) = SynIdent::parse(tokens, &mut k)? else {
             return Err(());
         };
 
@@ -118,7 +115,7 @@ impl Parse for SynStatement {
 #[cfg(test)]
 mod test {
     use crate::{
-        syn_expr::SynExpr,
+        to_felis_string::ToFelisString,
         token::{lex, FileId},
     };
 
@@ -138,7 +135,7 @@ mod test {
         let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
-        assert_eq!(res.name.as_str(), "f");
+        assert_eq!(res.name.ident.as_str(), "f");
         assert_eq!(res.args.len(), 0);
         assert_eq!(res.fn_block.statements.len(), 0);
     }
@@ -157,7 +154,7 @@ mod test {
         let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
-        assert_eq!(res.name.as_str(), "f");
+        assert_eq!(res.name.ident.as_str(), "f");
         assert_eq!(res.args.len(), 0);
         assert_eq!(res.fn_block.statements.len(), 1);
         // todo: check expr
@@ -177,7 +174,7 @@ mod test {
         let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
-        assert_eq!(res.name.as_str(), "f");
+        assert_eq!(res.name.ident.as_str(), "f");
         assert_eq!(res.args.len(), 1);
         assert_eq!(res.args[0].to_felis_string(), "(x : T)");
         assert_eq!(res.fn_block.statements.len(), 1);
@@ -198,7 +195,7 @@ mod test {
         let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
-        assert_eq!(res.name.as_str(), "proof");
+        assert_eq!(res.name.ident.as_str(), "proof");
         assert_eq!(res.args.len(), 3);
         assert_eq!(res.args[0].to_felis_string(), "(A : Prop)");
         assert_eq!(res.args[1].to_felis_string(), "(B : Prop)");

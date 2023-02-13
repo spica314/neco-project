@@ -39,13 +39,13 @@ pub fn felis_type_check(file: &SynFile) -> Result<SynFile, ()> {
             SynFileItem::TypeDef(type_def) => {
                 context
                     .types
-                    .insert(type_def.name.as_str().to_string(), type_def);
+                    .insert(type_def.name.ident.as_str().to_string(), type_def);
             }
             SynFileItem::FnDef(_) => todo!(),
             SynFileItem::TheoremDef(theorem_def) => {
                 context
                     .theorems
-                    .insert(theorem_def.name.as_str().to_string(), theorem_def);
+                    .insert(theorem_def.name.ident.as_str().to_string(), theorem_def);
             }
         }
     }
@@ -54,7 +54,7 @@ pub fn felis_type_check(file: &SynFile) -> Result<SynFile, ()> {
         for variant in &type_def.variants {
             context
                 .type_resolver
-                .record(variant.name.as_str().to_string(), variant.ty.clone())
+                .record(variant.name.ident.as_str().to_string(), variant.ty.clone())
                 .ok();
         }
     }
@@ -93,7 +93,10 @@ fn felis_fn_type_check(context: &mut Context, fn_def: &SynFnDef) -> Result<SynFn
     for typed_arg in &fn_def.args {
         context
             .type_resolver
-            .record(typed_arg.name.as_str().to_string(), typed_arg.ty.clone())
+            .record(
+                typed_arg.name.ident.as_str().to_string(),
+                typed_arg.ty.clone(),
+            )
             .ok();
     }
 
@@ -160,7 +163,7 @@ fn felis_expr_type_check(
 // temp
 fn expr_to_ident_name(expr: &SynExpr) -> Option<String> {
     match expr {
-        SynExpr::Ident(ident) => Some(ident.ident.as_str().to_string()),
+        SynExpr::Ident(ident) => Some(ident.ident.ident.as_str().to_string()),
         SynExpr::App(_) => todo!(),
         SynExpr::Match(_) => todo!(),
         SynExpr::Paren(paren) => todo!("{:?}", paren),
@@ -172,7 +175,7 @@ fn type_most_left_name(ty: &SynType) -> Option<String> {
     match ty {
         SynType::Forall(_) => todo!(),
         SynType::App(app) => type_most_left_name(&app.left),
-        SynType::Atom(atom) => Some(atom.ident.as_str().to_string()),
+        SynType::Atom(atom) => Some(atom.ident.ident.as_str().to_string()),
         SynType::Map(_) => todo!(),
         SynType::Paren(_) => todo!(),
     }
@@ -213,11 +216,11 @@ fn felis_expr_match_type_check(
         let mut variant_names = vec![];
         let mut arm_names = vec![];
         for variant in &type_def.variants {
-            let t = variant.name.as_str().to_string();
+            let t = variant.name.ident.as_str().to_string();
             variant_names.push(t);
         }
         for arm in &expr_match.arms {
-            let t = arm.pattern.idents[0].as_str().to_string();
+            let t = arm.pattern.idents[0].ident.as_str().to_string();
             arm_names.push(t);
         }
         variant_names.sort();
@@ -230,7 +233,7 @@ fn felis_expr_match_type_check(
         context.type_resolver.enter_scope();
         let variant = 'b: {
             for variant in &type_def.variants {
-                if arm.pattern.idents[0].as_str() == variant.name.as_str() {
+                if arm.pattern.idents[0].ident.as_str() == variant.name.ident.as_str() {
                     break 'b variant;
                 }
             }
@@ -238,7 +241,7 @@ fn felis_expr_match_type_check(
         };
         let variant_types = type_flatten_map(&variant.ty).unwrap();
         for i in 1..arm.pattern.idents.len() {
-            let name = arm.pattern.idents[i].as_str().to_string();
+            let name = arm.pattern.idents[i].ident.as_str().to_string();
             let ty = variant_types[i - 1].clone();
             eprintln!("name = {name}, ty = {ty:?}");
             context.type_resolver.record(name, ty).ok();

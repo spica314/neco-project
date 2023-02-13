@@ -1,14 +1,15 @@
 use crate::{
     parse::Parse,
+    syn_ident::SynIdent,
     syn_type::SynType,
     syn_typed_arg::SynTypedArg,
-    token::{Token, TokenCamma, TokenColon, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
+    token::{Token, TokenCamma, TokenColon, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynTypeDef {
     pub keyword_type: TokenKeyword,
-    pub name: TokenIdent,
+    pub name: SynIdent,
     pub args: Vec<SynTypedArg>,
     pub colon: TokenColon,
     pub ty_ty: Box<SynType>,
@@ -26,7 +27,7 @@ impl Parse for SynTypeDef {
         if keyword_type.keyword != "#type" {
             return Ok(None);
         }
-        let Some(name) = TokenIdent::parse(tokens, &mut k)? else {
+        let Some(name) = SynIdent::parse(tokens, &mut k)? else {
             return Ok(None);
         };
 
@@ -72,7 +73,7 @@ impl Parse for SynTypeDef {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynVariant {
-    pub name: TokenIdent,
+    pub name: SynIdent,
     pub colon: TokenColon,
     pub ty: SynType,
     pub camma: TokenCamma,
@@ -82,7 +83,7 @@ impl Parse for SynVariant {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
-        let Some(name) = TokenIdent::parse(tokens, &mut k)? else {
+        let Some(name) = SynIdent::parse(tokens, &mut k)? else {
             return Ok(None);
         };
 
@@ -131,15 +132,15 @@ mod test {
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(i, tokens.len());
-        assert_eq!(res.name.as_str(), "And");
+        assert_eq!(res.name.ident.as_str(), "And");
         assert_eq!(res.args.len(), 2);
-        assert_eq!(res.args[0].name.as_str(), "A");
+        assert_eq!(res.args[0].name.ident.as_str(), "A");
         assert_eq!(res.args[0].ty.to_felis_string(), "Prop");
-        assert_eq!(res.args[1].name.as_str(), "B");
+        assert_eq!(res.args[1].name.ident.as_str(), "B");
         assert_eq!(res.args[1].ty.to_felis_string(), "Prop");
         assert_eq!(res.ty_ty.to_felis_string(), "Prop");
         assert_eq!(res.variants.len(), 1);
-        assert_eq!(res.variants[0].name.as_str(), "conj");
+        assert_eq!(res.variants[0].name.ident.as_str(), "conj");
         assert_eq!(res.variants[0].ty.to_felis_string(), "A -> B -> And A B");
     }
 
@@ -157,17 +158,17 @@ mod test {
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(i, tokens.len());
-        assert_eq!(res.name.as_str(), "Or");
+        assert_eq!(res.name.ident.as_str(), "Or");
         assert_eq!(res.args.len(), 2);
-        assert_eq!(res.args[0].name.as_str(), "A");
+        assert_eq!(res.args[0].name.ident.as_str(), "A");
         assert_eq!(res.args[0].ty.to_felis_string(), "Prop");
-        assert_eq!(res.args[1].name.as_str(), "B");
+        assert_eq!(res.args[1].name.ident.as_str(), "B");
         assert_eq!(res.args[1].ty.to_felis_string(), "Prop");
         assert_eq!(res.ty_ty.to_felis_string(), "Prop");
         assert_eq!(res.variants.len(), 2);
-        assert_eq!(res.variants[0].name.as_str(), "or_introl");
+        assert_eq!(res.variants[0].name.ident.as_str(), "or_introl");
         assert_eq!(res.variants[0].ty.to_felis_string(), "A -> Or A B");
-        assert_eq!(res.variants[1].name.as_str(), "or_intror");
+        assert_eq!(res.variants[1].name.ident.as_str(), "or_intror");
         assert_eq!(res.variants[1].ty.to_felis_string(), "B -> Or A B");
     }
 }

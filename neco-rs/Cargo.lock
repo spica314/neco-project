@@ -3,6 +3,22 @@
 version = 3
 
 [[package]]
+name = "felis-package"
+version = "0.1.0"
+dependencies = [
+ "felis-syn",
+]
+
+[[package]]
+name = "felis-rename"
+version = "0.1.0"
+dependencies = [
+ "felis-package",
+ "felis-syn",
+ "neco-resolver",
+]
+
+[[package]]
 name = "felis-syn"
 version = "0.1.0"
 

@@ -1,5 +1,7 @@
 [workspace]
 members = [
+    "felis-package",
+    "felis-rename",
     "felis-syn",
     "felis-type-check",
     "neco",
@@ -7,6 +9,8 @@ members = [
 ]
 
 [workspace.dependencies]
+felis-package = { path = "./felis-package" }
+felis-rename = { path = "./felis-rename" }
 felis-syn = { path = "./felis-syn" }
 felis-type-check = { path = "./felis-type-check" }
 neco = { path = "./neco" }

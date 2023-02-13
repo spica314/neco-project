@@ -352,4 +352,20 @@ mod test {
             "#forall (A : Prop), #forall (B : Prop), And A B -> Or A B"
         );
     }
+
+    #[test]
+    fn felis_syn_type_parse_test_5() {
+        let s = "(A -> B)";
+        let cs: Vec<_> = s.chars().collect();
+        let file_id = FileId(0);
+        let tokens = lex(file_id, &cs).unwrap();
+        let mut i = 0;
+        let res = SynType::parse(&tokens, &mut i);
+        assert_eq!(i, tokens.len());
+        assert!(res.is_ok());
+        let res = res.unwrap();
+        assert!(res.is_some());
+        let res = res.unwrap();
+        assert_eq!(res.to_felis_string(), "(A -> B)");
+    }
 }

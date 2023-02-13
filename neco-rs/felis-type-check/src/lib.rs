@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
 use felis_syn::{
+    syn_expr::{SynExpr, SynExprMatch},
     syn_file::{SynFile, SynFileItem},
-    syn_fn_def::{SynExpr, SynExprMatch, SynFnDef, SynStatement},
+    syn_fn_def::{SynFnDef, SynStatement},
     syn_theorem_def::SynTheoremDef,
     syn_type::SynType,
     syn_type_def::SynTypeDef,
@@ -152,6 +153,7 @@ fn felis_expr_type_check(
             let t = felis_expr_match_type_check(context, expr_match, expected_ret_ty);
             t.map(SynExpr::Match)
         }
+        SynExpr::Paren(_) => todo!(),
     }
 }
 
@@ -161,6 +163,7 @@ fn expr_to_ident_name(expr: &SynExpr) -> Option<String> {
         SynExpr::Ident(ident) => Some(ident.ident.as_str().to_string()),
         SynExpr::App(_) => todo!(),
         SynExpr::Match(_) => todo!(),
+        SynExpr::Paren(paren) => todo!("{:?}", paren),
     }
 }
 
@@ -296,6 +299,23 @@ mod test {
     #[should_panic]
     fn felis_type_check_test_3() {
         let s = std::fs::read_to_string("../../library/wip/fail_prop2.fe").unwrap();
+        let cs: Vec<_> = s.chars().collect();
+        let file_id = FileId(0);
+        let tokens = lex(file_id, &cs);
+        assert!(tokens.is_ok());
+        let tokens = tokens.unwrap();
+        let mut i = 0;
+        let res = SynFile::parse(&tokens, &mut i);
+        assert!(res.is_ok());
+        let res = res.unwrap();
+        assert!(res.is_some());
+        let res = res.unwrap();
+        let _res_typed = felis_type_check(&res).ok();
+    }
+
+    // #[test]
+    fn felis_type_check_test_4() {
+        let s = std::fs::read_to_string("../../library/wip/prop3.fe").unwrap();
         let cs: Vec<_> = s.chars().collect();
         let file_id = FileId(0);
         let tokens = lex(file_id, &cs);

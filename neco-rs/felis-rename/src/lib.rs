@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use felis_package::FelisPackage;
 use felis_syn::{
     syn_file::{SynFile, SynFileItem},
@@ -5,13 +7,15 @@ use felis_syn::{
     syn_theorem_def::SynTheoremDef,
     syn_type::SynType,
     syn_type_def::SynTypeDef,
+    token_id::TokenId,
 };
 use neco_resolver::Resolver;
 
 struct Context<'a> {
     dependencies: &'a [&'a FelisPackage],
     type_resolver: Resolver<SynType>,
-    rename_index: usize,
+    ident_unique_id_table: HashMap<TokenId, usize>,
+    next_ident_unique_id: usize,
 }
 
 impl<'a> Context<'a> {
@@ -19,12 +23,13 @@ impl<'a> Context<'a> {
         Context {
             dependencies: &[],
             type_resolver: Resolver::new(),
-            rename_index: 1,
+            ident_unique_id_table: HashMap::new(),
+            next_ident_unique_id: 1,
         }
     }
-    pub fn make_unique_name(&mut self, s: &str) -> String {
-        let res = format!("{}_{}", s, self.rename_index);
-        self.rename_index += 1;
+    pub fn make_ident_unique_id(&mut self, s: &str) -> usize {
+        let res = self.next_ident_unique_id;
+        self.next_ident_unique_id += 1;
         res
     }
 }
@@ -36,11 +41,7 @@ impl<'a> Default for Context<'a> {
 }
 
 pub fn felis_rename(package: &mut FelisPackage, dependencies: &[&FelisPackage]) -> Result<(), ()> {
-    let mut context = Context {
-        dependencies,
-        type_resolver: Resolver::new(),
-        rename_index: 1,
-    };
+    let mut context = Context::new();
     felis_rename_defs_file(&mut context, &mut package.file)?;
     felis_rename_uses_file(&mut context, &mut package.file)?;
     Ok(())
@@ -67,8 +68,10 @@ fn felis_rename_defs_file_item(context: &mut Context, item: &mut SynFileItem) ->
 fn felis_rename_defs_type_def(context: &mut Context, type_def: &mut SynTypeDef) -> Result<(), ()> {
     // name
     {
-        let unique_name = context.make_unique_name(type_def.name.ident.as_str());
-        type_def.name.unique_name = Some(unique_name);
+        let unique_id = context.make_ident_unique_id(type_def.name.ident.as_str());
+        context
+            .ident_unique_id_table
+            .insert(type_def.name.token_id(), unique_id);
     }
     Ok(())
 }
@@ -100,7 +103,7 @@ mod test {
         let s = "#type A : Prop { hoge : A, }";
         let mut type_def = parse_from_str::<SynTypeDef>(&s).unwrap().unwrap();
         felis_rename_defs_type_def(&mut context, &mut type_def).unwrap();
-        assert_eq!(type_def.name.unique_name, Some("A_1".to_string()));
+        assert_eq!(type_def.name.token_id().as_usize(), 1);
     }
 
     #[test]
@@ -110,7 +113,7 @@ mod test {
         let mut file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         felis_rename_defs_file(&mut context, &mut file).unwrap();
         if let SynFileItem::TypeDef(type_def) = &file.items[0] {
-            assert_eq!(type_def.name.unique_name, Some("A_1".to_string()));
+            assert_eq!(type_def.name.token_id().as_usize(), 1);
         }
     }
 }

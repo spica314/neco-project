@@ -5,6 +5,9 @@ impl TokenId {
     pub fn id(&self) -> usize {
         self.0
     }
+    pub fn as_usize(&self) -> usize {
+        self.0
+    }
 }
 
 pub struct TokenIdGenerator {

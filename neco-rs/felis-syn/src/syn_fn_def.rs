@@ -1,16 +1,15 @@
 use crate::{
     parse::Parse,
     syn_expr::SynExpr,
-    syn_ident::SynIdent,
     syn_type::SynType,
     syn_typed_arg::SynTypedArg,
-    token::{Token, TokenArrow, TokenKeyword, TokenLBrace, TokenRBrace},
+    token::{Token, TokenArrow, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynFnDef {
     pub keyword_fn: TokenKeyword,
-    pub name: SynIdent,
+    pub name: TokenIdent,
     pub args: Vec<SynTypedArg>,
     pub arrow: TokenArrow,
     pub res_ty: SynType,
@@ -28,7 +27,7 @@ impl Parse for SynFnDef {
             return Ok(None);
         };
 
-        let Some(name) = SynIdent::parse(tokens, &mut k)? else {
+        let Some(name) = TokenIdent::parse(tokens, &mut k)? else {
             return Err(());
         };
 

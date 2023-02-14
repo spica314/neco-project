@@ -72,6 +72,12 @@ impl TokenIdent {
     pub fn as_str(&self) -> &str {
         &self.ident
     }
+    pub fn token_id(&self) -> TokenId {
+        self.id
+    }
+    pub fn as_usize(&self) -> usize {
+        self.id.as_usize()
+    }
 }
 
 impl Parse for TokenIdent {

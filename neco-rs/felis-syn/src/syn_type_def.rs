@@ -1,15 +1,14 @@
 use crate::{
     parse::Parse,
-    syn_ident::SynIdent,
     syn_type::SynType,
     syn_typed_arg::SynTypedArg,
-    token::{Token, TokenCamma, TokenColon, TokenKeyword, TokenLBrace, TokenRBrace},
+    token::{Token, TokenCamma, TokenColon, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynTypeDef {
     pub keyword_type: TokenKeyword,
-    pub name: SynIdent,
+    pub name: TokenIdent,
     pub args: Vec<SynTypedArg>,
     pub colon: TokenColon,
     pub ty_ty: Box<SynType>,
@@ -27,7 +26,7 @@ impl Parse for SynTypeDef {
         if keyword_type.keyword != "#type" {
             return Ok(None);
         }
-        let Some(name) = SynIdent::parse(tokens, &mut k)? else {
+        let Some(name) = TokenIdent::parse(tokens, &mut k)? else {
             return Ok(None);
         };
 
@@ -73,7 +72,7 @@ impl Parse for SynTypeDef {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynVariant {
-    pub name: SynIdent,
+    pub name: TokenIdent,
     pub colon: TokenColon,
     pub ty: SynType,
     pub camma: TokenCamma,
@@ -83,7 +82,7 @@ impl Parse for SynVariant {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
-        let Some(name) = SynIdent::parse(tokens, &mut k)? else {
+        let Some(name) = TokenIdent::parse(tokens, &mut k)? else {
             return Ok(None);
         };
 

@@ -1,9 +1,8 @@
 use crate::{
     parse::Parse,
-    syn_ident::SynIdent,
     syn_typed_arg::SynTypedArg,
     to_felis_string::ToFelisString,
-    token::{Token, TokenArrow, TokenCamma, TokenKeyword, TokenLParen, TokenRParen},
+    token::{Token, TokenArrow, TokenCamma, TokenIdent, TokenKeyword, TokenLParen, TokenRParen},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -230,7 +229,7 @@ impl Parse for SynTypeMap {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynTypeAtom {
-    pub ident: SynIdent,
+    pub ident: TokenIdent,
 }
 
 impl Parse for SynTypeAtom {
@@ -240,7 +239,7 @@ impl Parse for SynTypeAtom {
             return Ok(None);
         };
 
-        let Some(ident) = SynIdent::parse(tokens, &mut k)? else {
+        let Some(ident) = TokenIdent::parse(tokens, &mut k)? else {
             return Ok(None);
         };
 

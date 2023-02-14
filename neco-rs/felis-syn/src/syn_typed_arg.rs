@@ -1,15 +1,14 @@
 use crate::{
     parse::Parse,
-    syn_ident::SynIdent,
     syn_type::SynType,
     to_felis_string::ToFelisString,
-    token::{Token, TokenColon, TokenLParen, TokenRParen},
+    token::{Token, TokenColon, TokenIdent, TokenLParen, TokenRParen},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynTypedArg {
     pub lparen: TokenLParen,
-    pub name: SynIdent,
+    pub name: TokenIdent,
     pub colon: TokenColon,
     pub ty: SynType,
     pub rparen: TokenRParen,
@@ -35,7 +34,7 @@ impl Parse for SynTypedArg {
             return Ok(None);
         };
 
-        let Some(name) = SynIdent::parse(tokens, &mut k)? else {
+        let Some(name) = TokenIdent::parse(tokens, &mut k)? else {
             return Err(());
         };
 

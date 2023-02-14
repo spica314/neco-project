@@ -1,10 +1,9 @@
 use crate::{
     parse::Parse,
-    syn_ident::SynIdent,
     to_felis_string::ToFelisString,
     token::{
-        Token, TokenArrow2, TokenCamma, TokenKeyword, TokenLBrace, TokenLParen, TokenRBrace,
-        TokenRParen,
+        Token, TokenArrow2, TokenCamma, TokenIdent, TokenKeyword, TokenLBrace, TokenLParen,
+        TokenRBrace, TokenRParen,
     },
 };
 
@@ -96,7 +95,7 @@ impl Parse for SynExprMatchArm {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynExprMatchPattern {
-    pub idents: Vec<SynIdent>,
+    pub idents: Vec<TokenIdent>,
 }
 
 impl Parse for SynExprMatchPattern {
@@ -104,7 +103,7 @@ impl Parse for SynExprMatchPattern {
         let mut k = *i;
 
         let mut idents = vec![];
-        while let Some(ident) = SynIdent::parse(tokens, &mut k)? {
+        while let Some(ident) = TokenIdent::parse(tokens, &mut k)? {
             idents.push(ident);
         }
 
@@ -265,14 +264,14 @@ impl Parse for SynExprApp {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SynExprIdent {
-    pub ident: SynIdent,
+    pub ident: TokenIdent,
 }
 
 impl Parse for SynExprIdent {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
-        let Some(ident) = SynIdent::parse(tokens, &mut k)? else {
+        let Some(ident) = TokenIdent::parse(tokens, &mut k)? else {
             return Ok(None);
         };
 

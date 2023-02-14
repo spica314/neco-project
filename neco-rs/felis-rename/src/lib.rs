@@ -77,6 +77,13 @@ fn felis_rename_defs_type_def(context: &mut Context, type_def: &mut SynTypeDef) 
 }
 
 fn felis_rename_defs_fn_def(context: &mut Context, fn_def: &mut SynFnDef) -> Result<(), ()> {
+    // name
+    {
+        let unique_id = context.make_ident_unique_id(fn_def.name.ident.as_str());
+        context
+            .ident_unique_id_table
+            .insert(fn_def.name.token_id(), unique_id);
+    }
     Ok(())
 }
 
@@ -84,6 +91,13 @@ fn felis_rename_defs_theorem_def(
     context: &mut Context,
     theorem_def: &mut SynTheoremDef,
 ) -> Result<(), ()> {
+    // name
+    {
+        let unique_id = context.make_ident_unique_id(theorem_def.name.ident.as_str());
+        context
+            .ident_unique_id_table
+            .insert(theorem_def.name.token_id(), unique_id);
+    }
     Ok(())
 }
 
@@ -103,7 +117,11 @@ mod test {
         let s = "#type A : Prop { hoge : A, }";
         let mut type_def = parse_from_str::<SynTypeDef>(&s).unwrap().unwrap();
         felis_rename_defs_type_def(&mut context, &mut type_def).unwrap();
-        assert_eq!(type_def.name.token_id().as_usize(), 1);
+        let id = *context
+            .ident_unique_id_table
+            .get(&type_def.name.token_id())
+            .unwrap();
+        assert_eq!(id, 1);
     }
 
     #[test]
@@ -113,7 +131,55 @@ mod test {
         let mut file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         felis_rename_defs_file(&mut context, &mut file).unwrap();
         if let SynFileItem::TypeDef(type_def) = &file.items[0] {
-            assert_eq!(type_def.name.token_id().as_usize(), 1);
+            let id = *context
+                .ident_unique_id_table
+                .get(&type_def.name.token_id())
+                .unwrap();
+            assert_eq!(id, 1);
+        }
+    }
+
+    #[test]
+    fn felis_rename_defs_file_test_2() {
+        let mut context = Context::new();
+        let s = std::fs::read_to_string("../../library/wip/fn_def.fe").unwrap();
+        let mut file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        felis_rename_defs_file(&mut context, &mut file).unwrap();
+        if let SynFileItem::FnDef(fn_def) = &file.items[0] {
+            let id = *context
+                .ident_unique_id_table
+                .get(&fn_def.name.token_id())
+                .unwrap();
+            assert_eq!(id, 1);
+        }
+    }
+
+    #[test]
+    fn felis_rename_defs_file_test_3() {
+        let mut context = Context::new();
+        let s = std::fs::read_to_string("../../library/wip/prop2.fe").unwrap();
+        let mut file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        felis_rename_defs_file(&mut context, &mut file).unwrap();
+        if let SynFileItem::TypeDef(type_def) = &file.items[0] {
+            let id = *context
+                .ident_unique_id_table
+                .get(&type_def.name.token_id())
+                .unwrap();
+            assert_eq!(id, 1);
+        }
+        if let SynFileItem::TypeDef(type_def) = &file.items[1] {
+            let id = *context
+                .ident_unique_id_table
+                .get(&type_def.name.token_id())
+                .unwrap();
+            assert_eq!(id, 2);
+        }
+        if let SynFileItem::TheoremDef(theorem_def) = &file.items[2] {
+            let id = *context
+                .ident_unique_id_table
+                .get(&theorem_def.name.token_id())
+                .unwrap();
+            assert_eq!(id, 3);
         }
     }
 }

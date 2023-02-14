@@ -54,20 +54,15 @@ impl Parse for SynFileItem {
 
 #[cfg(test)]
 mod test {
-    use crate::token::{lex, FileId};
+    use crate::Parser;
 
     use super::*;
 
     #[test]
     fn felis_syn_file_parse_test_1() {
         let s = std::fs::read_to_string("../../library/wip/prop2.fe").unwrap();
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs);
-        assert!(tokens.is_ok());
-        let tokens = tokens.unwrap();
-        let mut i = 0;
-        let res = SynFile::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynFile>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -78,13 +73,8 @@ mod test {
     #[test]
     fn felis_syn_file_parse_test_2() {
         let s = std::fs::read_to_string("../../library/wip/prop3.fe").unwrap();
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs);
-        assert!(tokens.is_ok());
-        let tokens = tokens.unwrap();
-        let mut i = 0;
-        let res = SynFile::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynFile>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());

@@ -283,20 +283,15 @@ impl Parse for SynExprIdent {
 
 #[cfg(test)]
 mod test {
-    use crate::token::{lex, FileId};
+    use crate::Parser;
 
     use super::*;
 
     #[test]
     fn felis_syn_expr_parse_test_1() {
         let s = "x";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs);
-        assert!(tokens.is_ok());
-        let tokens = tokens.unwrap();
-        let mut i = 0;
-        let res = SynExpr::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynExpr>(s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -309,13 +304,8 @@ mod test {
     #[test]
     fn felis_syn_expr_parse_test_2() {
         let s = "#match x { }";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs);
-        assert!(tokens.is_ok());
-        let tokens = tokens.unwrap();
-        let mut i = 0;
-        let res = SynExpr::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynExpr>(s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -328,13 +318,8 @@ mod test {
     #[test]
     fn felis_syn_expr_parse_test_3() {
         let s = "#match x { y z => t, }";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs);
-        assert!(tokens.is_ok());
-        let tokens = tokens.unwrap();
-        let mut i = 0;
-        let res = SynExpr::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynExpr>(s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -349,13 +334,8 @@ mod test {
     #[test]
     fn felis_syn_expr_parse_test_4() {
         let s = "#match x { y z => t, a => b, }";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs);
-        assert!(tokens.is_ok());
-        let tokens = tokens.unwrap();
-        let mut i = 0;
-        let res = SynExpr::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynExpr>(s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -372,13 +352,8 @@ mod test {
     #[test]
     fn felis_syn_expr_parse_test_5() {
         let s = "f (g x)";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs);
-        assert!(tokens.is_ok());
-        let tokens = tokens.unwrap();
-        let mut i = 0;
-        let res = SynExpr::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynExpr>(s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());

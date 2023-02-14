@@ -111,27 +111,19 @@ impl Parse for SynVariant {
 
 #[cfg(test)]
 mod test {
-    use crate::{
-        to_felis_string::ToFelisString,
-        token::{lex, FileId},
-    };
+    use crate::{to_felis_string::ToFelisString, Parser};
 
     use super::*;
 
     #[test]
     fn felis_syn_type_def_parse_test_1() {
         let s = include_str!("../../../library/wip/and.fe");
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs).unwrap();
-        eprintln!("tokens = {:?}", tokens);
-        let mut i = 0;
-        let res = SynTypeDef::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynTypeDef>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
-        assert_eq!(i, tokens.len());
         assert_eq!(res.name.ident.as_str(), "And");
         assert_eq!(res.args.len(), 2);
         assert_eq!(res.args[0].name.ident.as_str(), "A");
@@ -147,17 +139,12 @@ mod test {
     #[test]
     fn felis_syn_type_def_parse_test_2() {
         let s = include_str!("../../../library/wip/or.fe");
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs).unwrap();
-        eprintln!("tokens = {:?}", tokens);
-        let mut i = 0;
-        let res = SynTypeDef::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynTypeDef>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
-        assert_eq!(i, tokens.len());
         assert_eq!(res.name.ident.as_str(), "Or");
         assert_eq!(res.args.len(), 2);
         assert_eq!(res.args[0].name.ident.as_str(), "A");

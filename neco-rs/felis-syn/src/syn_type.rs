@@ -283,19 +283,15 @@ impl Parse for SynTypeParen {
 
 #[cfg(test)]
 mod test {
-    use crate::token::{lex, FileId};
+    use crate::Parser;
 
     use super::*;
 
     #[test]
     fn felis_syn_type_parse_test_1() {
         let s = "And A B";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs).unwrap();
-        let mut i = 0;
-        let res = SynType::parse(&tokens, &mut i);
-        assert_eq!(i, tokens.len());
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -306,12 +302,8 @@ mod test {
     #[test]
     fn felis_syn_type_parse_test_2() {
         let s = "(And A B)";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs).unwrap();
-        let mut i = 0;
-        let res = SynType::parse(&tokens, &mut i);
-        assert_eq!(i, tokens.len());
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -322,12 +314,8 @@ mod test {
     #[test]
     fn felis_syn_type_parse_test_3() {
         let s = "#forall (A : Prop), Hoge A";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs).unwrap();
-        let mut i = 0;
-        let res = SynType::parse(&tokens, &mut i);
-        assert_eq!(i, tokens.len());
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -338,12 +326,8 @@ mod test {
     #[test]
     fn felis_syn_type_parse_test_4() {
         let s = "#forall (A : Prop), #forall (B : Prop), And A B -> Or A B";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs).unwrap();
-        let mut i = 0;
-        let res = SynType::parse(&tokens, &mut i);
-        assert_eq!(i, tokens.len());
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -357,12 +341,8 @@ mod test {
     #[test]
     fn felis_syn_type_parse_test_5() {
         let s = "(A -> B)";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs).unwrap();
-        let mut i = 0;
-        let res = SynType::parse(&tokens, &mut i);
-        assert_eq!(i, tokens.len());
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());

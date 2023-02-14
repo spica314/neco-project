@@ -65,17 +65,13 @@ impl Parse for SynTypedArg {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::token::{lex, FileId};
+    use crate::Parser;
 
     #[test]
     fn felis_syn_typed_arg_parse_test_1() {
         let s = "(A : Prop)";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs).unwrap();
-        let mut i = 0;
-        let res = SynTypedArg::parse(&tokens, &mut i);
-        assert_eq!(i, tokens.len());
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynTypedArg>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -86,12 +82,8 @@ mod test {
     #[test]
     fn felis_syn_typed_arg_parse_test_2() {
         let s = "(x : A -> B)";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs).unwrap();
-        let mut i = 0;
-        let res = SynTypedArg::parse(&tokens, &mut i);
-        assert_eq!(i, tokens.len());
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynTypedArg>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());

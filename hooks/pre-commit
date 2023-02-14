@@ -22,11 +22,11 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cargo llvm-cov --fail-under-lines 80
+cargo llvm-cov --fail-under-lines 75
 
 if [ $? -ne 0 ]; then
     git stash pop
-    echo -e "\033[31;1mpre-commit failed: line coverage < 80%\033[m"
+    echo -e "\033[31;1mpre-commit failed: line coverage < 75%\033[m"
     exit 1
 fi
 

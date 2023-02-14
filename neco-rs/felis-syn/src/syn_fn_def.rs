@@ -114,23 +114,15 @@ impl Parse for SynStatement {
 
 #[cfg(test)]
 mod test {
-    use crate::{
-        to_felis_string::ToFelisString,
-        token::{lex, FileId},
-    };
+    use crate::{to_felis_string::ToFelisString, Parser};
 
     use super::*;
 
     #[test]
     fn felis_syn_fn_def_parse_test_1() {
         let s = "#fn f -> T { }";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs);
-        assert!(tokens.is_ok());
-        let tokens = tokens.unwrap();
-        let mut i = 0;
-        let res = SynFnDef::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynFnDef>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -143,13 +135,8 @@ mod test {
     #[test]
     fn felis_syn_fn_def_parse_test_2() {
         let s = "#fn f -> T { x }";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs);
-        assert!(tokens.is_ok());
-        let tokens = tokens.unwrap();
-        let mut i = 0;
-        let res = SynFnDef::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynFnDef>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -163,13 +150,8 @@ mod test {
     #[test]
     fn felis_syn_fn_def_parse_test_3() {
         let s = "#fn f (x : T) -> T { x }";
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs);
-        assert!(tokens.is_ok());
-        let tokens = tokens.unwrap();
-        let mut i = 0;
-        let res = SynFnDef::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynFnDef>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -184,13 +166,8 @@ mod test {
     #[test]
     fn felis_syn_fn_def_parse_test_4() {
         let s = std::fs::read_to_string("../../library/wip/fn_def.fe").unwrap();
-        let cs: Vec<_> = s.chars().collect();
-        let file_id = FileId(0);
-        let tokens = lex(file_id, &cs);
-        assert!(tokens.is_ok());
-        let tokens = tokens.unwrap();
-        let mut i = 0;
-        let res = SynFnDef::parse(&tokens, &mut i);
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynFnDef>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());

@@ -1,9 +1,8 @@
-use crate::{
-    parse::Parse,
-    token_id::{TokenId, TokenIdGenerator},
-};
+use neco_table::TableId;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+use crate::parse::Parse;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Token {
     Ident(TokenIdent),
     Keyword(TokenKeyword),
@@ -61,10 +60,10 @@ impl Span {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenIdent {
     pub span: Span,
-    id: TokenId,
+    id: TableId,
     pub ident: String,
 }
 
@@ -72,12 +71,12 @@ impl TokenIdent {
     pub fn as_str(&self) -> &str {
         &self.ident
     }
-    pub fn token_id(&self) -> TokenId {
+    pub fn table_id(&self) -> TableId {
         self.id
     }
-    pub fn as_usize(&self) -> usize {
-        self.id.as_usize()
-    }
+    // pub fn as_usize(&self) -> usize {
+    //     self.id.as_usize()
+    // }
 }
 
 impl Parse for TokenIdent {
@@ -94,10 +93,10 @@ impl Parse for TokenIdent {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenKeyword {
     pub span: Span,
-    id: TokenId,
+    id: TableId,
     pub keyword: String,
 }
 
@@ -115,10 +114,10 @@ impl Parse for TokenKeyword {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenLParen {
     span: Span,
-    id: TokenId,
+    id: TableId,
 }
 
 impl Parse for TokenLParen {
@@ -134,10 +133,10 @@ impl Parse for TokenLParen {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenRParen {
     span: Span,
-    id: TokenId,
+    id: TableId,
 }
 
 impl Parse for TokenRParen {
@@ -153,10 +152,10 @@ impl Parse for TokenRParen {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenLBrace {
     span: Span,
-    id: TokenId,
+    id: TableId,
 }
 
 impl Parse for TokenLBrace {
@@ -172,10 +171,10 @@ impl Parse for TokenLBrace {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenRBrace {
     span: Span,
-    id: TokenId,
+    id: TableId,
 }
 
 impl Parse for TokenRBrace {
@@ -191,10 +190,10 @@ impl Parse for TokenRBrace {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenColon {
     span: Span,
-    id: TokenId,
+    id: TableId,
 }
 
 impl Parse for TokenColon {
@@ -210,16 +209,16 @@ impl Parse for TokenColon {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenSemicolon {
     span: Span,
-    id: TokenId,
+    id: TableId,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenCamma {
     span: Span,
-    id: TokenId,
+    id: TableId,
 }
 
 impl Parse for TokenCamma {
@@ -235,10 +234,10 @@ impl Parse for TokenCamma {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenEq {
     span: Span,
-    id: TokenId,
+    id: TableId,
 }
 
 impl Parse for TokenEq {
@@ -254,10 +253,10 @@ impl Parse for TokenEq {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenArrow {
     span: Span,
-    id: TokenId,
+    id: TableId,
 }
 
 impl Parse for TokenArrow {
@@ -273,10 +272,10 @@ impl Parse for TokenArrow {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenArrow2 {
     span: Span,
-    id: TokenId,
+    id: TableId,
 }
 
 impl Parse for TokenArrow2 {
@@ -302,11 +301,7 @@ fn is_ident_tail_char(c: char) -> bool {
     c.is_ascii_alphanumeric() || "-_".contains(c)
 }
 
-pub fn lex(
-    token_id_generator: &mut TokenIdGenerator,
-    file_id: FileId,
-    chars: &[char],
-) -> Result<Vec<Token>, ()> {
+pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
     let mut r = 1;
     let mut c = 1;
     let mut i = 0;
@@ -338,7 +333,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::Keyword(TokenKeyword {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
                 keyword,
             }));
             continue;
@@ -354,7 +349,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::Ident(TokenIdent {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
                 ident,
             }));
             continue;
@@ -366,7 +361,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::Arrow(TokenArrow {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
             }));
             continue;
         }
@@ -377,7 +372,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::Arrow2(TokenArrow2 {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
             }));
             continue;
         }
@@ -388,7 +383,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::LParen(TokenLParen {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
             }));
             continue;
         }
@@ -399,7 +394,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::RParen(TokenRParen {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
             }));
             continue;
         }
@@ -410,7 +405,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::LBrace(TokenLBrace {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
             }));
             continue;
         }
@@ -421,7 +416,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::RBrace(TokenRBrace {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
             }));
             continue;
         }
@@ -432,7 +427,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::Colon(TokenColon {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
             }));
             continue;
         }
@@ -443,7 +438,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::Camma(TokenCamma {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
             }));
             continue;
         }
@@ -454,7 +449,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::Camma(TokenCamma {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
             }));
             continue;
         }
@@ -465,7 +460,7 @@ pub fn lex(
             let end = FilePos::new_with_pos(r, c);
             res.push(Token::Eq(TokenEq {
                 span: Span::new(file_id, begin, end),
-                id: token_id_generator.generate(),
+                id: TableId::new(),
             }));
             continue;
         }
@@ -483,8 +478,7 @@ mod test {
         let s = std::fs::read_to_string("../../library/wip/prop2.fe").unwrap();
         let cs: Vec<_> = s.chars().collect();
         let file_id = FileId(0);
-        let mut token_id_generator = TokenIdGenerator::new();
-        let tokens = lex(&mut token_id_generator, file_id, &cs).unwrap();
+        let tokens = lex(file_id, &cs).unwrap();
         eprintln!("tokens = {tokens:#?}");
         assert_eq!(tokens.len(), 120);
     }
@@ -494,8 +488,7 @@ mod test {
         let s = "test test_1 test-1 __test";
         let cs: Vec<_> = s.chars().collect();
         let file_id = FileId(0);
-        let mut token_id_generator = TokenIdGenerator::new();
-        let tokens = lex(&mut token_id_generator, file_id, &cs).unwrap();
+        let tokens = lex(file_id, &cs).unwrap();
         assert_eq!(tokens.len(), 4);
         assert!(tokens.iter().all(|t| matches!(t, Token::Ident(_))));
     }

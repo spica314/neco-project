@@ -3,7 +3,7 @@ use crate::{
     token::Token,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynFile {
     pub items: Vec<SynFileItem>,
 }
@@ -22,7 +22,7 @@ impl Parse for SynFile {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SynFileItem {
     TypeDef(SynTypeDef),
     FnDef(SynFnDef),

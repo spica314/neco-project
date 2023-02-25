@@ -6,7 +6,7 @@ use crate::{
     token::{Token, TokenArrow, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynFnDef {
     pub keyword_fn: TokenKeyword,
     pub name: TokenIdent,
@@ -60,7 +60,7 @@ impl Parse for SynFnDef {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynFnBlock {
     pub lbrace: TokenLBrace,
     pub statements: Vec<SynStatement>,
@@ -93,7 +93,7 @@ impl Parse for SynFnBlock {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SynStatement {
     Expr(SynExpr),
 }

@@ -5,7 +5,7 @@ use crate::{
     token::{Token, TokenArrow, TokenCamma, TokenIdent, TokenKeyword, TokenLParen, TokenRParen},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SynType {
     // #forall (A : Prop), A -> B
     Forall(SynTypeForall),
@@ -81,7 +81,7 @@ impl Parse for SynType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeForall {
     pub keyword_forall: TokenKeyword,
     pub typed_arg: Box<SynTypedArg>,
@@ -122,7 +122,7 @@ impl Parse for SynTypeForall {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum SynTypeNoMapAndApp {
     Atom(SynTypeAtom),
     Paren(SynTypeParen),
@@ -164,7 +164,7 @@ impl Parse for SynTypeNoMapAndApp {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum SynTypeNoMap {
     App(SynTypeApp),
     Atom(SynTypeAtom),
@@ -202,7 +202,7 @@ impl Parse for SynTypeNoMap {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeApp {
     pub left: Box<SynType>,
     pub right: Box<SynType>,
@@ -214,7 +214,7 @@ impl Parse for SynTypeApp {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeMap {
     pub from: Box<SynType>,
     pub arrow: TokenArrow,
@@ -227,7 +227,7 @@ impl Parse for SynTypeMap {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeAtom {
     pub ident: TokenIdent,
 }
@@ -248,7 +248,7 @@ impl Parse for SynTypeAtom {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeParen {
     pub lparen: TokenLParen,
     pub ty: Box<SynType>,

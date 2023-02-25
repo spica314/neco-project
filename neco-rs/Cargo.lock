@@ -16,11 +16,15 @@ dependencies = [
  "felis-package",
  "felis-syn",
  "neco-resolver",
+ "neco-table",
 ]
 
 [[package]]
 name = "felis-syn"
 version = "0.1.0"
+dependencies = [
+ "neco-table",
+]
 
 [[package]]
 name = "felis-type-check"

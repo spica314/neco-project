@@ -5,7 +5,7 @@ use crate::{
     token::{Token, TokenCamma, TokenColon, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeDef {
     pub keyword_type: TokenKeyword,
     pub name: TokenIdent,
@@ -70,7 +70,7 @@ impl Parse for SynTypeDef {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynVariant {
     pub name: TokenIdent,
     pub colon: TokenColon,

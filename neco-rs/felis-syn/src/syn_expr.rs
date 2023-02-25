@@ -7,7 +7,7 @@ use crate::{
     },
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprMatch {
     pub keyword_match: TokenKeyword,
     pub expr: Box<SynExpr>,
@@ -55,7 +55,7 @@ impl Parse for SynExprMatch {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprMatchArm {
     pub pattern: SynExprMatchPattern,
     pub arrow2: TokenArrow2,
@@ -93,7 +93,7 @@ impl Parse for SynExprMatchArm {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprMatchPattern {
     pub idents: Vec<TokenIdent>,
 }
@@ -130,7 +130,7 @@ impl ToFelisString for SynExprMatchPattern {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SynExpr {
     Ident(SynExprIdent),
     App(SynExprApp),
@@ -167,7 +167,7 @@ impl ToFelisString for SynExpr {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprParen {
     pub lparen: TokenLParen,
     pub expr: Box<SynExpr>,
@@ -199,7 +199,7 @@ impl Parse for SynExprParen {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum SynExprNoApp {
     Ident(SynExprIdent),
     Match(SynExprMatch),
@@ -239,7 +239,7 @@ impl From<SynExprNoApp> for SynExpr {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprApp {
     pub exprs: Vec<SynExpr>,
 }
@@ -262,7 +262,7 @@ impl Parse for SynExprApp {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprIdent {
     pub ident: TokenIdent,
 }

@@ -64,7 +64,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynFile>(&s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.items.len(), 3);
@@ -76,7 +76,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynFile>(&s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.items.len(), 1);

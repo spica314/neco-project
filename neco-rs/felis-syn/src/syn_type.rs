@@ -292,7 +292,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.to_felis_string(), "And A B");
@@ -304,7 +304,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.to_felis_string(), "(And A B)");
@@ -316,7 +316,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.to_felis_string(), "#forall (A : Prop), Hoge A");
@@ -328,7 +328,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(
@@ -343,7 +343,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.to_felis_string(), "(A -> B)");

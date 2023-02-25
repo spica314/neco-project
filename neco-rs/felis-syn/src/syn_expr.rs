@@ -292,7 +292,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynExpr>(s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::Ident(_)));
@@ -306,7 +306,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynExpr>(s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::Match(_)));
@@ -320,7 +320,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynExpr>(s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::Match(_)));
@@ -336,7 +336,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynExpr>(s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::Match(_)));
@@ -354,7 +354,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynExpr>(s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::App(_)));

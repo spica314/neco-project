@@ -5,6 +5,12 @@ pub struct TableId {
     id: u64,
 }
 
+impl Default for TableId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TableId {
     pub fn new() -> TableId {
         static COUNTER: AtomicU64 = AtomicU64::new(0);

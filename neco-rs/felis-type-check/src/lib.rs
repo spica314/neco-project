@@ -256,15 +256,14 @@ fn felis_expr_match_type_check(
 
 #[cfg(test)]
 mod test {
-    use felis_syn::Parser;
+    use felis_syn::test_utils::parse_from_str;
 
     use super::*;
 
     #[test]
     fn felis_type_check_test_1() {
         let s = std::fs::read_to_string("../../library/wip/prop2.fe").unwrap();
-        let mut parser = Parser::new();
-        let res = parser.parse::<SynFile>(&s);
+        let res = parse_from_str::<SynFile>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -276,8 +275,7 @@ mod test {
     #[should_panic]
     fn felis_type_check_test_2() {
         let s = std::fs::read_to_string("../../library/wip/fail_prop.fe").unwrap();
-        let mut parser = Parser::new();
-        let res = parser.parse::<SynFile>(&s);
+        let res = parse_from_str::<SynFile>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -289,8 +287,7 @@ mod test {
     #[should_panic]
     fn felis_type_check_test_3() {
         let s = std::fs::read_to_string("../../library/wip/fail_prop2.fe").unwrap();
-        let mut parser = Parser::new();
-        let res = parser.parse::<SynFile>(&s);
+        let res = parse_from_str::<SynFile>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -301,8 +298,7 @@ mod test {
     // #[test]
     fn felis_type_check_test_4() {
         let s = std::fs::read_to_string("../../library/wip/prop3.fe").unwrap();
-        let mut parser = Parser::new();
-        let res = parser.parse::<SynFile>(&s);
+        let res = parse_from_str::<SynFile>(&s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());

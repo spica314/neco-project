@@ -76,7 +76,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynTheoremDef>(&s);
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.name.ident.as_str(), "theorem1");

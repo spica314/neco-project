@@ -64,13 +64,12 @@ impl Parse for SynTypedArg {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::Parser;
+    use crate::test_utils::parse_from_str;
 
     #[test]
     fn felis_syn_typed_arg_parse_test_1() {
         let s = "(A : Prop)";
-        let mut parser = Parser::new();
-        let res = parser.parse::<SynTypedArg>(&s);
+        let res = parse_from_str::<SynTypedArg>(s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -81,8 +80,7 @@ mod test {
     #[test]
     fn felis_syn_typed_arg_parse_test_2() {
         let s = "(x : A -> B)";
-        let mut parser = Parser::new();
-        let res = parser.parse::<SynTypedArg>(&s);
+        let res = parse_from_str::<SynTypedArg>(s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());

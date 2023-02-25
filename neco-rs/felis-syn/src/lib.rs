@@ -1,5 +1,7 @@
+use neco_table::Table;
 use parse::Parse;
 use syn_file::SynFile;
+use token::TokenInfo;
 
 use crate::token::{lex, FileId};
 
@@ -19,22 +21,28 @@ pub struct Parser {
     next_file_id: usize,
 }
 
+impl Default for Parser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Parser {
     pub fn new() -> Parser {
         Parser { next_file_id: 0 }
     }
-    pub fn parse_file(&mut self, s: &str) -> Result<SynFile, ()> {
-        let res = self.parse::<SynFile>(s)?;
-        Ok(res.unwrap())
+    pub fn parse_file(&mut self, s: &str) -> Result<(SynFile, Table<TokenInfo>), ()> {
+        let (syn_file, table) = self.parse::<SynFile>(s)?;
+        Ok((syn_file.unwrap(), table))
     }
-    pub fn parse<T: Parse>(&mut self, s: &str) -> Result<Option<T>, ()> {
+    pub fn parse<T: Parse>(&mut self, s: &str) -> Result<(Option<T>, Table<TokenInfo>), ()> {
         let cs: Vec<_> = s.chars().collect();
         let file_id = FileId(self.next_file_id);
         self.next_file_id += 1;
-        let tokens = lex(file_id, &cs).unwrap();
+        let (tokens, table) = lex(file_id, &cs).unwrap();
         let mut i = 0;
-        let res = T::parse(&tokens, &mut i);
+        let res = T::parse(&tokens, &mut i)?;
         assert_eq!(i, tokens.len());
-        res
+        Ok((res, table))
     }
 }

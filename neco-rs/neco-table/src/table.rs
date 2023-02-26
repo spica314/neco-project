@@ -56,6 +56,15 @@ impl<T> Table<T> {
             table2
         }
     }
+
+    pub fn merge_mut(&mut self, mut table: Table<T>) {
+        if self.map.len() < table.len() {
+            std::mem::swap(&mut self.map, &mut table.map);
+        }
+        for (k, v) in table.map {
+            self.map.insert(k, v);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -104,6 +113,20 @@ mod test {
             table = Table::merge(table2, table);
 
             assert_eq!(table.len(), 20 * (i + 1));
+        }
+    }
+
+    #[test]
+    fn test_table_merge_mut_1() {
+        let mut table = Table::<i64>::new();
+        for i in 0..10000 {
+            let mut table2 = Table::<i64>::new();
+            for _ in 0..10 {
+                let id = TableId::new();
+                table2.insert(id, 0);
+            }
+            table.merge_mut(table2);
+            assert_eq!(table.len(), 10 * (i + 1));
         }
     }
 }

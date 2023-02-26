@@ -14,7 +14,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cargo test --offline
+cargo nextest run --offline
 
 if [ $? -ne 0 ]; then
     git stash pop
@@ -22,7 +22,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cargo llvm-cov --fail-under-lines 75
+cargo llvm-cov nextest --fail-under-lines 75
 
 if [ $? -ne 0 ]; then
     git stash pop

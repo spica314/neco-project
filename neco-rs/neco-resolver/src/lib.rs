@@ -17,7 +17,7 @@ impl<T> Scope<T> {
         let res2: Vec<_> = res.into_iter().map(|x| (x.0, x.1 .1)).collect();
         res2
     }
-    fn record(&mut self, name: String, record: T) -> Result<(), ()> {
+    fn set(&mut self, name: String, record: T) -> Result<(), ()> {
         if self.map.contains_key(&name) {
             return Err(());
         }
@@ -55,9 +55,14 @@ impl<T> Resolver<T> {
         let scope = self.scopes.pop().unwrap();
         scope.into_records()
     }
+    #[deprecated]
     pub fn record(&mut self, name: String, record: T) -> Result<(), ()> {
         let top = self.scopes.last_mut().unwrap();
-        top.record(name, record)
+        top.set(name, record)
+    }
+    pub fn set(&mut self, name: String, record: T) -> Result<(), ()> {
+        let top = self.scopes.last_mut().unwrap();
+        top.set(name, record)
     }
     pub fn get(&self, name: &str) -> Option<&T> {
         for scope in self.scopes.iter().rev() {

@@ -17,7 +17,7 @@ pub fn rename_defs_file(file: &SynFile) -> Result<Table<TableId>, ()> {
     Ok(res)
 }
 
-pub fn rename_defs_file_item(item: &SynFileItem) -> Result<Table<TableId>, ()> {
+fn rename_defs_file_item(item: &SynFileItem) -> Result<Table<TableId>, ()> {
     match item {
         SynFileItem::TypeDef(type_def) => rename_defs_type_def(type_def),
         SynFileItem::FnDef(fn_def) => rename_defs_fn_def(fn_def),
@@ -25,7 +25,7 @@ pub fn rename_defs_file_item(item: &SynFileItem) -> Result<Table<TableId>, ()> {
     }
 }
 
-pub fn rename_defs_type_def(type_def: &SynTypeDef) -> Result<Table<TableId>, ()> {
+fn rename_defs_type_def(type_def: &SynTypeDef) -> Result<Table<TableId>, ()> {
     let mut table = Table::new();
     // name
     {
@@ -46,7 +46,7 @@ pub fn rename_defs_type_def(type_def: &SynTypeDef) -> Result<Table<TableId>, ()>
     Ok(table)
 }
 
-pub fn rename_defs_fn_def(fn_def: &SynFnDef) -> Result<Table<TableId>, ()> {
+fn rename_defs_fn_def(fn_def: &SynFnDef) -> Result<Table<TableId>, ()> {
     let mut table = Table::new();
     // name
     {
@@ -70,7 +70,7 @@ pub fn rename_defs_fn_def(fn_def: &SynFnDef) -> Result<Table<TableId>, ()> {
     Ok(table)
 }
 
-pub fn rename_defs_expr(expr: &SynExpr) -> Result<Table<TableId>, ()> {
+fn rename_defs_expr(expr: &SynExpr) -> Result<Table<TableId>, ()> {
     let mut table = Table::new();
     match expr {
         SynExpr::Ident(_) => {}
@@ -88,7 +88,7 @@ pub fn rename_defs_expr(expr: &SynExpr) -> Result<Table<TableId>, ()> {
     Ok(table)
 }
 
-pub fn rename_defs_theorem_def(theorem_def: &SynTheoremDef) -> Result<Table<TableId>, ()> {
+fn rename_defs_theorem_def(theorem_def: &SynTheoremDef) -> Result<Table<TableId>, ()> {
     let mut table = Table::new();
     // name
     {
@@ -108,7 +108,7 @@ pub fn rename_defs_theorem_def(theorem_def: &SynTheoremDef) -> Result<Table<Tabl
     Ok(table)
 }
 
-pub fn rename_defs_type(ty: &SynType) -> Result<Table<TableId>, ()> {
+fn rename_defs_type(ty: &SynType) -> Result<Table<TableId>, ()> {
     let mut table = Table::new();
     match ty {
         SynType::Forall(type_forall) => {
@@ -132,7 +132,7 @@ mod test {
     use felis_syn::test_utils::parse_from_str;
 
     #[test]
-    fn felis_raename_defs_type_def_test_1() {
+    fn felis_rename_defs_type_def_test_1() {
         let s = "#type A : Prop { hoge : A, }";
         let type_def = parse_from_str::<SynTypeDef>(&s).unwrap().unwrap();
         let table = rename_defs_type_def(&type_def).unwrap();

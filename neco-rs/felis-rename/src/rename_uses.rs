@@ -207,7 +207,7 @@ fn rename_uses_expr_ident(
     let a = expr_ident.ident.as_str();
     let b = expr_ident.ident.table_id();
     let Some(c) = resolver.get(a) else {
-        panic!("unknown ident {}", a);
+        panic!("unknown ident {a}");
     };
     res.insert(b, *c);
     Ok(res)

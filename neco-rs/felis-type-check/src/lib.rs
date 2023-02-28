@@ -54,7 +54,7 @@ pub fn felis_type_check(file: &SynFile) -> Result<SynFile, ()> {
         for variant in &type_def.variants {
             context
                 .type_resolver
-                .record(variant.name.ident.as_str().to_string(), variant.ty.clone())
+                .set(variant.name.ident.as_str().to_string(), variant.ty.clone())
                 .ok();
         }
     }
@@ -93,7 +93,7 @@ fn felis_fn_type_check(context: &mut Context, fn_def: &SynFnDef) -> Result<SynFn
     for typed_arg in &fn_def.args {
         context
             .type_resolver
-            .record(
+            .set(
                 typed_arg.name.ident.as_str().to_string(),
                 typed_arg.ty.clone(),
             )
@@ -244,7 +244,7 @@ fn felis_expr_match_type_check(
             let name = arm.pattern.idents[i].ident.as_str().to_string();
             let ty = variant_types[i - 1].clone();
             eprintln!("name = {name}, ty = {ty:?}");
-            context.type_resolver.record(name, ty).ok();
+            context.type_resolver.set(name, ty).ok();
         }
         let expr = &arm.expr;
         eprintln!("expr = {expr:?}");

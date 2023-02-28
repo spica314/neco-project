@@ -22,7 +22,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cargo llvm-cov nextest --fail-under-lines 75
+cargo llvm-cov nextest --fail-under-lines 75 --open
 
 if [ $? -ne 0 ]; then
     git stash pop

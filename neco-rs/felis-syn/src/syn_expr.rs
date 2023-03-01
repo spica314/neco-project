@@ -1,3 +1,5 @@
+use neco_table::TableId;
+
 use crate::{
     parse::Parse,
     to_felis_string::ToFelisString,
@@ -9,11 +11,18 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprMatch {
+    id: TableId,
     pub keyword_match: TokenKeyword,
     pub expr: Box<SynExpr>,
     pub lbrace: TokenLBrace,
     pub arms: Vec<SynExprMatchArm>,
     pub rbrace: TokenRBrace,
+}
+
+impl SynExprMatch {
+    pub fn table_id(&self) -> TableId {
+        self.id
+    }
 }
 
 impl Parse for SynExprMatch {
@@ -46,6 +55,7 @@ impl Parse for SynExprMatch {
 
         *i = k;
         Ok(Some(SynExprMatch {
+            id: TableId::new(),
             keyword_match,
             expr: Box::new(expr),
             lbrace,
@@ -138,6 +148,17 @@ pub enum SynExpr {
     Paren(SynExprParen),
 }
 
+impl SynExpr {
+    pub fn table_id(&self) -> TableId {
+        match self {
+            SynExpr::Ident(expr_ident) => expr_ident.table_id(),
+            SynExpr::App(expr_app) => expr_app.table_id(),
+            SynExpr::Match(expr_match) => expr_match.table_id(),
+            SynExpr::Paren(expr_paren) => expr_paren.table_id(),
+        }
+    }
+}
+
 impl Parse for SynExpr {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
@@ -169,9 +190,16 @@ impl ToFelisString for SynExpr {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprParen {
+    id: TableId,
     pub lparen: TokenLParen,
     pub expr: Box<SynExpr>,
     pub rparen: TokenRParen,
+}
+
+impl SynExprParen {
+    pub fn table_id(&self) -> TableId {
+        self.id
+    }
 }
 
 impl Parse for SynExprParen {
@@ -192,6 +220,7 @@ impl Parse for SynExprParen {
 
         *i = k;
         Ok(Some(SynExprParen {
+            id: TableId::new(),
             lparen,
             expr: Box::new(expr),
             rparen,
@@ -241,7 +270,14 @@ impl From<SynExprNoApp> for SynExpr {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprApp {
+    id: TableId,
     pub exprs: Vec<SynExpr>,
+}
+
+impl SynExprApp {
+    pub fn table_id(&self) -> TableId {
+        self.id
+    }
 }
 
 impl Parse for SynExprApp {
@@ -258,13 +294,23 @@ impl Parse for SynExprApp {
         }
 
         *i = k;
-        Ok(Some(SynExprApp { exprs }))
+        Ok(Some(SynExprApp {
+            id: TableId::new(),
+            exprs,
+        }))
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprIdent {
+    id: TableId,
     pub ident: TokenIdent,
+}
+
+impl SynExprIdent {
+    pub fn table_id(&self) -> TableId {
+        self.id
+    }
 }
 
 impl Parse for SynExprIdent {
@@ -276,7 +322,10 @@ impl Parse for SynExprIdent {
         };
 
         *i = k;
-        Ok(Some(SynExprIdent { ident }))
+        Ok(Some(SynExprIdent {
+            id: TableId::new(),
+            ident,
+        }))
     }
 }
 

@@ -55,7 +55,7 @@ fn rename_uses_type_def(
     resolver.enter_scope();
     // ty_ty
     {
-        let table = rename_uses_type(&type_def.ty_ty, defs_table, resolver)?;
+        let table = rename_uses_type_atom(&type_def.ty_ty, defs_table, resolver)?;
         res.merge_mut(table);
     }
     // name

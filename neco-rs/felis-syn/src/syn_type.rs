@@ -248,6 +248,12 @@ impl Parse for SynTypeAtom {
     }
 }
 
+impl ToFelisString for SynTypeAtom {
+    fn to_felis_string(&self) -> String {
+        self.ident.as_str().to_string()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeParen {
     pub lparen: TokenLParen,

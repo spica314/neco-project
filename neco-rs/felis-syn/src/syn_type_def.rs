@@ -1,6 +1,6 @@
 use crate::{
     parse::Parse,
-    syn_type::SynType,
+    syn_type::{SynType, SynTypeAtom},
     syn_typed_arg::SynTypedArg,
     token::{Token, TokenCamma, TokenColon, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
 };
@@ -11,7 +11,7 @@ pub struct SynTypeDef {
     pub name: TokenIdent,
     pub args: Vec<SynTypedArg>,
     pub colon: TokenColon,
-    pub ty_ty: Box<SynType>,
+    pub ty_ty: Box<SynTypeAtom>,
     pub lbrace: TokenLBrace,
     pub variants: Vec<SynVariant>,
     pub rbrace: TokenRBrace,
@@ -39,7 +39,7 @@ impl Parse for SynTypeDef {
             return Err(());
         };
 
-        let Some(ty_ty) = SynType::parse(tokens, &mut k)? else {
+        let Some(ty_ty) = SynTypeAtom::parse(tokens, &mut k)? else {
             return Err(());
         };
 

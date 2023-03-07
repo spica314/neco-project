@@ -1,4 +1,4 @@
-use neco_table::Table;
+use neco_table::{define_wrapper_of_table, define_wrapper_of_table_id, Table};
 use parse::Parse;
 use syn_file::SynFile;
 use token::TokenInfo;

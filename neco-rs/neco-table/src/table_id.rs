@@ -29,6 +29,26 @@ impl TableId {
     }
 }
 
+#[macro_export]
+macro_rules! define_wrapper_of_table_id {
+    ( $x:ident ) => {
+        #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
+        pub struct $x(pub(crate) $crate::TableId);
+
+        impl From<$x> for $crate::TableId {
+            fn from(v: $x) -> $crate::TableId {
+                v.0
+            }
+        }
+
+        impl $x {
+            pub fn new() -> $x {
+                $x($crate::TableId::new())
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -46,5 +66,13 @@ mod test {
         let thread = std::thread::spawn(|| TableId::new());
         let id2 = thread.join().unwrap();
         assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn test_define_wrapper_of_table_id() {
+        define_wrapper_of_table_id!(TestId);
+        let x = TestId::new();
+        let y = TestId::new();
+        assert_ne!(x, y);
     }
 }

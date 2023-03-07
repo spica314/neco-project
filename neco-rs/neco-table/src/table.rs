@@ -67,8 +67,55 @@ impl<T> Table<T> {
     }
 }
 
+#[macro_export]
+macro_rules! define_wrapper_of_table {
+    ( $x:ident, $y:ident, $z:ident ) => {
+        pub struct $x(pub(crate) $crate::Table<$z>);
+
+        impl $x {
+            pub fn new() -> $x {
+                $x($crate::Table::<$z>::new())
+            }
+
+            pub fn get(&self, k: $y) -> Option<&$z> {
+                self.0.get(k.into())
+            }
+
+            pub fn insert(&mut self, k: $y, v: $z) -> Option<$z> {
+                self.0.insert(k.into(), v)
+            }
+
+            pub fn entry(&mut self, k: $y) -> Entry<'_, $crate::TableId, $z> {
+                self.0.entry(k.into())
+            }
+
+            pub fn remove(&mut self, k: $y) -> Option<$z> {
+                self.0.remove(k.into())
+            }
+
+            pub fn is_empty(&self) -> bool {
+                self.0.is_empty()
+            }
+
+            pub fn len(&self) -> usize {
+                self.0.len()
+            }
+
+            pub fn merge(table1: $x, table2: $x) -> $x {
+                $x($crate::Table::<$z>::merge(table1.0, table2.0))
+            }
+
+            pub fn merge_mut(&mut self, table: $x) {
+                self.0.merge_mut(table.0)
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
+    use crate::define_wrapper_of_table_id;
+
     use super::*;
 
     #[test]
@@ -128,5 +175,16 @@ mod test {
             table.merge_mut(table2);
             assert_eq!(table.len(), 10 * (i + 1));
         }
+    }
+
+    #[test]
+    fn test_define_wrapper_of_table() {
+        define_wrapper_of_table_id!(TableTestId);
+        define_wrapper_of_table!(TableTest, TableTestId, i64);
+        let id = TableTestId::new();
+        let mut table = TableTest::new();
+        table.insert(id, 42);
+        let v = *table.get(id).unwrap();
+        assert_eq!(v, 42);
     }
 }

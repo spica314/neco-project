@@ -2,6 +2,7 @@ use std::collections::{hash_map::Entry, HashMap};
 
 use crate::TableId;
 
+#[derive(Debug, Clone)]
 pub struct Table<T> {
     map: HashMap<TableId, T>,
 }

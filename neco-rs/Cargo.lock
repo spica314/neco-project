@@ -49,6 +49,7 @@ dependencies = [
 name = "felis-types-and-values"
 version = "0.1.0"
 dependencies = [
+ "felis-rename",
  "neco-table",
 ]
 

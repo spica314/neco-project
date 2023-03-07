@@ -6,10 +6,11 @@ use felis_syn::{
     syn_type::SynType,
     syn_type_def::SynTypeDef,
 };
-use neco_table::{Table, TableId};
 
-pub fn rename_defs_file(file: &SynFile) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+use crate::{SerialId, SerialIdTable};
+
+pub fn rename_defs_file(file: &SynFile) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     for item in &file.items {
         let table = rename_defs_file_item(item)?;
         res.merge_mut(table);
@@ -17,7 +18,7 @@ pub fn rename_defs_file(file: &SynFile) -> Result<Table<TableId>, ()> {
     Ok(res)
 }
 
-fn rename_defs_file_item(item: &SynFileItem) -> Result<Table<TableId>, ()> {
+fn rename_defs_file_item(item: &SynFileItem) -> Result<SerialIdTable, ()> {
     match item {
         SynFileItem::TypeDef(type_def) => rename_defs_type_def(type_def),
         SynFileItem::FnDef(fn_def) => rename_defs_fn_def(fn_def),
@@ -25,38 +26,38 @@ fn rename_defs_file_item(item: &SynFileItem) -> Result<Table<TableId>, ()> {
     }
 }
 
-fn rename_defs_type_def(type_def: &SynTypeDef) -> Result<Table<TableId>, ()> {
-    let mut table = Table::new();
+fn rename_defs_type_def(type_def: &SynTypeDef) -> Result<SerialIdTable, ()> {
+    let mut table = SerialIdTable::new();
     // name
     {
-        let id = TableId::new();
-        table.insert(type_def.name.table_id(), id);
+        let id = SerialId::new();
+        table.insert(type_def.name.syn_tree_id(), id);
     }
     // args
     for arg in &type_def.args {
-        let id = TableId::new();
-        table.insert(arg.name.table_id(), id);
+        let id = SerialId::new();
+        table.insert(arg.name.syn_tree_id(), id);
     }
     // variants
     for variant in &type_def.variants {
-        let id = TableId::new();
-        table.insert(variant.name.table_id(), id);
+        let id = SerialId::new();
+        table.insert(variant.name.syn_tree_id(), id);
     }
     eprintln!("len = {}", table.len());
     Ok(table)
 }
 
-fn rename_defs_fn_def(fn_def: &SynFnDef) -> Result<Table<TableId>, ()> {
-    let mut table = Table::new();
+fn rename_defs_fn_def(fn_def: &SynFnDef) -> Result<SerialIdTable, ()> {
+    let mut table = SerialIdTable::new();
     // name
     {
-        let id = TableId::new();
-        table.insert(fn_def.name.table_id(), id);
+        let id = SerialId::new();
+        table.insert(fn_def.name.syn_tree_id(), id);
     }
     // args
     for arg in &fn_def.args {
-        let id = TableId::new();
-        table.insert(arg.name.table_id(), id);
+        let id = SerialId::new();
+        table.insert(arg.name.syn_tree_id(), id);
     }
     // statements
     for statement in &fn_def.fn_block.statements {
@@ -70,16 +71,16 @@ fn rename_defs_fn_def(fn_def: &SynFnDef) -> Result<Table<TableId>, ()> {
     Ok(table)
 }
 
-fn rename_defs_expr(expr: &SynExpr) -> Result<Table<TableId>, ()> {
-    let mut table = Table::new();
+fn rename_defs_expr(expr: &SynExpr) -> Result<SerialIdTable, ()> {
+    let mut table = SerialIdTable::new();
     match expr {
         SynExpr::Ident(_) => {}
         SynExpr::App(_) => {}
         SynExpr::Match(expr_match) => {
             for arm in &expr_match.arms {
                 for ident in arm.pattern.idents.iter().skip(1) {
-                    let id = TableId::new();
-                    table.insert(ident.table_id(), id);
+                    let id = SerialId::new();
+                    table.insert(ident.syn_tree_id(), id);
                 }
             }
         }
@@ -88,12 +89,12 @@ fn rename_defs_expr(expr: &SynExpr) -> Result<Table<TableId>, ()> {
     Ok(table)
 }
 
-fn rename_defs_theorem_def(theorem_def: &SynTheoremDef) -> Result<Table<TableId>, ()> {
-    let mut table = Table::new();
+fn rename_defs_theorem_def(theorem_def: &SynTheoremDef) -> Result<SerialIdTable, ()> {
+    let mut table = SerialIdTable::new();
     // name
     {
-        let id = TableId::new();
-        table.insert(theorem_def.name.table_id(), id);
+        let id = SerialId::new();
+        table.insert(theorem_def.name.syn_tree_id(), id);
     }
     // ty
     {
@@ -108,12 +109,12 @@ fn rename_defs_theorem_def(theorem_def: &SynTheoremDef) -> Result<Table<TableId>
     Ok(table)
 }
 
-fn rename_defs_type(ty: &SynType) -> Result<Table<TableId>, ()> {
-    let mut table = Table::new();
+fn rename_defs_type(ty: &SynType) -> Result<SerialIdTable, ()> {
+    let mut table = SerialIdTable::new();
     match ty {
         SynType::Forall(type_forall) => {
-            let id = TableId::new();
-            table.insert(type_forall.typed_arg.name.table_id(), id);
+            let id = SerialId::new();
+            table.insert(type_forall.typed_arg.name.syn_tree_id(), id);
 
             let table2 = rename_defs_type(&type_forall.ty)?;
             table.merge_mut(table2);

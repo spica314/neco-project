@@ -1,4 +1,4 @@
-use neco_table::TableId;
+use felis_rename::SerialId;
 
 use crate::values::Value;
 
@@ -67,11 +67,11 @@ impl IsType for TypeApp {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeAtom {
     level: usize,
-    ref_id: TableId,
+    ref_id: SerialId,
 }
 
 impl TypeAtom {
-    pub fn new(level: usize, ref_id: TableId) -> TypeAtom {
+    pub fn new(level: usize, ref_id: SerialId) -> TypeAtom {
         TypeAtom { level, ref_id }
     }
 }

@@ -1,7 +1,7 @@
-use neco_table::{define_wrapper_of_table, define_wrapper_of_table_id, Table};
+use neco_table::define_wrapper_of_table_id;
 use parse::Parse;
 use syn_file::SynFile;
-use token::TokenInfo;
+use token::TokenInfoTable;
 
 use crate::token::{lex, FileId};
 
@@ -31,11 +31,11 @@ impl Parser {
     pub fn new() -> Parser {
         Parser { next_file_id: 0 }
     }
-    pub fn parse_file(&mut self, s: &str) -> Result<(SynFile, Table<TokenInfo>), ()> {
+    pub fn parse_file(&mut self, s: &str) -> Result<(SynFile, TokenInfoTable), ()> {
         let (syn_file, table) = self.parse::<SynFile>(s)?;
         Ok((syn_file.unwrap(), table))
     }
-    pub fn parse<T: Parse>(&mut self, s: &str) -> Result<(Option<T>, Table<TokenInfo>), ()> {
+    pub fn parse<T: Parse>(&mut self, s: &str) -> Result<(Option<T>, TokenInfoTable), ()> {
         let cs: Vec<_> = s.chars().collect();
         let file_id = FileId(self.next_file_id);
         self.next_file_id += 1;
@@ -46,3 +46,5 @@ impl Parser {
         Ok((res, table))
     }
 }
+
+define_wrapper_of_table_id!(SynTreeId);

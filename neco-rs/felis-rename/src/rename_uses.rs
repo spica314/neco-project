@@ -8,14 +8,15 @@ use felis_syn::{
     syn_typed_arg::SynTypedArg,
 };
 use neco_resolver::Resolver;
-use neco_table::{Table, TableId};
+
+use crate::{SerialId, SerialIdTable};
 
 pub fn rename_uses_file(
     file: &SynFile,
-    defs_table: &Table<TableId>,
-    mut resolver: Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    defs_table: &SerialIdTable,
+    mut resolver: Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     for item in &file.items {
         let table = rename_uses_file_item(item, defs_table, &mut resolver)?;
         res.merge_mut(table);
@@ -25,10 +26,10 @@ pub fn rename_uses_file(
 
 fn rename_uses_file_item(
     item: &SynFileItem,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     match item {
         SynFileItem::TypeDef(type_def) => {
             let table = rename_uses_type_def(type_def, defs_table, resolver)?;
@@ -48,10 +49,10 @@ fn rename_uses_file_item(
 
 fn rename_uses_type_def(
     type_def: &SynTypeDef,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     resolver.enter_scope();
     // ty_ty
     {
@@ -61,15 +62,16 @@ fn rename_uses_type_def(
     // name
     {
         let a = type_def.name.as_str();
-        let b = type_def.name.table_id();
+        let b = type_def.name.syn_tree_id();
         let c = defs_table.get(b).unwrap();
         resolver.set(a.to_string(), *c).unwrap();
     }
     // args
     for arg in &type_def.args {
         let a = arg.name.as_str();
-        let b = arg.name.table_id();
-        resolver.set(a.to_string(), b).unwrap();
+        let b = arg.name.syn_tree_id();
+        let c = *defs_table.get(b).unwrap();
+        resolver.set(a.to_string(), c).unwrap();
         let table = rename_uses_type(&arg.ty, defs_table, resolver)?;
         res.merge_mut(table);
     }
@@ -86,11 +88,11 @@ fn rename_uses_type_def(
 
 fn rename_uses_fn_def(
     fn_def: &SynFnDef,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
     resolver.enter_scope();
-    let mut res = Table::new();
+    let mut res = SerialIdTable::new();
     // args
     for arg in &fn_def.args {
         let table = rename_uses_typed_arg(arg, defs_table, resolver)?;
@@ -112,10 +114,10 @@ fn rename_uses_fn_def(
 
 fn rename_uses_fn_block(
     fn_block: &SynFnBlock,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     resolver.enter_scope();
     for statement in &fn_block.statements {
         let table = rename_uses_statement(statement, defs_table, resolver)?;
@@ -127,9 +129,9 @@ fn rename_uses_fn_block(
 
 fn rename_uses_statement(
     statement: &SynStatement,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
     match statement {
         SynStatement::Expr(expr) => rename_uses_expr(expr, defs_table, resolver),
     }
@@ -137,9 +139,9 @@ fn rename_uses_statement(
 
 fn rename_uses_expr(
     expr: &SynExpr,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
     match expr {
         SynExpr::Ident(expr_ident) => rename_uses_expr_ident(expr_ident, defs_table, resolver),
         SynExpr::App(expr_app) => rename_uses_expr_app(expr_app, defs_table, resolver),
@@ -150,10 +152,10 @@ fn rename_uses_expr(
 
 fn rename_uses_expr_app(
     expr_app: &SynExprApp,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     for expr in &expr_app.exprs {
         let table = rename_uses_expr(expr, defs_table, resolver)?;
         res.merge_mut(table);
@@ -163,10 +165,10 @@ fn rename_uses_expr_app(
 
 fn rename_uses_expr_match(
     expr_match: &SynExprMatch,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     // 1
     {
         let table = rename_uses_expr(&expr_match.expr, defs_table, resolver)?;
@@ -177,14 +179,14 @@ fn rename_uses_expr_match(
         // constructor
         {
             let a = arm.pattern.idents[0].as_str();
-            let b = arm.pattern.idents[0].table_id();
+            let b = arm.pattern.idents[0].syn_tree_id();
             let c = resolver.get(a).unwrap();
             res.insert(b, *c);
         }
         // constructor args
         for ident in arm.pattern.idents.iter().skip(1) {
             let a = ident.as_str();
-            let b = ident.table_id();
+            let b = ident.syn_tree_id();
             let c = defs_table.get(b).unwrap();
             resolver.set(a.to_string(), *c).unwrap();
         }
@@ -200,12 +202,12 @@ fn rename_uses_expr_match(
 
 fn rename_uses_expr_ident(
     expr_ident: &SynExprIdent,
-    _defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    _defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     let a = expr_ident.ident.as_str();
-    let b = expr_ident.ident.table_id();
+    let b = expr_ident.ident.syn_tree_id();
     let Some(c) = resolver.get(a) else {
         panic!("unknown ident {a}");
     };
@@ -215,10 +217,10 @@ fn rename_uses_expr_ident(
 
 fn rename_uses_theorem_def(
     theorem_def: &SynTheoremDef,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     resolver.enter_scope();
     // ty
     {
@@ -236,9 +238,9 @@ fn rename_uses_theorem_def(
 
 fn rename_uses_type(
     ty: &SynType,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
     match ty {
         SynType::Forall(type_forall) => rename_uses_type_forall(type_forall, defs_table, resolver),
         SynType::App(type_app) => rename_uses_type_app(type_app, defs_table, resolver),
@@ -250,10 +252,10 @@ fn rename_uses_type(
 
 fn rename_uses_typed_arg(
     typed_arg: &SynTypedArg,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     // 1
     {
         let table = rename_uses_type(&typed_arg.ty, defs_table, resolver)?;
@@ -262,7 +264,7 @@ fn rename_uses_typed_arg(
 
     // 2
     {
-        let a = typed_arg.name.table_id();
+        let a = typed_arg.name.syn_tree_id();
         let b = typed_arg.name.as_str().to_string();
         let Some(c) = defs_table.get(a) else {
             panic!();
@@ -276,10 +278,10 @@ fn rename_uses_typed_arg(
 // #forall (name^{2,def} : <Type>^{1}), <Type>^{3}
 fn rename_uses_type_forall(
     type_forall: &SynTypeForall,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     // 1
     {
         let table = rename_uses_typed_arg(&type_forall.typed_arg, defs_table, resolver)?;
@@ -298,10 +300,10 @@ fn rename_uses_type_forall(
 // X^{1} X^{2}
 fn rename_uses_type_app(
     type_app: &SynTypeApp,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     // 1
     {
         let table = rename_uses_type(&type_app.left, defs_table, resolver)?;
@@ -318,25 +320,25 @@ fn rename_uses_type_app(
 // X^{use,1}
 fn rename_uses_type_atom(
     type_atom: &SynTypeAtom,
-    _defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    _defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     let Some(id) = resolver.get(type_atom.ident.as_str()) else {
         panic!("unknown name : {}", type_atom.ident.as_str());
         // return Err(());
     };
-    res.insert(type_atom.ident.table_id(), *id);
+    res.insert(type_atom.ident.syn_tree_id(), *id);
     Ok(res)
 }
 
 // X^{1} -> Y^{2}
 fn rename_uses_type_map(
     type_map: &SynTypeMap,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
-    let mut res = Table::new();
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
     // 1
     {
         let table = rename_uses_type(&type_map.from, defs_table, resolver)?;
@@ -353,9 +355,9 @@ fn rename_uses_type_map(
 // X^{1}
 fn rename_uses_type_paren(
     type_paren: &SynTypeParen,
-    defs_table: &Table<TableId>,
-    resolver: &mut Resolver<TableId>,
-) -> Result<Table<TableId>, ()> {
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
     rename_uses_type(&type_paren.ty, defs_table, resolver)
 }
 
@@ -376,7 +378,7 @@ mod test {
         assert_eq!(defs_table.len(), 2);
         /* use */
         let mut resolver = Resolver::new();
-        let a = TableId::new();
+        let a = SerialId::new();
         resolver.set("Prop".to_string(), a).unwrap();
         let uses_table = rename_uses_file(&file, &defs_table, resolver).unwrap();
         // Prop, A
@@ -393,12 +395,12 @@ mod test {
         assert_eq!(defs_table.len(), 6);
         /* use */
         let mut resolver = Resolver::new();
-        resolver.set("Prop".to_string(), TableId::new()).unwrap();
-        resolver.set("And".to_string(), TableId::new()).unwrap();
-        resolver.set("Or".to_string(), TableId::new()).unwrap();
-        resolver.set("conj".to_string(), TableId::new()).unwrap();
+        resolver.set("Prop".to_string(), SerialId::new()).unwrap();
+        resolver.set("And".to_string(), SerialId::new()).unwrap();
+        resolver.set("Or".to_string(), SerialId::new()).unwrap();
+        resolver.set("conj".to_string(), SerialId::new()).unwrap();
         resolver
-            .set("or_introl".to_string(), TableId::new())
+            .set("or_introl".to_string(), SerialId::new())
             .unwrap();
         let uses_table = rename_uses_file(&file, &defs_table, resolver).unwrap();
         // Prop, Prop, And, A, B, Or, A, B, x, conj, or_introl, l
@@ -415,12 +417,12 @@ mod test {
         assert_eq!(defs_table.len(), 18);
         /* use */
         let mut resolver = Resolver::new();
-        resolver.set("Prop".to_string(), TableId::new()).unwrap();
-        resolver.set("And".to_string(), TableId::new()).unwrap();
-        resolver.set("Or".to_string(), TableId::new()).unwrap();
-        resolver.set("conj".to_string(), TableId::new()).unwrap();
+        resolver.set("Prop".to_string(), SerialId::new()).unwrap();
+        resolver.set("And".to_string(), SerialId::new()).unwrap();
+        resolver.set("Or".to_string(), SerialId::new()).unwrap();
+        resolver.set("conj".to_string(), SerialId::new()).unwrap();
         resolver
-            .set("or_introl".to_string(), TableId::new())
+            .set("or_introl".to_string(), SerialId::new())
             .unwrap();
         let uses_table = rename_uses_file(&file, &defs_table, resolver).unwrap();
         // (8) Prop, Prop, Prop, A, B, And A, B,

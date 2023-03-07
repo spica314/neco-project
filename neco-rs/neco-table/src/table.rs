@@ -86,7 +86,10 @@ macro_rules! define_wrapper_of_table {
                 self.0.insert(k.into(), v)
             }
 
-            pub fn entry(&mut self, k: $y) -> Entry<'_, $crate::TableId, $z> {
+            pub fn entry(
+                &mut self,
+                k: $y,
+            ) -> std::collections::hash_map::Entry<'_, $crate::TableId, $z> {
                 self.0.entry(k.into())
             }
 

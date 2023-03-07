@@ -1,6 +1,6 @@
-use neco_table::{Table, TableId};
+use neco_table::define_wrapper_of_table;
 
-use crate::parse::Parse;
+use crate::{parse::Parse, SynTreeId};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Token {
@@ -62,7 +62,7 @@ impl Span {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenIdent {
-    id: TableId,
+    id: SynTreeId,
     pub ident: String,
 }
 
@@ -70,7 +70,7 @@ impl TokenIdent {
     pub fn as_str(&self) -> &str {
         &self.ident
     }
-    pub fn table_id(&self) -> TableId {
+    pub fn syn_tree_id(&self) -> SynTreeId {
         self.id
     }
 }
@@ -91,7 +91,7 @@ impl Parse for TokenIdent {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenKeyword {
-    id: TableId,
+    id: SynTreeId,
     pub keyword: String,
 }
 
@@ -111,7 +111,7 @@ impl Parse for TokenKeyword {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenLParen {
-    id: TableId,
+    id: SynTreeId,
 }
 
 impl Parse for TokenLParen {
@@ -129,7 +129,7 @@ impl Parse for TokenLParen {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenRParen {
-    id: TableId,
+    id: SynTreeId,
 }
 
 impl Parse for TokenRParen {
@@ -147,7 +147,7 @@ impl Parse for TokenRParen {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenLBrace {
-    id: TableId,
+    id: SynTreeId,
 }
 
 impl Parse for TokenLBrace {
@@ -165,7 +165,7 @@ impl Parse for TokenLBrace {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenRBrace {
-    id: TableId,
+    id: SynTreeId,
 }
 
 impl Parse for TokenRBrace {
@@ -183,7 +183,7 @@ impl Parse for TokenRBrace {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenColon {
-    id: TableId,
+    id: SynTreeId,
 }
 
 impl Parse for TokenColon {
@@ -201,12 +201,12 @@ impl Parse for TokenColon {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenSemicolon {
-    id: TableId,
+    id: SynTreeId,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenCamma {
-    id: TableId,
+    id: SynTreeId,
 }
 
 impl Parse for TokenCamma {
@@ -224,7 +224,7 @@ impl Parse for TokenCamma {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenEq {
-    id: TableId,
+    id: SynTreeId,
 }
 
 impl Parse for TokenEq {
@@ -242,7 +242,7 @@ impl Parse for TokenEq {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenArrow {
-    id: TableId,
+    id: SynTreeId,
 }
 
 impl Parse for TokenArrow {
@@ -260,7 +260,7 @@ impl Parse for TokenArrow {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenArrow2 {
-    id: TableId,
+    id: SynTreeId,
 }
 
 impl Parse for TokenArrow2 {
@@ -290,8 +290,10 @@ pub struct TokenInfo {
     pub span: Span,
 }
 
-pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenInfo>), ()> {
-    let mut table = Table::new();
+define_wrapper_of_table!(TokenInfoTable, SynTreeId, TokenInfo);
+
+pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTable), ()> {
+    let mut table = TokenInfoTable::new();
     let mut r = 1;
     let mut c = 1;
     let mut i = 0;
@@ -321,7 +323,7 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
                 c += 1;
             }
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
@@ -340,7 +342,7 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
                 c += 1;
             }
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
@@ -348,7 +350,7 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
                 },
             );
             res.push(Token::Ident(TokenIdent {
-                id: TableId::new(),
+                id: Default::default(),
                 ident,
             }));
             continue;
@@ -358,14 +360,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
             i += 2;
             c += 2;
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
                     span: Span::new(file_id, begin, end),
                 },
             );
-            res.push(Token::Arrow(TokenArrow { id: TableId::new() }));
+            res.push(Token::Arrow(TokenArrow {
+                id: Default::default(),
+            }));
             continue;
         }
         if i + 1 < chars.len() && chars[i] == '=' && chars[i + 1] == '>' {
@@ -373,14 +377,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
             i += 2;
             c += 2;
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
                     span: Span::new(file_id, begin, end),
                 },
             );
-            res.push(Token::Arrow2(TokenArrow2 { id: TableId::new() }));
+            res.push(Token::Arrow2(TokenArrow2 {
+                id: Default::default(),
+            }));
             continue;
         }
         if chars[i] == '(' {
@@ -388,14 +394,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
                     span: Span::new(file_id, begin, end),
                 },
             );
-            res.push(Token::LParen(TokenLParen { id: TableId::new() }));
+            res.push(Token::LParen(TokenLParen {
+                id: Default::default(),
+            }));
             continue;
         }
         if chars[i] == ')' {
@@ -403,14 +411,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
                     span: Span::new(file_id, begin, end),
                 },
             );
-            res.push(Token::RParen(TokenRParen { id: TableId::new() }));
+            res.push(Token::RParen(TokenRParen {
+                id: Default::default(),
+            }));
             continue;
         }
         if chars[i] == '{' {
@@ -418,14 +428,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
                     span: Span::new(file_id, begin, end),
                 },
             );
-            res.push(Token::LBrace(TokenLBrace { id: TableId::new() }));
+            res.push(Token::LBrace(TokenLBrace {
+                id: Default::default(),
+            }));
             continue;
         }
         if chars[i] == '}' {
@@ -433,14 +445,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
                     span: Span::new(file_id, begin, end),
                 },
             );
-            res.push(Token::RBrace(TokenRBrace { id: TableId::new() }));
+            res.push(Token::RBrace(TokenRBrace {
+                id: Default::default(),
+            }));
             continue;
         }
         if chars[i] == ':' {
@@ -448,14 +462,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
                     span: Span::new(file_id, begin, end),
                 },
             );
-            res.push(Token::Colon(TokenColon { id: TableId::new() }));
+            res.push(Token::Colon(TokenColon {
+                id: Default::default(),
+            }));
             continue;
         }
         if chars[i] == ',' {
@@ -463,14 +479,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
                     span: Span::new(file_id, begin, end),
                 },
             );
-            res.push(Token::Camma(TokenCamma { id: TableId::new() }));
+            res.push(Token::Camma(TokenCamma {
+                id: Default::default(),
+            }));
             continue;
         }
         if chars[i] == ';' {
@@ -478,14 +496,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
                     span: Span::new(file_id, begin, end),
                 },
             );
-            res.push(Token::Camma(TokenCamma { id: TableId::new() }));
+            res.push(Token::Camma(TokenCamma {
+                id: Default::default(),
+            }));
             continue;
         }
         if chars[i] == '=' {
@@ -493,14 +513,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, Table<TokenIn
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = TableId::new();
+            let id = SynTreeId::new();
             table.insert(
                 id,
                 TokenInfo {
                     span: Span::new(file_id, begin, end),
                 },
             );
-            res.push(Token::Eq(TokenEq { id: TableId::new() }));
+            res.push(Token::Eq(TokenEq {
+                id: Default::default(),
+            }));
             continue;
         }
         panic!("unknown character '{}'", chars[i]);

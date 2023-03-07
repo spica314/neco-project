@@ -14,19 +14,11 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cargo nextest run --offline
+cargo llvm-cov nextest --offline --fail-under-lines 75 --open
 
 if [ $? -ne 0 ]; then
     git stash pop
-    echo -e "\033[31;1mpre-commit failed: cargo test\033[m"
-    exit 1
-fi
-
-cargo llvm-cov nextest --fail-under-lines 75 --open
-
-if [ $? -ne 0 ]; then
-    git stash pop
-    echo -e "\033[31;1mpre-commit failed: line coverage < 75%\033[m"
+    echo -e "\033[31;1mpre-commit failed: test failed or line coverage < 75%\033[m"
     exit 1
 fi
 

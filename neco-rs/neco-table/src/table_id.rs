@@ -41,6 +41,12 @@ macro_rules! define_wrapper_of_table_id {
             }
         }
 
+        impl Default for $x {
+            fn default() -> $x {
+                $x::new()
+            }
+        }
+
         impl $x {
             pub fn new() -> $x {
                 $x($crate::TableId::new())

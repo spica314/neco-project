@@ -1,44 +1,43 @@
+use felis_rename::{SerialId, SerialIdTable};
 use felis_syn::{
     syn_file::{SynFile, SynFileItem},
     syn_type::SynType,
     syn_type_def::SynTypeDef,
 };
 use felis_types_and_values::types::{IsType, Type, TypeAtom};
-use neco_table::{Table, TableId};
+use neco_table::define_wrapper_of_table;
 
-pub fn type_check_file(
-    file: &SynFile,
-    rename_table: &Table<TableId>,
-    type_table: &mut Table<Type>,
-) {
+define_wrapper_of_table!(TypeTable, SerialId, Type);
+
+pub fn type_check_file(file: &SynFile, rename_table: &SerialIdTable, type_table: &mut TypeTable) {
     for item in &file.items {
         match item {
             SynFileItem::TypeDef(type_def) => {
-                type_check_type_def(type_def, &rename_table, type_table)
+                type_check_type_def(type_def, rename_table, type_table)
             }
-            _ => {}
+            _ => unimplemented!(),
         }
     }
 }
 
 pub fn type_check_type_def(
     type_def: &SynTypeDef,
-    rename_table: &Table<TableId>,
-    type_table: &mut Table<Type>,
+    rename_table: &SerialIdTable,
+    type_table: &mut TypeTable,
 ) {
-    let id = type_def.ty_ty.as_ref().ident.table_id();
+    let id = type_def.ty_ty.as_ref().ident.syn_tree_id();
     let id = *rename_table.get(id).unwrap();
     let ty_ty = type_table.get(id).unwrap();
     let ty_ty_level = ty_ty.level();
 
     {
-        let id2 = type_def.name.table_id();
+        let id2 = type_def.name.syn_tree_id();
         let id2 = *rename_table.get(id2).unwrap();
         type_table.insert(id2, TypeAtom::new(ty_ty_level - 1, id).into());
     }
 
     for variant in &type_def.variants {
-        let id = variant.name.table_id();
+        let id = variant.name.syn_tree_id();
         let id = *rename_table.get(id).unwrap();
         let ty = syn_type_to_type(&variant.ty, rename_table, type_table);
         type_table.insert(id, ty);
@@ -47,14 +46,14 @@ pub fn type_check_type_def(
 
 fn syn_type_to_type(
     syn_type: &SynType,
-    rename_table: &Table<TableId>,
-    type_table: &mut Table<Type>,
+    rename_table: &SerialIdTable,
+    type_table: &mut TypeTable,
 ) -> Type {
     match syn_type {
         SynType::Forall(_) => todo!(),
         SynType::App(_) => todo!(),
         SynType::Atom(syn_type_atom) => {
-            let id = syn_type_atom.ident.table_id();
+            let id = syn_type_atom.ident.syn_tree_id();
             let id = *rename_table.get(id).unwrap();
             let ty = type_table.get(id).unwrap();
             let ty_level = ty.level();
@@ -67,7 +66,9 @@ fn syn_type_to_type(
 
 #[cfg(test)]
 mod test {
-    use felis_rename::{rename_defs::rename_defs_file, rename_uses::rename_uses_file};
+    use felis_rename::{
+        rename_defs::rename_defs_file, rename_uses::rename_uses_file, SerialId, SerialIdTable,
+    };
     use felis_syn::test_utils::parse_from_str;
     use felis_types_and_values::types::{TypeAtom, TypeStar};
     use neco_resolver::Resolver;
@@ -82,13 +83,13 @@ mod test {
         let defs_table = rename_defs_file(&file).unwrap();
         /* use */
         let mut resolver = Resolver::new();
-        let prop_id = TableId::new();
+        let prop_id = SerialId::new();
         resolver.set("Prop".to_string(), prop_id).unwrap();
         let uses_table = rename_uses_file(&file, &defs_table, resolver).unwrap();
-        let mut rename_table = Table::new();
+        let mut rename_table = SerialIdTable::new();
         rename_table.merge_mut(defs_table);
         rename_table.merge_mut(uses_table);
-        let mut type_table: Table<Type> = Table::new();
+        let mut type_table = TypeTable::new();
         type_table.insert(prop_id, TypeStar::new(2).into());
         type_check_file(&file, &rename_table, &mut type_table);
         assert_eq!(type_table.len(), 3);
@@ -96,14 +97,14 @@ mod test {
         assert_eq!(type_table.get(prop_id).unwrap(), &TypeStar::new(2).into());
         // A : Prop
         let SynFileItem::TypeDef(ref type_def) = file.items[0] else { panic!() };
-        let a_id = *rename_table.get(type_def.name.table_id()).unwrap();
+        let a_id = *rename_table.get(type_def.name.syn_tree_id()).unwrap();
         assert_eq!(
             type_table.get(a_id).unwrap(),
             &TypeAtom::new(1, prop_id).into()
         );
         // hoge : A
         let hoge_id = *rename_table
-            .get(type_def.variants[0].name.table_id())
+            .get(type_def.variants[0].name.syn_tree_id())
             .unwrap();
         assert_eq!(
             type_table.get(hoge_id).unwrap(),

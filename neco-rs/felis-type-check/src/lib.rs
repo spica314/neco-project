@@ -178,6 +178,7 @@ fn type_most_left_name(ty: &SynType) -> Option<String> {
         SynType::Atom(atom) => Some(atom.ident.ident.as_str().to_string()),
         SynType::Map(_) => todo!(),
         SynType::Paren(_) => todo!(),
+        SynType::DependentMap(_) => todo!(),
     }
 }
 
@@ -194,6 +195,7 @@ fn type_flatten_map(ty: &SynType) -> Option<Vec<SynType>> {
             }
             Some(xs)
         }
+        SynType::DependentMap(_) => todo!(),
     }
 }
 

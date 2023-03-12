@@ -35,11 +35,11 @@ impl Parse for SynTypedArg {
         };
 
         let Some(name) = TokenIdent::parse(tokens, &mut k)? else {
-            return Err(());
+            return Ok(None);
         };
 
         let Some(colon) = TokenColon::parse(tokens, &mut k)? else {
-            return Err(());
+            return Ok(None);
         };
 
         let Some(ty) = SynType::parse(tokens, &mut k)? else {

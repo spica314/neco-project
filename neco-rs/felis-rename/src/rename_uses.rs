@@ -56,7 +56,7 @@ fn rename_uses_type_def(
     resolver.enter_scope();
     // ty_ty
     {
-        let table = rename_uses_type_atom(&type_def.ty_ty, defs_table, resolver)?;
+        let table = rename_uses_type(&type_def.ty_ty, defs_table, resolver)?;
         res.merge_mut(table);
     }
     // name
@@ -247,6 +247,7 @@ fn rename_uses_type(
         SynType::Atom(type_atom) => rename_uses_type_atom(type_atom, defs_table, resolver),
         SynType::Map(type_map) => rename_uses_type_map(type_map, defs_table, resolver),
         SynType::Paren(type_paren) => rename_uses_type_paren(type_paren, defs_table, resolver),
+        SynType::DependentMap(_) => todo!(),
     }
 }
 

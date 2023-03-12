@@ -17,6 +17,8 @@ pub enum SynType {
     Map(SynTypeMap),
     // (And A B)
     Paren(SynTypeParen),
+    // (A : Prop) -> B A
+    DependentMap(SynTypeDependentMap),
 }
 
 impl ToFelisString for SynType {
@@ -47,6 +49,13 @@ impl ToFelisString for SynType {
             SynType::Paren(paren) => {
                 format!("({})", paren.ty.to_felis_string())
             }
+            SynType::DependentMap(dependent_map) => {
+                format!(
+                    "{} -> {}",
+                    dependent_map.from.to_felis_string(),
+                    dependent_map.to.to_felis_string()
+                )
+            }
         }
     }
 }
@@ -58,6 +67,11 @@ impl Parse for SynType {
         if let Some(forall) = SynTypeForall::parse(tokens, &mut k)? {
             *i = k;
             return Ok(Some(SynType::Forall(forall)));
+        }
+
+        if let Some(dependent_map) = SynTypeDependentMap::parse(tokens, &mut k)? {
+            *i = k;
+            return Ok(Some(SynType::DependentMap(dependent_map)));
         }
 
         let Some(res) = SynTypeNoMap::parse(tokens, &mut k)? else {
@@ -215,6 +229,41 @@ impl Parse for SynTypeApp {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SynTypeDependentMap {
+    pub from: Box<SynTypedArg>,
+    pub arrow: TokenArrow,
+    pub to: Box<SynType>,
+}
+
+impl Parse for SynTypeDependentMap {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        let mut k = *i;
+        if *i >= tokens.len() {
+            return Ok(None);
+        }
+
+        let Some(from) = SynTypedArg::parse(tokens, &mut k)? else {
+            return Ok(None);
+        };
+
+        let Some(arrow) = TokenArrow::parse(tokens, &mut k)? else {
+            return Err(());
+        };
+
+        let Some(to) = SynType::parse(tokens, &mut k)? else {
+            return Ok(None);
+        };
+
+        *i = k;
+        Ok(Some(SynTypeDependentMap {
+            from: Box::new(from),
+            arrow,
+            to: Box::new(to),
+        }))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeMap {
     pub from: Box<SynType>,
     pub arrow: TokenArrow,
@@ -353,5 +402,17 @@ mod test {
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.to_felis_string(), "(A -> B)");
+    }
+
+    #[test]
+    fn felis_syn_type_parse_test_6() {
+        let s = "(x : Nat) -> P x";
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynType>(&s);
+        assert!(res.is_ok());
+        let (res, _) = res.unwrap();
+        assert!(res.is_some());
+        let res = res.unwrap();
+        assert_eq!(res.to_felis_string(), "(x : Nat) -> P x");
     }
 }

@@ -3,6 +3,7 @@ use felis_syn::{
     syn_file::{SynFile, SynFileItem},
     syn_type::SynType,
     syn_type_def::SynTypeDef,
+    token::TokenIdent,
 };
 use felis_types_and_values::types::{IsType, Type, TypeAtom};
 use neco_table::define_wrapper_of_table;
@@ -20,12 +21,23 @@ pub fn type_check_file(file: &SynFile, rename_table: &SerialIdTable, type_table:
     }
 }
 
+fn as_ref_ident(ty: &SynType) -> &TokenIdent {
+    match ty {
+        SynType::Forall(_) => todo!(),
+        SynType::App(_) => todo!(),
+        SynType::Atom(atom) => &atom.ident,
+        SynType::Map(_) => todo!(),
+        SynType::Paren(_) => todo!(),
+        SynType::DependentMap(_) => todo!(),
+    }
+}
+
 pub fn type_check_type_def(
     type_def: &SynTypeDef,
     rename_table: &SerialIdTable,
     type_table: &mut TypeTable,
 ) {
-    let id = type_def.ty_ty.as_ref().ident.syn_tree_id();
+    let id = as_ref_ident(&type_def.ty_ty).syn_tree_id();
     let id = *rename_table.get(id).unwrap();
     let ty_ty = type_table.get(id).unwrap();
     let ty_ty_level = ty_ty.level();
@@ -61,6 +73,7 @@ fn syn_type_to_type(
         }
         SynType::Map(_) => todo!(),
         SynType::Paren(_) => todo!(),
+        SynType::DependentMap(_) => todo!(),
     }
 }
 

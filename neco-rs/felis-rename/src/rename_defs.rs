@@ -123,6 +123,7 @@ fn rename_defs_type(ty: &SynType) -> Result<SerialIdTable, ()> {
         SynType::Atom(_) => {}
         SynType::Map(_) => {}
         SynType::Paren(_) => {}
+        SynType::DependentMap(_) => todo!(),
     }
     Ok(table)
 }

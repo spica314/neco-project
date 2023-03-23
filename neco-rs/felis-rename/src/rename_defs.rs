@@ -43,7 +43,6 @@ fn rename_defs_type_def(type_def: &SynTypeDef) -> Result<SerialIdTable, ()> {
         let t = rename_defs_variant(variant).unwrap();
         table.merge_mut(t);
     }
-    eprintln!("len = {}", table.len());
     Ok(table)
 }
 

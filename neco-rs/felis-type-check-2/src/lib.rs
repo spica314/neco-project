@@ -3,7 +3,6 @@ use felis_syn::{
     syn_file::{SynFile, SynFileItem},
     syn_type::{SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap},
     syn_type_def::SynTypeDef,
-    token::TokenIdent,
 };
 use felis_term::{IsTerm, Term, TermApp, TermAtom, TermDependentMap, TermMap, TypedTerm};
 use neco_table::define_wrapper_of_table;
@@ -26,17 +25,6 @@ pub fn type_check_syn_file(
     }
 }
 
-fn as_ref_ident(ty: &SynType) -> &TokenIdent {
-    match ty {
-        SynType::Forall(_) => panic!("not take into account"),
-        SynType::App(_) => todo!(),
-        SynType::Atom(atom) => &atom.ident,
-        SynType::Map(_) => todo!(),
-        SynType::Paren(_) => todo!(),
-        SynType::DependentMap(_) => todo!(),
-    }
-}
-
 pub fn type_check_syn_type(
     ty: &SynType,
     rename_table: &SerialIdTable,
@@ -52,13 +40,6 @@ pub fn type_check_syn_type(
             type_check_syn_type_dep_map(dep_map, rename_table, typed_term_table)
         }
     }
-    // let ty_id = ty.syn_tree_id();
-
-    // // let id = as_ref_ident(&type_def.ty_ty).syn_tree_id();
-    // // let id = *rename_table.get(id).unwrap();
-    // // let ty_ty = type_table.get(id).unwrap();
-    // // let ty_ty_level = ty_ty.level();
-    // unimplemented!()
 }
 
 pub fn type_check_syn_type_app(
@@ -69,7 +50,7 @@ pub fn type_check_syn_type_app(
     let fun_typed_term = type_check_syn_type(&ty_app.left, rename_table, typed_term_table);
     let arg_typed_term = type_check_syn_type(&ty_app.right, rename_table, typed_term_table);
     // todo: check A -> B and A
-    let term = TermApp::new(fun_typed_term.term.clone(), arg_typed_term.term.clone());
+    let term = TermApp::new(fun_typed_term.term.clone(), arg_typed_term.term);
     let ty = match fun_typed_term.ty {
         Term::Map(ty_map) => ty_map.to.as_ref().clone(),
         Term::DependentMap(ty_dep_map) => ty_dep_map.to.as_ref().clone(),
@@ -89,13 +70,13 @@ pub fn type_check_syn_type_map(
     let from_typed_term = type_check_syn_type(&ty_map.from, rename_table, typed_term_table);
     let to_typed_term = type_check_syn_type(&ty_map.to, rename_table, typed_term_table);
     let term = TermMap {
-        from: Box::new(from_typed_term.term.clone()),
+        from: Box::new(from_typed_term.term),
         to: Box::new(to_typed_term.term.clone()),
     };
-    let ty = to_typed_term.ty.clone();
+    let ty = to_typed_term.ty;
     TypedTerm {
         term: term.into(),
-        ty: ty.into(),
+        ty,
     }
 }
 
@@ -119,10 +100,10 @@ pub fn type_check_syn_type_dep_map(
     );
     let to_typed_term = type_check_syn_type(&ty_map.to, rename_table, typed_term_table);
     let term = TermDependentMap::new((from_term, from_ty_typed_term.term), to_typed_term.term);
-    let ty = to_typed_term.ty.clone();
+    let ty = to_typed_term.ty;
     TypedTerm {
         term: term.into(),
-        ty: ty.into(),
+        ty,
     }
 }
 
@@ -131,14 +112,8 @@ pub fn type_check_syn_type_atom(
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
 ) -> TypedTerm {
-    eprintln!();
-    eprintln!("ty_atom = {:?}", ty_atom);
-    eprintln!("rename_table = {:?}", rename_table);
     let id = ty_atom.syn_tree_id();
-    eprintln!("id = {:?}", id);
     let id = *rename_table.get(id).unwrap();
-    eprintln!("id(serial) = {:?}", id);
-    eprintln!("typed_term_table = {:?}", typed_term_table);
     typed_term_table.get(id).unwrap().clone()
 }
 
@@ -148,10 +123,7 @@ pub fn type_check_syn_type_def(
     typed_term_table: &mut TypedTermTable,
 ) {
     let typed_ty_ty = type_check_syn_type(&type_def.ty_ty, rename_table, typed_term_table);
-    let ty_ty = &typed_ty_ty.term;
-    eprintln!("ty_ty = {:?}", ty_ty);
     let ty_ty_level = typed_ty_ty.term.level();
-    eprintln!("ty_ty_level = {}", ty_ty_level);
     // todo: check typed_ty_ty.ty is *
 
     // name
@@ -159,7 +131,7 @@ pub fn type_check_syn_type_def(
         let id2 = type_def.name.syn_tree_id();
         let id2 = *rename_table.get(id2).unwrap();
         let term = TermAtom::new(ty_ty_level - 1, id2).into();
-        let ty = typed_ty_ty.term.clone();
+        let ty = typed_ty_ty.term;
         let typed_term = TypedTerm { term, ty };
         typed_term_table.insert(id2, typed_term);
     }
@@ -175,50 +147,6 @@ pub fn type_check_syn_type_def(
         typed_term_table.insert(id2, typed_term);
     }
 }
-
-// fn syn_type_to_type(
-//     syn_type: &SynType,
-//     rename_table: &SerialIdTable,
-//     type_table: &mut TypeTable,
-// ) -> Term {
-//     match syn_type {
-//         SynType::Forall(_) => todo!(),
-//         SynType::App(syn_type_app) => {
-//             let fun_ty = syn_type_to_type(&syn_type_app.left, rename_table, type_table);
-//             let arg_ty = syn_type_to_type(&syn_type_app.right, rename_table, type_table);
-//             eprintln!("syn_type_app = {:?}", syn_type_app);
-//             eprintln!("fun_ty = {:?}", fun_ty);
-//             eprintln!("arg_ty = {:?}", arg_ty);
-//             match fun_ty {
-//                 Type::ForallValue(type_forall_value) => type_forall_value.ty.as_ref().clone(),
-//                 Type::ForallType(type_forall_type) => type_forall_type.ty.as_ref().clone(),
-//                 _ => panic!(),
-//             }
-//         }
-//         SynType::Atom(syn_type_atom) => {
-//             let id = syn_type_atom.ident.syn_tree_id();
-//             let id = *rename_table.get(id).unwrap();
-//             let ty = type_table
-//                 .get(id)
-//                 .unwrap_or_else(|| panic!("ident = {:?}", syn_type_atom.ident));
-//             let ty_level = ty.level();
-//             TypeAtom::new(ty_level - 1, id).into()
-//         }
-//         SynType::Map(syn_type_map) => {
-//             let from_ty = syn_type_to_type(&syn_type_map.from, rename_table, type_table);
-//             let ty = syn_type_to_type(&syn_type_map.to, rename_table, type_table);
-//             if from_ty.level() == 0 {
-//                 let v = ValueAtom::new(SerialId::new()).into();
-//                 TypeForallValue::new(v, from_ty, ty).into()
-//             } else {
-//                 let v = TypeAtom::new(from_ty.level() - 1, SerialId::new()).into();
-//                 TypeForallType::new(v, from_ty, ty).into()
-//             }
-//         }
-//         SynType::Paren(_) => todo!(),
-//         SynType::DependentMap(_) => todo!(),
-//     }
-// }
 
 #[cfg(test)]
 mod test {
@@ -290,7 +218,6 @@ mod test {
     fn type_check_test_2() {
         let s = std::fs::read_to_string("../../library/wip/and2.fe").unwrap();
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
-        eprintln!("file = {:?}", file);
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         /* use */

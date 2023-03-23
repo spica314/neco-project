@@ -334,7 +334,6 @@ fn rename_uses_type_atom(
         panic!("unknown name : {}", type_atom.ident.as_str());
         // return Err(());
     };
-    eprintln!("{:?} -> {:?}", type_atom.ident.syn_tree_id(), *id);
     res.insert(type_atom.ident.syn_tree_id(), *id);
     Ok(res)
 }

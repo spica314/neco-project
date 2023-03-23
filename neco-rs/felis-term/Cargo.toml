@@ -1,5 +1,5 @@
 [package]
-name = "felis-types-and-values"
+name = "felis-term"
 version = "0.1.0"
 edition = "2021"
 

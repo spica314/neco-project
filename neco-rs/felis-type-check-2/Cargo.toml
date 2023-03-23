@@ -8,6 +8,6 @@ edition = "2021"
 [dependencies]
 felis-rename = { workspace = true }
 felis-syn = { workspace = true }
-felis-types-and-values = { workspace = true }
+felis-term = { workspace = true }
 neco-resolver = { workspace = true }
 neco-table = { workspace = true }

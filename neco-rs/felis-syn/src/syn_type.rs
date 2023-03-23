@@ -3,6 +3,7 @@ use crate::{
     syn_typed_arg::SynTypedArg,
     to_felis_string::ToFelisString,
     token::{Token, TokenArrow, TokenCamma, TokenIdent, TokenKeyword, TokenLParen, TokenRParen},
+    SynTreeId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -19,6 +20,25 @@ pub enum SynType {
     Paren(SynTypeParen),
     // (A : Prop) -> B A
     DependentMap(SynTypeDependentMap),
+}
+
+impl SynType {
+    pub fn syn_tree_id(&self) -> SynTreeId {
+        match self {
+            SynType::Forall(_) => todo!(),
+            SynType::App(app) => app.syn_tree_id(),
+            SynType::Atom(atom) => atom.syn_tree_id(),
+            SynType::Map(map) => map.syn_tree_id(),
+            SynType::Paren(_) => todo!(),
+            SynType::DependentMap(dep_map) => dep_map.syn_tree_id(),
+        }
+    }
+    pub fn as_dependent_map(&self) -> Option<&SynTypeDependentMap> {
+        match self {
+            SynType::DependentMap(dep_map) => Some(dep_map),
+            _ => None,
+        }
+    }
 }
 
 impl ToFelisString for SynType {
@@ -84,6 +104,7 @@ impl Parse for SynType {
                 return Err(());
             };
             res = SynType::Map(SynTypeMap {
+                id: SynTreeId::new(),
                 from: Box::new(res),
                 arrow,
                 to: Box::new(to),
@@ -206,6 +227,7 @@ impl Parse for SynTypeNoMap {
 
         while let Some(right) = SynTypeNoMapAndApp::parse(tokens, &mut k)? {
             res = SynTypeNoMap::App(SynTypeApp {
+                id: SynTreeId::new(),
                 left: Box::new(res.into()),
                 right: Box::new(right.into()),
             });
@@ -218,8 +240,15 @@ impl Parse for SynTypeNoMap {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeApp {
+    id: SynTreeId,
     pub left: Box<SynType>,
     pub right: Box<SynType>,
+}
+
+impl SynTypeApp {
+    pub fn syn_tree_id(&self) -> SynTreeId {
+        self.id
+    }
 }
 
 impl Parse for SynTypeApp {
@@ -230,9 +259,16 @@ impl Parse for SynTypeApp {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeDependentMap {
+    id: SynTreeId,
     pub from: Box<SynTypedArg>,
     pub arrow: TokenArrow,
     pub to: Box<SynType>,
+}
+
+impl SynTypeDependentMap {
+    pub fn syn_tree_id(&self) -> SynTreeId {
+        self.id
+    }
 }
 
 impl Parse for SynTypeDependentMap {
@@ -256,6 +292,7 @@ impl Parse for SynTypeDependentMap {
 
         *i = k;
         Ok(Some(SynTypeDependentMap {
+            id: SynTreeId::new(),
             from: Box::new(from),
             arrow,
             to: Box::new(to),
@@ -265,9 +302,16 @@ impl Parse for SynTypeDependentMap {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeMap {
+    id: SynTreeId,
     pub from: Box<SynType>,
     pub arrow: TokenArrow,
     pub to: Box<SynType>,
+}
+
+impl SynTypeMap {
+    pub fn syn_tree_id(&self) -> SynTreeId {
+        self.id
+    }
 }
 
 impl Parse for SynTypeMap {
@@ -279,6 +323,12 @@ impl Parse for SynTypeMap {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeAtom {
     pub ident: TokenIdent,
+}
+
+impl SynTypeAtom {
+    pub fn syn_tree_id(&self) -> SynTreeId {
+        self.ident.syn_tree_id()
+    }
 }
 
 impl Parse for SynTypeAtom {

@@ -286,6 +286,7 @@ fn is_ident_tail_char(c: char) -> bool {
     c.is_ascii_alphanumeric() || "-_".contains(c)
 }
 
+#[derive(Debug)]
 pub struct TokenInfo {
     pub span: Span,
 }

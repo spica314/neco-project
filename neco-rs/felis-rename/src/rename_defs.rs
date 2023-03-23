@@ -4,7 +4,7 @@ use felis_syn::{
     syn_fn_def::SynFnDef,
     syn_theorem_def::SynTheoremDef,
     syn_type::SynType,
-    syn_type_def::SynTypeDef,
+    syn_type_def::{SynTypeDef, SynVariant},
 };
 
 use crate::{SerialId, SerialIdTable};
@@ -40,10 +40,22 @@ fn rename_defs_type_def(type_def: &SynTypeDef) -> Result<SerialIdTable, ()> {
     }
     // variants
     for variant in &type_def.variants {
-        let id = SerialId::new();
-        table.insert(variant.name.syn_tree_id(), id);
+        let t = rename_defs_variant(variant).unwrap();
+        table.merge_mut(t);
     }
     eprintln!("len = {}", table.len());
+    Ok(table)
+}
+
+fn rename_defs_variant(variant: &SynVariant) -> Result<SerialIdTable, ()> {
+    let mut table = SerialIdTable::new();
+
+    let id = SerialId::new();
+    table.insert(variant.name.syn_tree_id(), id);
+
+    let t = rename_defs_type(&variant.ty).unwrap();
+    table.merge_mut(t);
+
     Ok(table)
 }
 
@@ -123,7 +135,13 @@ fn rename_defs_type(ty: &SynType) -> Result<SerialIdTable, ()> {
         SynType::Atom(_) => {}
         SynType::Map(_) => {}
         SynType::Paren(_) => {}
-        SynType::DependentMap(_) => todo!(),
+        SynType::DependentMap(dep_map) => {
+            let id = SerialId::new();
+            table.insert(dep_map.from.name.syn_tree_id(), id);
+
+            let table2 = rename_defs_type(&dep_map.to)?;
+            table.merge_mut(table2);
+        }
     }
     Ok(table)
 }

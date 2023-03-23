@@ -174,7 +174,7 @@ fn expr_to_ident_name(expr: &SynExpr) -> Option<String> {
 fn type_most_left_name(ty: &SynType) -> Option<String> {
     match ty {
         SynType::Forall(_) => todo!(),
-        SynType::App(app) => type_most_left_name(&app.left),
+        SynType::App(app) => type_most_left_name(&app.right),
         SynType::Atom(atom) => Some(atom.ident.ident.as_str().to_string()),
         SynType::Map(_) => todo!(),
         SynType::Paren(_) => todo!(),

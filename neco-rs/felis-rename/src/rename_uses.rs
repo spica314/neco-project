@@ -3,7 +3,10 @@ use felis_syn::{
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::{SynFnBlock, SynFnDef, SynStatement},
     syn_theorem_def::SynTheoremDef,
-    syn_type::{SynType, SynTypeApp, SynTypeAtom, SynTypeForall, SynTypeMap, SynTypeParen},
+    syn_type::{
+        SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeForall, SynTypeMap,
+        SynTypeParen,
+    },
     syn_type_def::SynTypeDef,
     syn_typed_arg::SynTypedArg,
 };
@@ -247,7 +250,9 @@ fn rename_uses_type(
         SynType::Atom(type_atom) => rename_uses_type_atom(type_atom, defs_table, resolver),
         SynType::Map(type_map) => rename_uses_type_map(type_map, defs_table, resolver),
         SynType::Paren(type_paren) => rename_uses_type_paren(type_paren, defs_table, resolver),
-        SynType::DependentMap(_) => todo!(),
+        SynType::DependentMap(type_dep_map) => {
+            rename_uses_type_dep_map(type_dep_map, defs_table, resolver)
+        }
     }
 }
 
@@ -329,6 +334,7 @@ fn rename_uses_type_atom(
         panic!("unknown name : {}", type_atom.ident.as_str());
         // return Err(());
     };
+    eprintln!("{:?} -> {:?}", type_atom.ident.syn_tree_id(), *id);
     res.insert(type_atom.ident.syn_tree_id(), *id);
     Ok(res)
 }
@@ -348,6 +354,35 @@ fn rename_uses_type_map(
     // 2
     {
         let table = rename_uses_type(&type_map.to, defs_table, resolver)?;
+        res.merge_mut(table);
+    }
+    Ok(res)
+}
+
+// (X^{2} : Y^{1}) -> Z^{3}
+fn rename_uses_type_dep_map(
+    type_dep_map: &SynTypeDependentMap,
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
+    // 1
+    {
+        let table = rename_uses_type(&type_dep_map.from.ty, defs_table, resolver)?;
+        res.merge_mut(table);
+    }
+    // 2
+    {
+        let a = type_dep_map.from.name.syn_tree_id();
+        let b = type_dep_map.from.name.as_str().to_string();
+        let Some(c) = defs_table.get(a) else {
+            panic!();
+        };
+        resolver.set(b, *c).unwrap();
+    }
+    // 3
+    {
+        let table = rename_uses_type(&type_dep_map.to, defs_table, resolver)?;
         res.merge_mut(table);
     }
     Ok(res)
@@ -430,5 +465,22 @@ mod test {
         // (11) Prop, Prop, Prop, A, Or, A, B, B, Or, A, B,
         // (20) Prop, Prop, And, A, B, Or, A, B, Prop, Prop, And, A, B, Or, A, B, x, conj, or_introl, l
         assert_eq!(uses_table.len(), 39);
+    }
+
+    #[test]
+    fn felis_rename_uses_test_4() {
+        let s = std::fs::read_to_string("../../library/wip/and2.fe").unwrap();
+        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        /* def */
+        let defs_table = rename_defs_file(&file).unwrap();
+        // And, conj, A, B
+        assert_eq!(defs_table.len(), 4);
+        /* use */
+        let mut resolver = Resolver::new();
+        resolver.set("Prop".to_string(), SerialId::new()).unwrap();
+        let uses_table = rename_uses_file(&file, &defs_table, resolver).unwrap();
+        // (3) Prop, Prop, Prop
+        // (7) Prop, Prop, A, B, And, A, B
+        assert_eq!(uses_table.len(), 10);
     }
 }

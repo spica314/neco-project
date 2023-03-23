@@ -71,6 +71,7 @@ impl<T> Table<T> {
 #[macro_export]
 macro_rules! define_wrapper_of_table {
     ( $x:ident, $y:ident, $z:ident ) => {
+        #[derive(Debug)]
         pub struct $x(pub(crate) $crate::Table<$z>);
 
         impl $x {

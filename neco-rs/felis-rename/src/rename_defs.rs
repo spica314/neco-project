@@ -186,4 +186,15 @@ mod test {
         // And, A, B, conj, Or, A, B, or_introl, or_intror, theorem1, A, B, proof, A, B, x, l, r
         assert_eq!(table.len(), 18);
     }
+
+    #[test]
+    fn felis_rename_defs_file_test_4() {
+        let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
+        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let table = rename_defs_file(&file).unwrap();
+        // (4) And, conj, A, B
+        // (7) Or or_introl, A, B, or_intror, A, B
+        // (9) theorem1, A, B, proof, A, B, x, l, r
+        assert_eq!(table.len(), 20);
+    }
 }

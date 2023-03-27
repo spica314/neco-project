@@ -104,8 +104,15 @@ impl Parse for SynExprMatchArm {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprIdentWithPath {
+    id: SynTreeId,
     pub path: Vec<(TokenIdent, TokenColonColon)>,
     pub ident: TokenIdent,
+}
+
+impl SynExprIdentWithPath {
+    pub fn syn_tree_id(&self) -> SynTreeId {
+        self.id
+    }
 }
 
 impl ToFelisString for SynExprIdentWithPath {
@@ -138,7 +145,11 @@ impl Parse for SynExprIdentWithPath {
         }
 
         *i = k;
-        Ok(Some(SynExprIdentWithPath { path, ident }))
+        Ok(Some(SynExprIdentWithPath {
+            id: SynTreeId::new(),
+            path,
+            ident,
+        }))
     }
 }
 
@@ -184,6 +195,7 @@ impl ToFelisString for SynExprMatchPattern {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SynExpr {
     Ident(SynExprIdent),
+    IdentWithPath(SynExprIdentWithPath),
     App(SynExprApp),
     Match(SynExprMatch),
     Paren(SynExprParen),
@@ -196,6 +208,7 @@ impl SynExpr {
             SynExpr::App(expr_app) => expr_app.syn_tree_id(),
             SynExpr::Match(expr_match) => expr_match.syn_tree_id(),
             SynExpr::Paren(expr_paren) => expr_paren.syn_tree_id(),
+            SynExpr::IdentWithPath(expr_ident_with_path) => expr_ident_with_path.syn_tree_id(),
         }
     }
 }
@@ -223,8 +236,9 @@ impl ToFelisString for SynExpr {
         match self {
             SynExpr::Ident(expr_ident) => expr_ident.ident.ident.as_str().to_string(),
             SynExpr::Match(_expr_match) => todo!(),
-            SynExpr::App(_expr_app) => todo!(),
+            SynExpr::App(expr_app) => expr_app.to_felis_string(),
             SynExpr::Paren(_) => todo!(),
+            SynExpr::IdentWithPath(expr_ident_with_path) => expr_ident_with_path.to_felis_string(),
         }
     }
 }
@@ -271,7 +285,7 @@ impl Parse for SynExprParen {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum SynExprNoApp {
-    Ident(SynExprIdent),
+    IdentWithPath(SynExprIdentWithPath),
     Match(SynExprMatch),
     Paren(SynExprParen),
 }
@@ -290,9 +304,9 @@ impl Parse for SynExprNoApp {
             return Ok(Some(SynExprNoApp::Paren(expr_paren)));
         }
 
-        if let Some(expr_ident) = SynExprIdent::parse(tokens, &mut k)? {
+        if let Some(expr_ident_with_path) = SynExprIdentWithPath::parse(tokens, &mut k)? {
             *i = k;
-            return Ok(Some(SynExprNoApp::Ident(expr_ident)));
+            return Ok(Some(SynExprNoApp::IdentWithPath(expr_ident_with_path)));
         }
 
         Ok(None)
@@ -302,7 +316,9 @@ impl Parse for SynExprNoApp {
 impl From<SynExprNoApp> for SynExpr {
     fn from(value: SynExprNoApp) -> Self {
         match value {
-            SynExprNoApp::Ident(expr_ident) => SynExpr::Ident(expr_ident),
+            SynExprNoApp::IdentWithPath(expr_ident_with_path) => {
+                SynExpr::IdentWithPath(expr_ident_with_path)
+            }
             SynExprNoApp::Match(expr_match) => SynExpr::Match(expr_match),
             SynExprNoApp::Paren(expr_paren) => SynExpr::Paren(expr_paren),
         }
@@ -313,6 +329,18 @@ impl From<SynExprNoApp> for SynExpr {
 pub struct SynExprApp {
     id: SynTreeId,
     pub exprs: Vec<SynExpr>,
+}
+
+impl ToFelisString for SynExprApp {
+    fn to_felis_string(&self) -> String {
+        let mut res = String::new();
+        res.push_str(&self.exprs[0].to_felis_string());
+        for expr in self.exprs.iter().skip(1) {
+            res.push(' ');
+            res.push_str(&expr.to_felis_string());
+        }
+        res
+    }
 }
 
 impl SynExprApp {
@@ -385,9 +413,9 @@ mod test {
         let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
-        assert!(matches!(res, SynExpr::Ident(_)));
-        let SynExpr::Ident(ident) = res else { panic!() };
-        assert_eq!(ident.ident.ident.as_str(), "x");
+        assert!(matches!(res, SynExpr::IdentWithPath(_)));
+        let SynExpr::IdentWithPath(ident_with_path) = res else { panic!() };
+        assert_eq!(ident_with_path.ident.ident.as_str(), "x");
     }
 
     #[test]
@@ -465,5 +493,37 @@ mod test {
         assert_eq!(expr_match.arms.len(), 1);
         assert_eq!(expr_match.arms[0].pattern.to_felis_string(), "y::z w");
         assert_eq!(expr_match.arms[0].expr.to_felis_string(), "t");
+    }
+
+    #[test]
+    fn felis_syn_expr_parse_test_7() {
+        let s = "#match x { y::z w => t::u, }";
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynExpr>(s);
+        assert!(res.is_ok());
+        let (res, _) = res.unwrap();
+        assert!(res.is_some());
+        let res = res.unwrap();
+        assert!(matches!(res, SynExpr::Match(_)));
+        let SynExpr::Match(expr_match) = res else { panic!() };
+        assert_eq!(expr_match.arms.len(), 1);
+        assert_eq!(expr_match.arms[0].pattern.to_felis_string(), "y::z w");
+        assert_eq!(expr_match.arms[0].expr.to_felis_string(), "t::u");
+    }
+
+    #[test]
+    fn felis_syn_expr_parse_test_8() {
+        let s = "#match x { y::z w => t::u a, }";
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynExpr>(s);
+        assert!(res.is_ok());
+        let (res, _) = res.unwrap();
+        assert!(res.is_some());
+        let res = res.unwrap();
+        assert!(matches!(res, SynExpr::Match(_)));
+        let SynExpr::Match(expr_match) = res else { panic!() };
+        assert_eq!(expr_match.arms.len(), 1);
+        assert_eq!(expr_match.arms[0].pattern.to_felis_string(), "y::z w");
+        assert_eq!(expr_match.arms[0].expr.to_felis_string(), "t::u a");
     }
 }

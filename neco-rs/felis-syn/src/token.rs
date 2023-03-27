@@ -208,7 +208,7 @@ pub struct TokenColonColon {
 impl Parse for TokenColonColon {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         if *i >= tokens.len() {
-            return Err(());
+            return Ok(None);
         }
         if let Token::ColonColon(colon_colon) = &tokens[*i] {
             *i += 1;

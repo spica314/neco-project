@@ -1,5 +1,5 @@
 use felis_syn::{
-    syn_expr::{SynExpr, SynExprApp, SynExprIdent, SynExprMatch},
+    syn_expr::{SynExpr, SynExprApp, SynExprIdent, SynExprIdentWithPath, SynExprMatch},
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::{SynFnBlock, SynFnDef, SynStatement},
     syn_theorem_def::SynTheoremDef,
@@ -150,6 +150,9 @@ fn rename_uses_expr(
         SynExpr::App(expr_app) => rename_uses_expr_app(expr_app, defs_table, resolver),
         SynExpr::Match(expr_match) => rename_uses_expr_match(expr_match, defs_table, resolver),
         SynExpr::Paren(_expr_paren) => todo!(),
+        SynExpr::IdentWithPath(expr_ident_with_path) => {
+            rename_uses_expr_ident_with_path(expr_ident_with_path, defs_table, resolver)
+        }
     }
 }
 
@@ -211,6 +214,21 @@ fn rename_uses_expr_ident(
     let mut res = SerialIdTable::new();
     let a = expr_ident.ident.as_str();
     let b = expr_ident.ident.syn_tree_id();
+    let Some(c) = resolver.get(a) else {
+        panic!("unknown ident {a}");
+    };
+    res.insert(b, *c);
+    Ok(res)
+}
+
+fn rename_uses_expr_ident_with_path(
+    expr_ident_with_path: &SynExprIdentWithPath,
+    _defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
+    let a = expr_ident_with_path.ident.as_str();
+    let b = expr_ident_with_path.ident.syn_tree_id();
     let Some(c) = resolver.get(a) else {
         panic!("unknown ident {a}");
     };

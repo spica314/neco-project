@@ -7,8 +7,10 @@
     or_intror : (A : Prop) -> (B : Prop) -> B -> Or A B,
 }
 
-#fn proof (A : Prop) (B : Prop) (x : And A B) -> Or A B {
-    #match x {
-        And::conj l r => Or::or_introl l,
+#theorem theorem1 = #forall (A : Prop), #forall (B : Prop), And A B -> Or A B {
+    #fn proof (A : Prop) (B : Prop) (x : And A B) -> Or A B {
+        #match x {
+            And::conj l r => Or::or_introl l,
+        }
     }
 }

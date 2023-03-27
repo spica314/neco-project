@@ -21,8 +21,7 @@ impl PathResolver {
         } else {
             self.children
                 .get(&path[0])
-                .map(|child| child.get(&path[1..]))
-                .flatten()
+                .and_then(|child| child.get(&path[1..]))
         }
     }
     pub fn set(&mut self, path: &[String], id: SerialId) {
@@ -32,9 +31,15 @@ impl PathResolver {
         } else {
             self.children
                 .entry(path[0].clone())
-                .or_insert_with(|| PathResolver::new())
+                .or_insert_with(PathResolver::new)
                 .set(&path[1..], id);
         }
+    }
+}
+
+impl Default for PathResolver {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -181,13 +181,13 @@ fn rename_uses_expr_match(
         resolver.enter_scope();
         // constructor
         {
-            let a = arm.pattern.idents[0].as_str();
-            let b = arm.pattern.idents[0].syn_tree_id();
+            let a = arm.pattern.type_constructor.ident.as_str();
+            let b = arm.pattern.type_constructor.ident.syn_tree_id();
             let c = resolver.get(a).unwrap();
             res.insert(b, *c);
         }
         // constructor args
-        for ident in arm.pattern.idents.iter().skip(1) {
+        for ident in arm.pattern.idents.iter() {
             let a = ident.as_str();
             let b = ident.syn_tree_id();
             let c = defs_table.get(b).unwrap();

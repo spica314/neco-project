@@ -1,0 +1,14 @@
+#type And : Prop -> Prop -> Prop {
+    conj : (A : Prop) -> (B : Prop) -> A -> B -> And A B,
+}
+
+#type Or : Prop -> Prop -> Prop {
+    or_introl : (A : Prop) -> (B : Prop) -> A -> Or A B,
+    or_intror : (A : Prop) -> (B : Prop) -> B -> Or A B,
+}
+
+#fn proof (A : Prop) (B : Prop) (x : And A B) -> Or A B {
+    #match x {
+        And::conj l r => Or::or_introl l,
+    }
+}

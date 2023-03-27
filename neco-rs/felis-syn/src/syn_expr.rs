@@ -2,8 +2,8 @@ use crate::{
     parse::Parse,
     to_felis_string::ToFelisString,
     token::{
-        Token, TokenArrow2, TokenCamma, TokenIdent, TokenKeyword, TokenLBrace, TokenLParen,
-        TokenRBrace, TokenRParen,
+        Token, TokenArrow2, TokenCamma, TokenColonColon, TokenIdent, TokenKeyword, TokenLBrace,
+        TokenLParen, TokenRBrace, TokenRParen,
     },
     SynTreeId,
 };
@@ -103,7 +103,48 @@ impl Parse for SynExprMatchArm {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SynExprIdentWithPath {
+    pub path: Vec<(TokenIdent, TokenColonColon)>,
+    pub ident: TokenIdent,
+}
+
+impl ToFelisString for SynExprIdentWithPath {
+    fn to_felis_string(&self) -> String {
+        let mut res = String::new();
+        for t in &self.path {
+            res.push_str(t.0.as_str());
+            res.push_str("::");
+        }
+        res.push_str(self.ident.as_str());
+        res
+    }
+}
+
+impl Parse for SynExprIdentWithPath {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        let mut k = *i;
+
+        let mut path = vec![];
+        let Some(mut ident) = TokenIdent::parse(tokens, &mut k)? else {
+            return Ok(None);
+        };
+
+        while let Some(colon_colon) = TokenColonColon::parse(tokens, &mut k)? {
+            path.push((ident.clone(), colon_colon));
+            let Some(ident2) = TokenIdent::parse(tokens, &mut k)? else {
+                return Err(());
+            };
+            ident = ident2;
+        }
+
+        *i = k;
+        Ok(Some(SynExprIdentWithPath { path, ident }))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprMatchPattern {
+    pub type_constructor: SynExprIdentWithPath,
     pub idents: Vec<TokenIdent>,
 }
 
@@ -111,27 +152,28 @@ impl Parse for SynExprMatchPattern {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
+        let Some(type_constructor) = SynExprIdentWithPath::parse(tokens, &mut k)? else {
+            return Ok(None);
+        };
+
         let mut idents = vec![];
         while let Some(ident) = TokenIdent::parse(tokens, &mut k)? {
             idents.push(ident);
         }
 
-        if idents.is_empty() {
-            return Ok(None);
-        }
-
         *i = k;
-        Ok(Some(SynExprMatchPattern { idents }))
+        Ok(Some(SynExprMatchPattern {
+            type_constructor,
+            idents,
+        }))
     }
 }
 
 impl ToFelisString for SynExprMatchPattern {
     fn to_felis_string(&self) -> String {
         let mut s = String::new();
-        if !self.idents.is_empty() {
-            s.push_str(self.idents[0].ident.as_str());
-        }
-        for x in &self.idents[1..] {
+        s.push_str(&self.type_constructor.to_felis_string());
+        for x in &self.idents[0..] {
             s.push(' ');
             s.push_str(x.ident.as_str());
         }
@@ -407,5 +449,21 @@ mod test {
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::App(_)));
         // todo: test for detail
+    }
+
+    #[test]
+    fn felis_syn_expr_parse_test_6() {
+        let s = "#match x { y::z w => t, }";
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynExpr>(s);
+        assert!(res.is_ok());
+        let (res, _) = res.unwrap();
+        assert!(res.is_some());
+        let res = res.unwrap();
+        assert!(matches!(res, SynExpr::Match(_)));
+        let SynExpr::Match(expr_match) = res else { panic!() };
+        assert_eq!(expr_match.arms.len(), 1);
+        assert_eq!(expr_match.arms[0].pattern.to_felis_string(), "y::z w");
+        assert_eq!(expr_match.arms[0].expr.to_felis_string(), "t");
     }
 }

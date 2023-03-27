@@ -89,7 +89,7 @@ fn rename_defs_expr(expr: &SynExpr) -> Result<SerialIdTable, ()> {
         SynExpr::App(_) => {}
         SynExpr::Match(expr_match) => {
             for arm in &expr_match.arms {
-                for ident in arm.pattern.idents.iter().skip(1) {
+                for ident in arm.pattern.idents.iter() {
                     let id = SerialId::new();
                     table.insert(ident.syn_tree_id(), id);
                 }

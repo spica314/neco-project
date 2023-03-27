@@ -9,6 +9,7 @@ pub enum Token {
     LParen(TokenLParen),
     RParen(TokenRParen),
     Colon(TokenColon),
+    ColonColon(TokenColonColon),
     Camma(TokenCamma),
     LBrace(TokenLBrace),
     RBrace(TokenRBrace),
@@ -200,6 +201,24 @@ impl Parse for TokenColon {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TokenColonColon {
+    id: SynTreeId,
+}
+
+impl Parse for TokenColonColon {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        if *i >= tokens.len() {
+            return Err(());
+        }
+        if let Token::ColonColon(colon_colon) = &tokens[*i] {
+            *i += 1;
+            return Ok(Some(colon_colon.clone()));
+        }
+        Ok(None)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenSemicolon {
     id: SynTreeId,
 }
@@ -353,6 +372,23 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             res.push(Token::Ident(TokenIdent {
                 id: Default::default(),
                 ident,
+            }));
+            continue;
+        }
+        if i + 1 < chars.len() && chars[i] == ':' && chars[i + 1] == ':' {
+            let begin = FilePos::new_with_pos(r, c);
+            i += 2;
+            c += 2;
+            let end = FilePos::new_with_pos(r, c);
+            let id = SynTreeId::new();
+            table.insert(
+                id,
+                TokenInfo {
+                    span: Span::new(file_id, begin, end),
+                },
+            );
+            res.push(Token::ColonColon(TokenColonColon {
+                id: Default::default(),
             }));
             continue;
         }

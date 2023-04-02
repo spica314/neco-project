@@ -2,14 +2,17 @@
 
 REPOSITORY_PATH=$(git rev-parse --show-toplevel)
 
-git stash save -k
+git diff --quiet
+if [ $? -ne 0 ]; then
+    echo "Unstaged changes found"
+    exit 1
+fi
 
 cd $REPOSITORY_PATH/neco-rs
 
 cargo fmt --all -- --check
 
 if [ $? -ne 0 ]; then
-    git stash pop
     echo -e "\033[31;1mpre-commit failed: cargo fmt\033[m"
     exit 1
 fi
@@ -17,11 +20,9 @@ fi
 cargo llvm-cov nextest --offline --fail-under-lines 75 --open
 
 if [ $? -ne 0 ]; then
-    git stash pop
     echo -e "\033[31;1mpre-commit failed: test failed or line coverage < 75%\033[m"
     exit 1
 fi
 
-git stash pop
 echo -e "\033[32;1mpre-commit: success\033[m"
 exit 0

@@ -34,11 +34,6 @@ fn rename_defs_type_def(type_def: &SynTypeDef) -> Result<SerialIdTable, ()> {
         let id = SerialId::new();
         table.insert(type_def.name.syn_tree_id(), id);
     }
-    // args
-    for arg in &type_def.args {
-        let id = SerialId::new();
-        table.insert(arg.name.syn_tree_id(), id);
-    }
     // variants
     for variant in &type_def.variants {
         let t = rename_defs_variant(variant).unwrap();
@@ -177,15 +172,6 @@ mod test {
         let table = rename_defs_file(&file).unwrap();
         // [file], proof, A, B, x, l, r
         assert_eq!(table.len(), 7);
-    }
-
-    #[test]
-    fn felis_rename_defs_file_test_3() {
-        let s = std::fs::read_to_string("../../library/wip/prop2.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
-        let table = rename_defs_file(&file).unwrap();
-        // [file] And, A, B, conj, Or, A, B, or_introl, or_intror, theorem1, A, B, proof, A, B, x, l, r
-        assert_eq!(table.len(), 19);
     }
 
     #[test]

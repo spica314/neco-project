@@ -10,8 +10,8 @@
     }
 }
 
-#type Eq (T : Set) (x : T) (y : T) : Prop {
-    eq : (z : T) -> Eq T z z
+#type Eq : (T : Set) -> T -> T -> Prop {
+    eq : (T : Set) -> (z : T) -> Eq T z z
 }
 
 #theorem theorem1 = #forall (x : Nat), #forall (y : Nat), Eq Nat (add x y) (add x y) {
@@ -21,15 +21,15 @@
                 // Eq Nat (add zero y) (add zero y)
                 //   by reduction
                 // Eq Nat y y
-                eq y
+                eq Nat y
             }
             succ x2 => {
                 // Eq Nat (succ (add x2 y)) (succ (add x2 y))
                 // with Eq Nat (add x2 y) (add x2 y)
                 let t : Eq Nat (add x2 y) (add x2 y) = f x2 y;
                 match t {
-                    eq s => {
-                        eq (succ s),
+                    eq _ s => {
+                        eq Nat (succ s),
                     }
                 }
             }
@@ -44,7 +44,7 @@
                 // Eq Nat (add (add zero y) z) (add zero (add y z))
                 //   by reduction
                 // Eq Nat (add y z) (add y z)
-                eq (add y z)
+                eq Nat (add y z)
             }
             succ x2 => {
                 // Eq Nat (add (add (succ x2) y) z) (add (succ x2) (add y z))
@@ -55,7 +55,7 @@
                 // with Eq Nat (add (add x2 y) z) (add x2 (add y z))
                 let t : Eq Nat (add (add x2 y) z) (add x2 (add y z)) = f x2 y z;
                 match t {
-                    eq s => eq (succ s)
+                    eq _ s => eq Nat (succ s)
                 }
             }
         }

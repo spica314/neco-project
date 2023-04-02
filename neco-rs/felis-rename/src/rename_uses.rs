@@ -72,15 +72,6 @@ fn rename_uses_type_def(
         let c = defs_table.get(b).unwrap();
         resolver.set(a.to_string(), *c).unwrap();
     }
-    // args
-    for arg in &type_def.args {
-        let a = arg.name.as_str();
-        let b = arg.name.syn_tree_id();
-        let c = *defs_table.get(b).unwrap();
-        resolver.set(a.to_string(), c).unwrap();
-        let table = rename_uses_type(&arg.ty, defs_table, resolver, path_table)?;
-        res.merge_mut(table);
-    }
     // variants
     for variant in &type_def.variants {
         resolver.enter_scope();
@@ -521,33 +512,6 @@ mod test {
         let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
         // Prop, Prop, And, A, B, Or, A, B, x, conj, or_introl, l
         assert_eq!(uses_table.len(), 12);
-    }
-
-    #[test]
-    fn felis_rename_uses_test_3() {
-        let s = std::fs::read_to_string("../../library/wip/prop2.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
-        /* def */
-        let defs_table = rename_defs_file(&file).unwrap();
-        // [file], And, A, B, conj, Or, A, B, or_introl, or_intror, theorem1, A, B, proof, A, B, x, l, r
-        assert_eq!(defs_table.len(), 19);
-        /* path */
-        let path_table = construct_path_table_syn_file(&file, &defs_table).unwrap();
-        assert_eq!(path_table.len(), 3);
-        /* use */
-        let mut resolver = Resolver::new();
-        resolver.set("Prop".to_string(), SerialId::new()).unwrap();
-        resolver.set("And".to_string(), SerialId::new()).unwrap();
-        resolver.set("Or".to_string(), SerialId::new()).unwrap();
-        resolver.set("conj".to_string(), SerialId::new()).unwrap();
-        resolver
-            .set("or_introl".to_string(), SerialId::new())
-            .unwrap();
-        let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
-        // (8) Prop, Prop, Prop, A, B, And A, B,
-        // (11) Prop, Prop, Prop, A, Or, A, B, B, Or, A, B,
-        // (20) Prop, Prop, And, A, B, Or, A, B, Prop, Prop, And, A, B, Or, A, B, x, conj, or_introl, l
-        assert_eq!(uses_table.len(), 39);
     }
 
     #[test]

@@ -70,7 +70,7 @@ mod test {
 
     #[test]
     fn felis_syn_file_parse_test_1() {
-        let s = std::fs::read_to_string("../../library/wip/prop2.fe").unwrap();
+        let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
         let mut parser = Parser::new();
         let res = parser.parse::<SynFile>(&s);
         assert!(res.is_ok());

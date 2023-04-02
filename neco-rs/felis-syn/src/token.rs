@@ -573,12 +573,12 @@ mod test {
 
     #[test]
     fn felis_syn_lex_test_1() {
-        let s = std::fs::read_to_string("../../library/wip/prop2.fe").unwrap();
+        let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
         let cs: Vec<_> = s.chars().collect();
         let file_id = FileId(0);
         let (tokens, table) = lex(file_id, &cs).unwrap();
         eprintln!("tokens = {tokens:#?}");
-        assert_eq!(tokens.len(), 120);
+        assert_eq!(tokens.len(), 148);
         assert_eq!(table.len(), tokens.len());
     }
 

@@ -152,18 +152,6 @@ mod test {
     }
 
     #[test]
-    fn felis_construct_path_table_test_3() {
-        let s = std::fs::read_to_string("../../library/wip/prop2.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
-        let def_table = rename_defs_file(&file).unwrap();
-        // [file] And, A, B, conj, Or, A, B, or_introl, or_intror, theorem1, A, B, proof, A, B, x, l, r
-        assert_eq!(def_table.len(), 19);
-        let path_table = construct_path_table_syn_file(&file, &def_table).unwrap();
-        // [file] -> (And, Or, theorem1), And -> conj, Or -> (or_introl, or_intror)
-        assert_eq!(path_table.len(), 3);
-    }
-
-    #[test]
     fn felis_construct_path_table_test_4() {
         let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();

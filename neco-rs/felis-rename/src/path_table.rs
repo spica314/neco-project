@@ -6,6 +6,7 @@ use felis_syn::{
     syn_theorem_def::SynTheoremDef,
     syn_type_def::SynTypeDef,
 };
+use neco_resolver::Resolver;
 use neco_table::define_wrapper_of_table;
 
 use crate::{SerialId, SerialIdTable};
@@ -24,6 +25,14 @@ impl PathTableItem {
 }
 
 define_wrapper_of_table!(PathTable, SerialId, PathTableItem);
+
+impl PathTable {
+    pub fn setup_resolver(&self, file: SerialId, resolver: &mut Resolver<SerialId>) {
+        for item in &self.get(file).unwrap().children {
+            resolver.set(item.0.clone(), *item.1).unwrap();
+        }
+    }
+}
 
 pub fn construct_path_table_syn_file(
     file: &SynFile,

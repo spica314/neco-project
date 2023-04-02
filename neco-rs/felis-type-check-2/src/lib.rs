@@ -151,7 +151,8 @@ pub fn type_check_syn_type_def(
 #[cfg(test)]
 mod test {
     use felis_rename::{
-        rename_defs::rename_defs_file, rename_uses::rename_uses_file, SerialId, SerialIdTable,
+        path_table::construct_path_table_syn_file, rename_defs::rename_defs_file,
+        rename_uses::rename_uses_file, SerialId, SerialIdTable,
     };
     use felis_syn::test_utils::parse_from_str;
     use felis_term::{TermDependentMap, TermMap, TermStar};
@@ -165,11 +166,13 @@ mod test {
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
+        /* path */
+        let path_table = construct_path_table_syn_file(&file, &defs_table).unwrap();
         /* use */
         let mut resolver = Resolver::new();
         let prop_id = SerialId::new();
         resolver.set("Prop".to_string(), prop_id).unwrap();
-        let uses_table = rename_uses_file(&file, &defs_table, resolver).unwrap();
+        let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
         let mut rename_table = SerialIdTable::new();
         rename_table.merge_mut(defs_table);
         rename_table.merge_mut(uses_table);
@@ -220,11 +223,13 @@ mod test {
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
+        /* path */
+        let path_table = construct_path_table_syn_file(&file, &defs_table).unwrap();
         /* use */
         let mut resolver = Resolver::new();
         let prop_id = SerialId::new();
         resolver.set("Prop".to_string(), prop_id).unwrap();
-        let uses_table = rename_uses_file(&file, &defs_table, resolver).unwrap();
+        let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
         /* merge def and use */
         let mut rename_table = SerialIdTable::new();
         rename_table.merge_mut(defs_table);

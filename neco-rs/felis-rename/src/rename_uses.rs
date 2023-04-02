@@ -427,8 +427,8 @@ mod test {
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
-        // A, hoge
-        assert_eq!(defs_table.len(), 2);
+        // [file], A, hoge
+        assert_eq!(defs_table.len(), 3);
         /* use */
         let mut resolver = Resolver::new();
         let a = SerialId::new();
@@ -444,8 +444,8 @@ mod test {
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
-        // proof, A, B, x, l, r
-        assert_eq!(defs_table.len(), 6);
+        // [file], proof, A, B, x, l, r
+        assert_eq!(defs_table.len(), 7);
         /* use */
         let mut resolver = Resolver::new();
         resolver.set("Prop".to_string(), SerialId::new()).unwrap();
@@ -466,8 +466,8 @@ mod test {
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
-        // And, A, B, conj, Or, A, B, or_introl, or_intror, theorem1, A, B, proof, A, B, x, l, r
-        assert_eq!(defs_table.len(), 18);
+        // [file], And, A, B, conj, Or, A, B, or_introl, or_intror, theorem1, A, B, proof, A, B, x, l, r
+        assert_eq!(defs_table.len(), 19);
         /* use */
         let mut resolver = Resolver::new();
         resolver.set("Prop".to_string(), SerialId::new()).unwrap();
@@ -490,8 +490,8 @@ mod test {
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
-        // And, conj, A, B
-        assert_eq!(defs_table.len(), 4);
+        // [file], And, conj, A, B
+        assert_eq!(defs_table.len(), 5);
         /* use */
         let mut resolver = Resolver::new();
         resolver.set("Prop".to_string(), SerialId::new()).unwrap();

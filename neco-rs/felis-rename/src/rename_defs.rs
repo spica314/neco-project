@@ -11,6 +11,7 @@ use crate::{SerialId, SerialIdTable};
 
 pub fn rename_defs_file(file: &SynFile) -> Result<SerialIdTable, ()> {
     let mut res = SerialIdTable::new();
+    res.insert(file.syn_tree_id(), SerialId::new());
     for item in &file.items {
         let table = rename_defs_file_item(item)?;
         res.merge_mut(table);
@@ -165,8 +166,8 @@ mod test {
         let s = "#type A : Prop { hoge : A, }";
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         let table = rename_defs_file(&file).unwrap();
-        // A, hoge
-        assert_eq!(table.len(), 2);
+        // [file], A, hoge
+        assert_eq!(table.len(), 3);
     }
 
     #[test]
@@ -174,8 +175,8 @@ mod test {
         let s = std::fs::read_to_string("../../library/wip/fn_def.fe").unwrap();
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         let table = rename_defs_file(&file).unwrap();
-        // proof, A, B, x, l, r
-        assert_eq!(table.len(), 6);
+        // [file], proof, A, B, x, l, r
+        assert_eq!(table.len(), 7);
     }
 
     #[test]
@@ -183,8 +184,8 @@ mod test {
         let s = std::fs::read_to_string("../../library/wip/prop2.fe").unwrap();
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         let table = rename_defs_file(&file).unwrap();
-        // And, A, B, conj, Or, A, B, or_introl, or_intror, theorem1, A, B, proof, A, B, x, l, r
-        assert_eq!(table.len(), 18);
+        // [file] And, A, B, conj, Or, A, B, or_introl, or_intror, theorem1, A, B, proof, A, B, x, l, r
+        assert_eq!(table.len(), 19);
     }
 
     #[test]
@@ -192,9 +193,10 @@ mod test {
         let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
         let table = rename_defs_file(&file).unwrap();
+        // (1) [file]
         // (4) And, conj, A, B
         // (7) Or or_introl, A, B, or_intror, A, B
         // (9) theorem1, A, B, proof, A, B, x, l, r
-        assert_eq!(table.len(), 20);
+        assert_eq!(table.len(), 21);
     }
 }

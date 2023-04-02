@@ -24,6 +24,12 @@ impl PathTableItem {
     }
 }
 
+impl Default for PathTableItem {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 define_wrapper_of_table!(PathTable, SerialId, PathTableItem);
 
 impl PathTable {
@@ -102,16 +108,16 @@ fn construct_path_table_syn_type_def(
 }
 
 fn construct_path_table_syn_fn_def(
-    fn_def: &SynFnDef,
-    rename_table: &SerialIdTable,
-    path_table: &mut PathTable,
+    _fn_def: &SynFnDef,
+    _rename_table: &SerialIdTable,
+    _path_table: &mut PathTable,
 ) {
 }
 
 fn construct_path_table_syn_theorem_def(
-    theorem_def: &SynTheoremDef,
-    rename_table: &SerialIdTable,
-    path_table: &mut PathTable,
+    _theorem_def: &SynTheoremDef,
+    _rename_table: &SerialIdTable,
+    _path_table: &mut PathTable,
 ) {
 }
 

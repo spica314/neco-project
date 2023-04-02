@@ -238,7 +238,7 @@ fn rename_uses_expr_ident(
     expr_ident: &SynExprIdent,
     _defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
-    path_table: &PathTable,
+    _path_table: &PathTable,
 ) -> Result<SerialIdTable, ()> {
     let mut res = SerialIdTable::new();
     let a = expr_ident.ident.as_str();
@@ -399,7 +399,7 @@ fn rename_uses_type_atom(
     type_atom: &SynTypeAtom,
     _defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
-    path_table: &PathTable,
+    _path_table: &PathTable,
 ) -> Result<SerialIdTable, ()> {
     let mut res = SerialIdTable::new();
     let Some(id) = resolver.get(type_atom.ident.as_str()) else {
@@ -473,8 +473,6 @@ fn rename_uses_type_paren(
 
 #[cfg(test)]
 mod test {
-    use std::path;
-
     use super::*;
 
     use crate::{path_table::construct_path_table_syn_file, rename_defs::*};

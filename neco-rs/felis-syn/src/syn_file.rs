@@ -1,11 +1,18 @@
 use crate::{
     parse::Parse, syn_fn_def::SynFnDef, syn_theorem_def::SynTheoremDef, syn_type_def::SynTypeDef,
-    token::Token,
+    token::Token, SynTreeId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynFile {
+    id: SynTreeId,
     pub items: Vec<SynFileItem>,
+}
+
+impl SynFile {
+    pub fn syn_tree_id(&self) -> SynTreeId {
+        self.id
+    }
 }
 
 impl Parse for SynFile {
@@ -18,7 +25,10 @@ impl Parse for SynFile {
         }
 
         *i = k;
-        Ok(Some(SynFile { items }))
+        Ok(Some(SynFile {
+            id: SynTreeId::new(),
+            items,
+        }))
     }
 }
 

@@ -61,10 +61,10 @@ fn rename_defs_fn_def(fn_def: &SynFnDef) -> Result<SerialIdTable, ()> {
         let id = SerialId::new();
         table.insert(fn_def.name.syn_tree_id(), id);
     }
-    // args
-    for arg in &fn_def.args {
-        let id = SerialId::new();
-        table.insert(arg.name.syn_tree_id(), id);
+    // ty
+    {
+        let t = rename_defs_type(&fn_def.ty).unwrap();
+        table.merge_mut(t);
     }
     // statements
     for statement in &fn_def.fn_block.statements {

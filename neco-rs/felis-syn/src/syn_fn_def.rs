@@ -3,16 +3,15 @@ use crate::{
     syn_expr::SynExpr,
     syn_type::SynType,
     syn_typed_arg::SynTypedArg,
-    token::{Token, TokenArrow, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
+    token::{Token, TokenArrow, TokenColon, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynFnDef {
     pub keyword_fn: TokenKeyword,
     pub name: TokenIdent,
-    pub args: Vec<SynTypedArg>,
-    pub arrow: TokenArrow,
-    pub res_ty: SynType,
+    pub colon: TokenColon,
+    pub ty: SynType,
     pub fn_block: SynFnBlock,
 }
 
@@ -31,16 +30,11 @@ impl Parse for SynFnDef {
             return Err(());
         };
 
-        let mut args = vec![];
-        while let Some(arg) = SynTypedArg::parse(tokens, &mut k)? {
-            args.push(arg);
-        }
-
-        let Some(arrow) = TokenArrow::parse(tokens, &mut k)? else {
+        let Some(colon) = TokenColon::parse(tokens, &mut k)? else {
             return Err(());
         };
 
-        let Some(res_ty) = SynType::parse(tokens, &mut k)? else {
+        let Some(ty) = SynType::parse(tokens, &mut k)? else {
             return Err(());
         };
 
@@ -52,9 +46,8 @@ impl Parse for SynFnDef {
         Ok(Some(SynFnDef {
             keyword_fn,
             name,
-            args,
-            arrow,
-            res_ty,
+            colon,
+            ty,
             fn_block,
         }))
     }
@@ -119,7 +112,7 @@ mod test {
 
     #[test]
     fn felis_syn_fn_def_parse_test_1() {
-        let s = "#fn f -> T { }";
+        let s = "#fn f : T { }";
         let mut parser = Parser::new();
         let res = parser.parse::<SynFnDef>(&s);
         assert!(res.is_ok());
@@ -127,13 +120,13 @@ mod test {
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.name.ident.as_str(), "f");
-        assert_eq!(res.args.len(), 0);
+        assert_eq!(res.ty.to_felis_string(), "T");
         assert_eq!(res.fn_block.statements.len(), 0);
     }
 
     #[test]
     fn felis_syn_fn_def_parse_test_2() {
-        let s = "#fn f -> T { x }";
+        let s = "#fn f : T { x }";
         let mut parser = Parser::new();
         let res = parser.parse::<SynFnDef>(&s);
         assert!(res.is_ok());
@@ -141,14 +134,14 @@ mod test {
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.name.ident.as_str(), "f");
-        assert_eq!(res.args.len(), 0);
+        assert_eq!(res.ty.to_felis_string(), "T");
         assert_eq!(res.fn_block.statements.len(), 1);
         // todo: check expr
     }
 
     #[test]
     fn felis_syn_fn_def_parse_test_3() {
-        let s = "#fn f (x : T) -> T { x }";
+        let s = "#fn f : (x : T) -> T { x }";
         let mut parser = Parser::new();
         let res = parser.parse::<SynFnDef>(&s);
         assert!(res.is_ok());
@@ -156,8 +149,7 @@ mod test {
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.name.ident.as_str(), "f");
-        assert_eq!(res.args.len(), 1);
-        assert_eq!(res.args[0].to_felis_string(), "(x : T)");
+        assert_eq!(res.ty.to_felis_string(), "(x : T) -> T");
         assert_eq!(res.fn_block.statements.len(), 1);
         // todo: check expr
     }
@@ -172,11 +164,10 @@ mod test {
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.name.ident.as_str(), "proof");
-        assert_eq!(res.args.len(), 3);
-        assert_eq!(res.args[0].to_felis_string(), "(A : Prop)");
-        assert_eq!(res.args[1].to_felis_string(), "(B : Prop)");
-        assert_eq!(res.args[2].to_felis_string(), "(x : And A B)");
-        assert_eq!(res.res_ty.to_felis_string(), "Or A B");
+        assert_eq!(
+            res.ty.to_felis_string(),
+            "(A : Prop) -> (B : Prop) -> (x : And A B) -> Or A B"
+        );
         assert_eq!(res.fn_block.statements.len(), 1);
         // todo: check expr
     }

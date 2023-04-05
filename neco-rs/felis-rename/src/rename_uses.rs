@@ -91,14 +91,9 @@ fn rename_uses_fn_def(
 ) -> Result<SerialIdTable, ()> {
     resolver.enter_scope();
     let mut res = SerialIdTable::new();
-    // args
-    for arg in &fn_def.args {
-        let table = rename_uses_typed_arg(arg, defs_table, resolver, path_table)?;
-        res.merge_mut(table);
-    }
-    // ret_ty
+    // ty
     {
-        let table = rename_uses_type(&fn_def.res_ty, defs_table, resolver, path_table)?;
+        let table = rename_uses_type(&fn_def.ty, defs_table, resolver, path_table)?;
         res.merge_mut(table);
     }
     // block

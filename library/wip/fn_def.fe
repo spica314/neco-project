@@ -1,4 +1,4 @@
-#fn proof (A : Prop) (B : Prop) (x : And A B) -> Or A B {
+#fn proof : (A : Prop) -> (B : Prop) -> (x : And A B) -> Or A B {
     #match x {
         conj l r => or_introl l,
     }

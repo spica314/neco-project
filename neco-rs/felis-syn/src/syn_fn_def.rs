@@ -2,8 +2,7 @@ use crate::{
     parse::Parse,
     syn_expr::SynExpr,
     syn_type::SynType,
-    syn_typed_arg::SynTypedArg,
-    token::{Token, TokenArrow, TokenColon, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
+    token::{Token, TokenColon, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

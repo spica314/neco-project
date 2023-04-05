@@ -19,7 +19,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: default
-          toolchain: nightly
+          toolchain: stable
           override: true
       - name: cargo fmt
         run: cargo fmt --all -- --check
@@ -37,7 +37,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: default
-          toolchain: nightly
+          toolchain: stable
           override: true
       - name: Test
         run: cargo test --workspace --offline

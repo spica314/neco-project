@@ -46,6 +46,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "felis-type-defs"
+version = "0.1.0"
+dependencies = [
+ "felis-rename",
+ "felis-syn",
+ "neco-table",
+]
+
+[[package]]
 name = "neco"
 version = "0.1.0"
 dependencies = [

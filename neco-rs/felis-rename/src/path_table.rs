@@ -159,8 +159,8 @@ mod test {
         // (1) [file]
         // (4) And, conj, A, B
         // (7) Or or_introl, A, B, or_intror, A, B
-        // (9) theorem1, A, B, proof, A, B, x, l, r
-        assert_eq!(def_table.len(), 21);
+        // (11) theorem1, A, B, proof, A, B, x, _, _, l, r
+        assert_eq!(def_table.len(), 23);
         let path_table = construct_path_table_syn_file(&file, &def_table).unwrap();
         // [file] -> (And, Or, theorem1), And -> (conj), Or -> (or_introl, or_intror)
         assert_eq!(path_table.len(), 3);

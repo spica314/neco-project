@@ -15,6 +15,7 @@ pub enum Term {
     Map(TermMap),
     DependentMap(TermDependentMap),
     App(TermApp),
+    Match(TermMatch),
 }
 
 impl IsTerm for Term {
@@ -25,6 +26,7 @@ impl IsTerm for Term {
             Term::Map(map) => map.level(),
             Term::DependentMap(dep_map) => dep_map.level(),
             Term::App(app) => app.level(),
+            Term::Match(term_match) => term_match.level(),
         }
     }
 }
@@ -165,3 +167,17 @@ pub struct TypedTerm {
     pub term: Term,
     pub ty: Term,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TermMatch {
+    pub expr: Box<Term>,
+    pub arms: Vec<(SerialId, Vec<SerialId>, Term)>,
+}
+
+impl IsTerm for TermMatch {
+    fn level(&self) -> usize {
+        self.arms[0].2.level()
+    }
+}
+
+impl TermMatch {}

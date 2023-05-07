@@ -182,7 +182,7 @@ mod test {
         // (1) [file]
         // (4) And, conj, A, B
         // (7) Or or_introl, A, B, or_intror, A, B
-        // (9) theorem1, A, B, proof, A, B, x, l, r
-        assert_eq!(table.len(), 21);
+        // (11) theorem1, A, B, proof, A, B, x, _, _, l, r
+        assert_eq!(table.len(), 23);
     }
 }

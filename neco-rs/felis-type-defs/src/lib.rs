@@ -69,8 +69,8 @@ mod test {
         // (1) [file]
         // (4) And, conj, A, B
         // (7) Or or_introl, A, B, or_intror, A, B
-        // (9) theorem1, A, B, proof, A, B, x, l, r
-        assert_eq!(rename_table.len(), 21);
+        // (11) theorem1, A, B, proof, A, B, x, _, _, l, r
+        assert_eq!(rename_table.len(), 23);
 
         let type_def_table = gen_type_def_table_file(&file, &rename_table);
 

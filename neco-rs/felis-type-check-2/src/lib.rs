@@ -8,7 +8,9 @@ use felis_syn::{
     syn_type_def::SynTypeDef,
     SynTreeId,
 };
-use felis_term::{IsTerm, Term, TermApp, TermAtom, TermDependentMap, TermMap, TermStar, TypedTerm};
+use felis_term::{
+    IsTerm, Term, TermApp, TermAtom, TermDependentMap, TermMap, TermMatch, TermStar, TypedTerm,
+};
 use felis_type_defs::{TypeDef, TypeDefTable};
 use neco_table::define_wrapper_of_table;
 
@@ -105,7 +107,57 @@ pub fn type_check_syn_expr(
             typed_term_table,
             typed_term_table_for_atom,
         ),
-        SynExpr::App(_) => todo!(),
+        SynExpr::App(app) => {
+            eprintln!("app = {:?}", app);
+            let terms: Vec<_> = app
+                .exprs
+                .iter()
+                .map(|expr| {
+                    let expr_typed = type_check_syn_expr(
+                        &expr,
+                        rename_table,
+                        typed_term_table,
+                        typed_term_table_for_atom,
+                        type_def_table,
+                    );
+                    expr_typed
+                })
+                .collect();
+            eprintln!("terms = {:?}", terms);
+            let mut ty = terms[0].ty.clone();
+            for arg in &terms[1..] {
+                match &ty {
+                    Term::Map(map) => {
+                        // if map.from.as_ref() != &arg.ty {
+                        //     eprintln!("map = {:?}, arg = {:?}", map, arg);
+                        //     panic!();
+                        // }
+                        ty = map.to.as_ref().clone();
+                    }
+                    Term::DependentMap(dep_map) => {
+                        // if dep_map.from.1.as_ref() != &arg.ty {
+                        //     panic!();
+                        // }
+                        ty = dep_map.to.as_ref().clone();
+                    }
+                    _ => panic!(),
+                }
+            }
+            let mut app = TermApp {
+                fun: Box::new(terms[0].term.clone()),
+                arg: Box::new(terms[1].term.clone()),
+            };
+            for term in &terms[2..] {
+                app = TermApp {
+                    fun: Box::new(Term::App(app)),
+                    arg: Box::new(term.term.clone()),
+                };
+            }
+            TypedTerm {
+                term: Term::App(app),
+                ty,
+            }
+        }
         SynExpr::Match(expr_match) => type_check_syn_expr_match(
             expr_match,
             rename_table,
@@ -147,6 +199,7 @@ fn calc_type_of_term(term: &Term, typed_term_table_for_atom: &mut TypedTermTable
                 _ => panic!(),
             }
         }
+        Term::Match(term_match) => todo!(),
     }
 }
 
@@ -211,7 +264,69 @@ pub fn type_check_syn_expr_match(
         }
     }
 
-    todo!()
+    let mut arms = vec![];
+    let mut arm_type = vec![];
+    for arm in &expr_match.arms {
+        let a = *rename_table
+            .get(arm.pattern.type_constructor.ident.syn_tree_id())
+            .unwrap();
+        let ty_a = typed_term_table_for_atom.get(a).unwrap();
+        eprintln!("ty_a = {:?}", ty_a);
+        let b: Vec<_> = arm
+            .pattern
+            .idents
+            .iter()
+            .map(|x| *rename_table.get(x.syn_tree_id()).unwrap())
+            .collect();
+        {
+            let mut ty = ty_a.ty.clone();
+            for &b in &b {
+                match &ty {
+                    Term::Map(map) => {
+                        let from = &map.from;
+                        typed_term_table_for_atom.insert(
+                            b,
+                            TypedTerm {
+                                term: Term::Atom(TermAtom::new(from.level() - 1, b)),
+                                ty: from.as_ref().clone(),
+                            },
+                        );
+                        ty = map.to.as_ref().clone();
+                    }
+                    Term::DependentMap(dep_map) => {
+                        let from = &dep_map.from;
+                        typed_term_table_for_atom.insert(
+                            b,
+                            TypedTerm {
+                                term: Term::Atom(TermAtom::new(from.1.level() - 1, b)),
+                                ty: from.1.as_ref().clone(),
+                            },
+                        );
+                        ty = dep_map.to.as_ref().clone();
+                    }
+                    _ => panic!(),
+                }
+            }
+        }
+        let arm_expr_typed = type_check_syn_expr(
+            &arm.expr,
+            rename_table,
+            typed_term_table,
+            typed_term_table_for_atom,
+            type_def_table,
+        );
+        arm_type.push(arm_expr_typed.ty.clone());
+        arms.push((a, b, arm_expr_typed.term));
+    }
+
+    let term_match = TermMatch {
+        expr: Box::new(expr_typed.term.clone()),
+        arms,
+    };
+    TypedTerm {
+        term: Term::Match(term_match),
+        ty: arm_type[0].clone(),
+    }
 }
 
 pub fn type_check_syn_type(
@@ -611,7 +726,7 @@ mod test {
         );
     }
 
-    // #[test]
+    #[test]
     fn type_check_test_3() {
         let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
         let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
@@ -620,8 +735,8 @@ mod test {
         // (1) [file]
         // (4) And, conj, A, B
         // (7) Or, or_introl, A, B, or_intror, A, B
-        // (9) theorem1, A, B, proof, A, B, x, l, r
-        assert_eq!(defs_table.len(), 21);
+        // (11) theorem1, A, B, proof, A, B, x, _, _, l, r
+        assert_eq!(defs_table.len(), 23);
         /* path */
         let path_table = construct_path_table_syn_file(&file, &defs_table).unwrap();
         assert_eq!(path_table.len(), 3);
@@ -639,8 +754,8 @@ mod test {
         // (8) Prop, Prop, And A, B, Or, A, B
         // (8) Prop, Prop, And, A, B, Or, A, B
         // (1) x
-        // (3) And::conj, Or::or_introl, l
-        assert_eq!(uses_table.len(), 45);
+        // (5) And::conj, Or::or_introl, A, B, l
+        assert_eq!(uses_table.len(), 47);
         /* merge def and use */
         let mut rename_table = SerialIdTable::new();
         rename_table.merge_mut(defs_table);
@@ -662,6 +777,9 @@ mod test {
             &mut typed_term_table_for_atom,
             &type_def_table,
         );
-        assert_eq!(typed_term_table_for_atom.len(), 12);
+        // (4) And, conj, A, B
+        // (7) Or, or_introl, A, B, or_intror, A, B
+        // (8) proof, A, B, x, _, _, l, r
+        assert_eq!(typed_term_table_for_atom.len(), 19);
     }
 }

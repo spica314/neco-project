@@ -208,7 +208,7 @@ fn rename_uses_expr_match(
             let a = ident.as_str();
             let b = ident.syn_tree_id();
             let c = defs_table.get(b).unwrap();
-            resolver.set(a.to_string(), *c).unwrap();
+            resolver.set(a.to_string(), *c);
         }
         // expr
         {
@@ -538,8 +538,8 @@ mod test {
         // (1) [file]
         // (4) And, conj, A, B
         // (7) Or, or_introl, A, B, or_intror, A, B
-        // (9) theorem1, A, B, proof, A, B, x, l, r
-        assert_eq!(defs_table.len(), 21);
+        // (11) theorem1, A, B, proof, A, B, x, _, _, l, r
+        assert_eq!(defs_table.len(), 23);
         /* path */
         let path_table = construct_path_table_syn_file(&file, &defs_table).unwrap();
         assert_eq!(path_table.len(), 3);
@@ -556,7 +556,7 @@ mod test {
         // (8) Prop, Prop, And A, B, Or, A, B
         // (8) Prop, Prop, And, A, B, Or, A, B
         // (1) x
-        // (3) And::conj, Or::or_introl, l
-        assert_eq!(uses_table.len(), 45);
+        // (5) And::conj, Or::or_introl, A, B, l
+        assert_eq!(uses_table.len(), 47);
     }
 }

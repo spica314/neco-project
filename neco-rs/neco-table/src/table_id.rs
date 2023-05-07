@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct TableId {
     id: u64,
 }
@@ -32,7 +32,7 @@ impl TableId {
 #[macro_export]
 macro_rules! define_wrapper_of_table_id {
     ( $x:ident ) => {
-        #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
+        #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq, PartialOrd, Ord)]
         pub struct $x(pub(crate) $crate::TableId);
 
         impl From<$x> for $crate::TableId {

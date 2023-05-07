@@ -9,7 +9,7 @@ pub enum TypeDef {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeDefUser {
-    variants: Vec<SerialId>,
+    pub variants: Vec<SerialId>,
 }
 
 define_wrapper_of_table!(TypeDefTable, SerialId, TypeDef);

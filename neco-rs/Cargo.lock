@@ -41,6 +41,7 @@ dependencies = [
  "felis-rename",
  "felis-syn",
  "felis-term",
+ "felis-type-defs",
  "neco-resolver",
  "neco-table",
 ]

@@ -39,6 +39,9 @@ impl TermAtom {
     pub fn new(level: usize, id: SerialId) -> TermAtom {
         TermAtom { level, id }
     }
+    pub fn id(&self) -> SerialId {
+        self.id
+    }
 }
 
 impl From<TermAtom> for Term {

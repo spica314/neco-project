@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use felis_rename::{SerialId, SerialIdTable};
 use felis_syn::{
     syn_expr::{SynExpr, SynExprIdentWithPath, SynExprMatch},
@@ -89,6 +91,86 @@ pub fn type_check_syn_fn_def(
                 );
             }
         }
+    }
+}
+
+fn remap_term(remap: &(SerialId, Term), term: &Term) -> Term {
+    match term {
+        Term::Atom(atom) => {
+            if atom.id() == remap.0 {
+                remap.1.clone()
+            } else {
+                Term::Atom(atom.clone())
+            }
+        }
+        Term::Star(star) => Term::Star(star.clone()),
+        Term::Map(map) => {
+            let from = remap_term(remap, &map.from);
+            let to = remap_term(remap, &map.to);
+            let t = TermMap {
+                from: Box::new(from),
+                to: Box::new(to),
+            };
+            Term::Map(t)
+        }
+        Term::DependentMap(dep_map) => {
+            let from_atom = &dep_map.from.0;
+            let from_ty = remap_term(remap, &dep_map.from.1);
+            let to = remap_term(remap, &dep_map.to);
+            let t = TermDependentMap {
+                from: (from_atom.clone(), Box::new(from_ty)),
+                to: Box::new(to),
+            };
+            Term::DependentMap(t)
+        }
+        Term::App(app) => {
+            let fun = remap_term(remap, &app.fun);
+            let arg = remap_term(remap, &app.arg);
+            let t = TermApp {
+                fun: Box::new(fun),
+                arg: Box::new(arg),
+            };
+            Term::App(t)
+        }
+        Term::Match(term_match) => {
+            panic!()
+        }
+    }
+}
+
+pub fn compute_apped_typed_term(fun: &TypedTerm, arg: &TypedTerm) -> TypedTerm {
+    match &fun.ty {
+        Term::Map(map) => {
+            let from_ty = &map.from;
+            if from_ty.as_ref() != &arg.ty {
+                panic!();
+            }
+            let to_ty = &map.to;
+            let app = Term::App(TermApp {
+                fun: Box::new(fun.term.clone()),
+                arg: Box::new(arg.term.clone()),
+            });
+            TypedTerm {
+                term: app,
+                ty: to_ty.as_ref().clone(),
+            }
+        }
+        Term::DependentMap(dep_map) => {
+            let from_ty = &dep_map.from.1;
+            if from_ty.as_ref() != &arg.ty {
+                panic!();
+            }
+            let to_ty = remap_term(&(dep_map.from.0.id(), arg.term.clone()), &dep_map.to);
+            let app = Term::App(TermApp {
+                fun: Box::new(fun.term.clone()),
+                arg: Box::new(arg.term.clone()),
+            });
+            TypedTerm {
+                term: app,
+                ty: to_ty,
+            }
+        }
+        _ => panic!(),
     }
 }
 
@@ -528,6 +610,38 @@ mod test {
     use neco_resolver::Resolver;
 
     use super::*;
+
+    #[test]
+    fn compute_apped_typed_term_test_1() {
+        // { term: f, ty: (A : Prop) -> A } { term: X, ty: Prop }
+        let f_id = SerialId::new();
+        let a_id = SerialId::new();
+        let prop_id = SerialId::new();
+        let x_id = SerialId::new();
+        let fun = TypedTerm {
+            term: Term::Atom(TermAtom::new(0, f_id)),
+            ty: Term::DependentMap(TermDependentMap {
+                from: (
+                    TermAtom::new(1, a_id),
+                    Box::new(Term::Atom(TermAtom::new(2, prop_id))),
+                ),
+                to: Box::new(Term::Atom(TermAtom::new(1, a_id))),
+            }),
+        };
+        let arg = TypedTerm {
+            term: Term::Atom(TermAtom::new(1, x_id)),
+            ty: Term::Atom(TermAtom::new(2, prop_id)),
+        };
+        let res = compute_apped_typed_term(&fun, &arg);
+        let expected = TypedTerm {
+            term: Term::App(TermApp {
+                fun: Box::new(Term::Atom(TermAtom::new(0, f_id))),
+                arg: Box::new(Term::Atom(TermAtom::new(1, x_id))),
+            }),
+            ty: Term::Atom(TermAtom::new(1, x_id)),
+        };
+        assert_eq!(res, expected);
+    }
 
     #[test]
     fn type_check_test_1() {

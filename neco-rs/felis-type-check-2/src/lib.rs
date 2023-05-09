@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use felis_rename::{SerialId, SerialIdTable};
 use felis_syn::{
     syn_expr::{SynExpr, SynExprIdentWithPath, SynExprMatch},
@@ -132,7 +130,7 @@ fn remap_term(remap: &(SerialId, Term), term: &Term) -> Term {
             };
             Term::App(t)
         }
-        Term::Match(term_match) => {
+        Term::Match(_term_match) => {
             panic!()
         }
     }
@@ -195,14 +193,13 @@ pub fn type_check_syn_expr(
                 .exprs
                 .iter()
                 .map(|expr| {
-                    let expr_typed = type_check_syn_expr(
-                        &expr,
+                    type_check_syn_expr(
+                        expr,
                         rename_table,
                         typed_term_table,
                         typed_term_table_for_atom,
                         type_def_table,
-                    );
-                    expr_typed
+                    )
                 })
                 .collect();
             eprintln!("terms = {:?}", terms);
@@ -226,7 +223,7 @@ pub fn type_check_syn_expr(
 pub fn type_check_syn_expr_ident_with_path(
     expr_ident_with_path: &SynExprIdentWithPath,
     rename_table: &SerialIdTable,
-    typed_term_table: &mut TypedTermTable,
+    _typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
 ) -> TypedTerm {
     eprintln!("expr = {:?}", expr_ident_with_path);
@@ -253,7 +250,7 @@ fn calc_type_of_term(term: &Term, typed_term_table_for_atom: &mut TypedTermTable
                 _ => panic!(),
             }
         }
-        Term::Match(term_match) => todo!(),
+        Term::Match(_term_match) => todo!(),
     }
 }
 
@@ -306,7 +303,7 @@ pub fn type_check_syn_expr_match(
     if !matches!(expr_typed_ty_ty, Term::Atom(_)) {
         panic!();
     }
-    let type_serial_id = get_most_left_id(&expr_typed_ty);
+    let type_serial_id = get_most_left_id(expr_typed_ty);
     eprintln!("type_serial_id = {:?}", type_serial_id);
 
     let expr_match_arms: Vec<_> = expr_match
@@ -354,55 +351,18 @@ pub fn type_check_syn_expr_match(
             .collect();
         {
             let mut ty = ty_a.ty.clone();
-
-            let ty_args = {
-                let mut ty_args = vec![];
-                let mut ty = ty.clone();
-                eprintln!("ty = {:?}", ty);
-                loop {
-                    match &ty {
-                        Term::Atom(_atom) => {
-                            break;
-                        }
-                        Term::App(_app) => {
-                            break;
-                        }
-                        // Term::App(app) => {
-                        //     ty_args.push(app.arg.as_ref().clone());
-                        //     ty = app.fun.as_ref().clone();
-                        // },
-                        Term::Map(map) => {
-                            ty_args.push(map.from.as_ref().clone());
-                            ty = map.to.as_ref().clone();
-                        }
-                        Term::DependentMap(dep_map) => {
-                            ty_args.push(dep_map.from.1.as_ref().clone());
-                            ty = dep_map.to.as_ref().clone();
-                        }
-                        _ => panic!(),
+            let mut ty2 = ty.clone();
+            eprintln!("ty2 = {:?}", ty2);
+            for arg in &expr_typed_ty_args {
+                match &ty2 {
+                    Term::Map(map) => {
+                        ty2 = map.to.as_ref().clone();
                     }
-                }
-                ty_args.reverse();
-                ty_args
-            };
-            // assert_eq!(expr_typed_ty_args.len(), ty_args.len());
-            {
-                let mut ty2 = ty.clone();
-                eprintln!("ty2 = {:?}", ty2);
-                for i in 0..ty_args.len() {
-                    match &ty2 {
-                        Term::Map(map) => {
-                            ty2 = map.to.as_ref().clone();
-                        }
-                        Term::DependentMap(dep_map) => {
-                            ty = remap_term(
-                                &(dep_map.from.0.id(), expr_typed_ty_args[i].clone()),
-                                &ty,
-                            );
-                            ty2 = dep_map.to.as_ref().clone();
-                        }
-                        _ => panic!(),
+                    Term::DependentMap(dep_map) => {
+                        ty = remap_term(&(dep_map.from.0.id(), arg.clone()), &ty);
+                        ty2 = dep_map.to.as_ref().clone();
                     }
+                    _ => panic!(),
                 }
             }
 
@@ -591,7 +551,7 @@ pub fn type_check_syn_type_dep_map(
 pub fn type_check_syn_type_atom(
     ty_atom: &SynTypeAtom,
     rename_table: &SerialIdTable,
-    typed_term_table: &mut TypedTermTable,
+    _typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
 ) -> TypedTerm {
     let id = ty_atom.syn_tree_id();
@@ -604,7 +564,7 @@ pub fn type_check_syn_type_def(
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
-    type_def_table: &TypeDefTable,
+    _type_def_table: &TypeDefTable,
 ) {
     let typed_ty_ty = type_check_syn_type(
         &type_def.ty_ty,
@@ -698,7 +658,7 @@ mod test {
         /* use */
         let mut resolver = Resolver::new();
         let prop_id = SerialId::new();
-        resolver.set("Prop".to_string(), prop_id).unwrap();
+        resolver.set("Prop".to_string(), prop_id);
         let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
         let mut rename_table = SerialIdTable::new();
         rename_table.merge_mut(defs_table);
@@ -763,7 +723,7 @@ mod test {
         /* use */
         let mut resolver = Resolver::new();
         let prop_id = SerialId::new();
-        resolver.set("Prop".to_string(), prop_id).unwrap();
+        resolver.set("Prop".to_string(), prop_id);
         let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
         /* merge def and use */
         let mut rename_table = SerialIdTable::new();
@@ -901,7 +861,7 @@ mod test {
         /* use */
         let mut resolver = Resolver::new();
         let prop_id = SerialId::new();
-        resolver.set("Prop".to_string(), prop_id).unwrap();
+        resolver.set("Prop".to_string(), prop_id);
         path_table.setup_resolver(*defs_table.get(file.syn_tree_id()).unwrap(), &mut resolver);
         let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
         // (3) Prop, Prop, Prop

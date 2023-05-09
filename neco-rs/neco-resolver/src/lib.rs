@@ -19,13 +19,13 @@ impl<T> Scope<T> {
         res2
     }
 
-    fn set(&mut self, name: String, record: T) -> Result<(), ()> {
+    fn set(&mut self, name: String, record: T) -> Option<()> {
         if self.map.contains_key(&name) {
-            return Err(());
+            return Some(());
         }
         let i = self.map.len();
         self.map.insert(name, (i, record));
-        Ok(())
+        None
     }
 
     fn get(&self, name: &str) -> Option<&T> {
@@ -61,7 +61,7 @@ impl<T> Resolver<T> {
         scope.into_records()
     }
 
-    pub fn set(&mut self, name: String, record: T) -> Result<(), ()> {
+    pub fn set(&mut self, name: String, record: T) -> Option<()> {
         let top = self.scopes.last_mut().unwrap();
         top.set(name, record)
     }
@@ -89,9 +89,9 @@ mod test {
     #[test]
     fn test_resolver_1() {
         let mut resolver = Resolver::<i64>::new();
-        resolver.set("hoge".to_string(), 1).unwrap();
+        resolver.set("hoge".to_string(), 1);
         assert_eq!(resolver.get("hoge"), Some(&1));
-        resolver.set("fuga".to_string(), 2).unwrap();
+        resolver.set("fuga".to_string(), 2);
         assert_eq!(resolver.get("fuga"), Some(&2));
         assert_eq!(resolver.get("hoge"), Some(&1));
     }
@@ -99,9 +99,9 @@ mod test {
     #[test]
     fn test_resolver_2() {
         let mut resolver = Resolver::<i64>::new();
-        resolver.set("hoge".to_string(), 1).unwrap();
+        resolver.set("hoge".to_string(), 1);
         resolver.enter_scope();
-        resolver.set("hoge".to_string(), 2).unwrap();
+        resolver.set("hoge".to_string(), 2);
         assert_eq!(resolver.get("hoge"), Some(&2));
         let leaved = resolver.leave_scope();
         assert_eq!(leaved, vec![("hoge".to_string(), 2)]);
@@ -111,7 +111,7 @@ mod test {
     #[test]
     fn test_resolver_3() {
         let mut resolver = Resolver::<i64>::new();
-        resolver.set("hoge".to_string(), 1).unwrap();
-        assert!(resolver.set("hoge".to_string(), 1).is_err());
+        resolver.set("hoge".to_string(), 1);
+        assert!(resolver.set("hoge".to_string(), 1).is_some());
     }
 }

@@ -35,7 +35,7 @@ define_wrapper_of_table!(PathTable, SerialId, PathTableItem);
 impl PathTable {
     pub fn setup_resolver(&self, file: SerialId, resolver: &mut Resolver<SerialId>) {
         for item in &self.get(file).unwrap().children {
-            resolver.set(item.0.clone(), *item.1).unwrap();
+            resolver.set(item.0.clone(), *item.1);
         }
     }
 }

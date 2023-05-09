@@ -17,20 +17,17 @@ define_wrapper_of_table!(TypeDefTable, SerialId, TypeDef);
 pub fn gen_type_def_table_file(file: &SynFile, rename_table: &SerialIdTable) -> TypeDefTable {
     let mut res = TypeDefTable::new();
     for item in &file.items {
-        match item {
-            SynFileItem::TypeDef(type_def) => {
-                let id = type_def.name.syn_tree_id();
-                let id = *rename_table.get(id).unwrap();
-                let mut variants = vec![];
-                for variant in &type_def.variants {
-                    let v_id = variant.name.syn_tree_id();
-                    let v_id = *rename_table.get(v_id).unwrap();
-                    variants.push(v_id);
-                }
-                let def = TypeDefUser { variants };
-                res.insert(id, TypeDef::User(def));
+        if let SynFileItem::TypeDef(type_def) = item {
+            let id = type_def.name.syn_tree_id();
+            let id = *rename_table.get(id).unwrap();
+            let mut variants = vec![];
+            for variant in &type_def.variants {
+                let v_id = variant.name.syn_tree_id();
+                let v_id = *rename_table.get(v_id).unwrap();
+                variants.push(v_id);
             }
-            _ => {}
+            let def = TypeDefUser { variants };
+            res.insert(id, TypeDef::User(def));
         }
     }
     res

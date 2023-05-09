@@ -70,7 +70,7 @@ fn rename_uses_type_def(
         let a = type_def.name.as_str();
         let b = type_def.name.syn_tree_id();
         let c = defs_table.get(b).unwrap();
-        resolver.set(a.to_string(), *c).unwrap();
+        resolver.set(a.to_string(), *c);
     }
     // variants
     for variant in &type_def.variants {
@@ -330,7 +330,7 @@ fn rename_uses_typed_arg(
             panic!();
             // return Err(());
         };
-        resolver.set(b, *c).unwrap();
+        resolver.set(b, *c);
     }
     Ok(res)
 }
@@ -437,7 +437,7 @@ fn rename_uses_type_dep_map(
         let Some(c) = defs_table.get(a) else {
             panic!();
         };
-        resolver.set(b, *c).unwrap();
+        resolver.set(b, *c);
     }
     // 3
     {
@@ -478,7 +478,7 @@ mod test {
         /* use */
         let mut resolver = Resolver::new();
         let a = SerialId::new();
-        resolver.set("Prop".to_string(), a).unwrap();
+        resolver.set("Prop".to_string(), a);
         let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
         // Prop, A
         assert_eq!(uses_table.len(), 2);
@@ -497,13 +497,11 @@ mod test {
         assert_eq!(path_table.len(), 1);
         /* use */
         let mut resolver = Resolver::new();
-        resolver.set("Prop".to_string(), SerialId::new()).unwrap();
-        resolver.set("And".to_string(), SerialId::new()).unwrap();
-        resolver.set("Or".to_string(), SerialId::new()).unwrap();
-        resolver.set("conj".to_string(), SerialId::new()).unwrap();
-        resolver
-            .set("or_introl".to_string(), SerialId::new())
-            .unwrap();
+        resolver.set("Prop".to_string(), SerialId::new());
+        resolver.set("And".to_string(), SerialId::new());
+        resolver.set("Or".to_string(), SerialId::new());
+        resolver.set("conj".to_string(), SerialId::new());
+        resolver.set("or_introl".to_string(), SerialId::new());
         let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
         // Prop, Prop, And, A, B, Or, A, B, x, conj, or_introl, l
         assert_eq!(uses_table.len(), 12);
@@ -522,7 +520,7 @@ mod test {
         assert_eq!(path_table.len(), 2);
         /* use */
         let mut resolver = Resolver::new();
-        resolver.set("Prop".to_string(), SerialId::new()).unwrap();
+        resolver.set("Prop".to_string(), SerialId::new());
         let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
         // (3) Prop, Prop, Prop
         // (7) Prop, Prop, A, B, And, A, B
@@ -545,7 +543,7 @@ mod test {
         assert_eq!(path_table.len(), 3);
         /* use */
         let mut resolver = Resolver::new();
-        resolver.set("Prop".to_string(), SerialId::new()).unwrap();
+        resolver.set("Prop".to_string(), SerialId::new());
         path_table.setup_resolver(*defs_table.get(file.syn_tree_id()).unwrap(), &mut resolver);
         let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
         // (3) Prop, Prop, Prop

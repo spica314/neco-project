@@ -206,39 +206,11 @@ pub fn type_check_syn_expr(
                 })
                 .collect();
             eprintln!("terms = {:?}", terms);
-            let mut ty = terms[0].ty.clone();
+            let mut res = terms[0].clone();
             for arg in &terms[1..] {
-                match &ty {
-                    Term::Map(map) => {
-                        // if map.from.as_ref() != &arg.ty {
-                        //     eprintln!("map = {:?}, arg = {:?}", map, arg);
-                        //     panic!();
-                        // }
-                        ty = map.to.as_ref().clone();
-                    }
-                    Term::DependentMap(dep_map) => {
-                        // if dep_map.from.1.as_ref() != &arg.ty {
-                        //     panic!();
-                        // }
-                        ty = dep_map.to.as_ref().clone();
-                    }
-                    _ => panic!(),
-                }
+                res = compute_apped_typed_term(&res, arg);
             }
-            let mut app = TermApp {
-                fun: Box::new(terms[0].term.clone()),
-                arg: Box::new(terms[1].term.clone()),
-            };
-            for term in &terms[2..] {
-                app = TermApp {
-                    fun: Box::new(Term::App(app)),
-                    arg: Box::new(term.term.clone()),
-                };
-            }
-            TypedTerm {
-                term: Term::App(app),
-                ty,
-            }
+            res
         }
         SynExpr::Match(expr_match) => type_check_syn_expr_match(
             expr_match,
@@ -309,6 +281,26 @@ pub fn type_check_syn_expr_match(
     );
     let expr_typed_ty = &expr_typed.ty;
     eprintln!("expr_typed_ty = {:?}", expr_typed_ty);
+    let expr_typed_ty_args = {
+        let mut expr_typed_ty_args = vec![];
+        let mut ty = expr_typed_ty.clone();
+        loop {
+            match &ty {
+                Term::Atom(_atom) => {
+                    break;
+                }
+                Term::App(app) => {
+                    expr_typed_ty_args.push(app.arg.as_ref().clone());
+                    ty = app.fun.as_ref().clone();
+                }
+                _ => panic!(),
+            }
+        }
+        expr_typed_ty_args.reverse();
+        expr_typed_ty_args
+    };
+    eprintln!("expr_typed_ty_args = {:?}", expr_typed_ty_args);
+
     let expr_typed_ty_ty = calc_type_of_term(&expr_typed.ty, typed_term_table_for_atom);
     eprintln!("expr_typed_ty_ty = {:?}", expr_typed_ty_ty);
     if !matches!(expr_typed_ty_ty, Term::Atom(_)) {
@@ -362,6 +354,58 @@ pub fn type_check_syn_expr_match(
             .collect();
         {
             let mut ty = ty_a.ty.clone();
+
+            let ty_args = {
+                let mut ty_args = vec![];
+                let mut ty = ty.clone();
+                eprintln!("ty = {:?}", ty);
+                loop {
+                    match &ty {
+                        Term::Atom(_atom) => {
+                            break;
+                        }
+                        Term::App(_app) => {
+                            break;
+                        }
+                        // Term::App(app) => {
+                        //     ty_args.push(app.arg.as_ref().clone());
+                        //     ty = app.fun.as_ref().clone();
+                        // },
+                        Term::Map(map) => {
+                            ty_args.push(map.from.as_ref().clone());
+                            ty = map.to.as_ref().clone();
+                        }
+                        Term::DependentMap(dep_map) => {
+                            ty_args.push(dep_map.from.1.as_ref().clone());
+                            ty = dep_map.to.as_ref().clone();
+                        }
+                        _ => panic!(),
+                    }
+                }
+                ty_args.reverse();
+                ty_args
+            };
+            // assert_eq!(expr_typed_ty_args.len(), ty_args.len());
+            {
+                let mut ty2 = ty.clone();
+                eprintln!("ty2 = {:?}", ty2);
+                for i in 0..ty_args.len() {
+                    match &ty2 {
+                        Term::Map(map) => {
+                            ty2 = map.to.as_ref().clone();
+                        }
+                        Term::DependentMap(dep_map) => {
+                            ty = remap_term(
+                                &(dep_map.from.0.id(), expr_typed_ty_args[i].clone()),
+                                &ty,
+                            );
+                            ty2 = dep_map.to.as_ref().clone();
+                        }
+                        _ => panic!(),
+                    }
+                }
+            }
+
             for &b in &b {
                 match &ty {
                     Term::Map(map) => {

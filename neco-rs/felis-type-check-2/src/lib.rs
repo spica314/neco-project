@@ -216,7 +216,13 @@ pub fn type_check_syn_expr(
             typed_term_table_for_atom,
             type_def_table,
         ),
-        SynExpr::Paren(_) => todo!(),
+        SynExpr::Paren(expr_paren) => type_check_syn_expr(
+            &expr_paren.expr,
+            rename_table,
+            typed_term_table,
+            typed_term_table_for_atom,
+            type_def_table,
+        ),
     }
 }
 
@@ -899,5 +905,44 @@ mod test {
         // (7) Or, or_introl, A, B, or_intror, A, B
         // (8) proof, A, B, x, _, _, l, r
         assert_eq!(typed_term_table_for_atom.len(), 19);
+    }
+
+    #[test]
+    fn type_check_test_4() {
+        let s = std::fs::read_to_string("../../library/wip/prop5.fe").unwrap();
+        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        /* def */
+        let defs_table = rename_defs_file(&file).unwrap();
+        /* path */
+        let path_table = construct_path_table_syn_file(&file, &defs_table).unwrap();
+        /* use */
+        let mut resolver = Resolver::new();
+        let prop_id = SerialId::new();
+        resolver.set("Prop".to_string(), prop_id);
+        path_table.setup_resolver(*defs_table.get(file.syn_tree_id()).unwrap(), &mut resolver);
+        let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
+        /* merge def and use */
+        let mut rename_table = SerialIdTable::new();
+        rename_table.merge_mut(defs_table);
+        rename_table.merge_mut(uses_table);
+        let mut typed_term_table = TypedTermTable::new();
+        let mut typed_term_table_for_atom = TypedTermTableForAtom::new();
+        typed_term_table_for_atom.insert(
+            prop_id,
+            TypedTerm {
+                term: Term::Atom(TermAtom::new(2, prop_id)),
+                ty: TermStar::new(3).into(),
+            },
+        );
+        let type_def_table = gen_type_def_table_file(&file, &rename_table);
+        type_check_syn_file(
+            &file,
+            &rename_table,
+            &mut typed_term_table,
+            &mut typed_term_table_for_atom,
+            &type_def_table,
+        );
+        // proof, A, B, C, f, g, x
+        assert_eq!(typed_term_table_for_atom.len(), 7);
     }
 }

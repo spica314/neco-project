@@ -146,7 +146,9 @@ fn rename_uses_expr(
         SynExpr::Match(expr_match) => {
             rename_uses_expr_match(expr_match, defs_table, resolver, path_table)
         }
-        SynExpr::Paren(_expr_paren) => todo!(),
+        SynExpr::Paren(expr_paren) => {
+            rename_uses_expr(&expr_paren.expr, defs_table, resolver, path_table)
+        }
         SynExpr::IdentWithPath(expr_ident_with_path) => {
             rename_uses_expr_ident_with_path(expr_ident_with_path, defs_table, resolver, path_table)
         }

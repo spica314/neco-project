@@ -6,10 +6,12 @@ use felis_syn::{
     syn_theorem_def::SynTheoremDef,
     syn_type::{SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap},
     syn_type_def::SynTypeDef,
+    token::FilePos,
     SynTreeId,
 };
 use felis_term::{
-    IsTerm, Term, TermApp, TermAtom, TermDependentMap, TermMap, TermMatch, TermStar, TypedTerm,
+    compute_apped_typed_term, remap_term, IsTerm, Term, TermApp, TermAtom, TermDependentMap,
+    TermMap, TermMatch, TermStar, TypedTerm,
 };
 use felis_type_defs::{TypeDef, TypeDefTable};
 use neco_table::define_wrapper_of_table;
@@ -20,13 +22,18 @@ define_wrapper_of_table!(TypedTermTable, SynTreeId, TypedTerm);
 // Atomに対応するTypedTerm
 define_wrapper_of_table!(TypedTermTableForAtom, SerialId, TypedTerm);
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TypeCheckError {
+    TypeMismatched { expected_ty: Term, actual_ty: Term },
+}
+
 pub fn type_check_syn_file(
     file: &SynFile,
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
     type_def_table: &TypeDefTable,
-) {
+) -> Result<(), TypeCheckError> {
     for item in &file.items {
         match item {
             SynFileItem::TypeDef(type_def) => type_check_syn_type_def(
@@ -35,17 +42,18 @@ pub fn type_check_syn_file(
                 typed_term_table,
                 typed_term_table_for_atom,
                 type_def_table,
-            ),
+            )?,
             SynFileItem::TheoremDef(theorem_def) => type_check_syn_theorem_def(
                 theorem_def,
                 rename_table,
                 typed_term_table,
                 typed_term_table_for_atom,
                 type_def_table,
-            ),
+            )?,
             _ => unimplemented!(),
         }
     }
+    Ok(())
 }
 
 pub fn type_check_syn_theorem_def(
@@ -54,14 +62,14 @@ pub fn type_check_syn_theorem_def(
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
     type_def_table: &TypeDefTable,
-) {
+) -> Result<(), TypeCheckError> {
     type_check_syn_fn_def(
         &theorem_def.fn_def,
         rename_table,
         typed_term_table,
         typed_term_table_for_atom,
         type_def_table,
-    );
+    )
 }
 
 pub fn type_check_syn_fn_def(
@@ -70,7 +78,7 @@ pub fn type_check_syn_fn_def(
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
     type_def_table: &TypeDefTable,
-) {
+) -> Result<(), TypeCheckError> {
     type_check_syn_type(
         &fn_def.ty,
         rename_table,
@@ -86,90 +94,11 @@ pub fn type_check_syn_fn_def(
                     typed_term_table,
                     typed_term_table_for_atom,
                     type_def_table,
-                );
+                )?;
             }
         }
     }
-}
-
-fn remap_term(remap: &(SerialId, Term), term: &Term) -> Term {
-    match term {
-        Term::Atom(atom) => {
-            if atom.id() == remap.0 {
-                remap.1.clone()
-            } else {
-                Term::Atom(atom.clone())
-            }
-        }
-        Term::Star(star) => Term::Star(star.clone()),
-        Term::Map(map) => {
-            let from = remap_term(remap, &map.from);
-            let to = remap_term(remap, &map.to);
-            let t = TermMap {
-                from: Box::new(from),
-                to: Box::new(to),
-            };
-            Term::Map(t)
-        }
-        Term::DependentMap(dep_map) => {
-            let from_atom = &dep_map.from.0;
-            let from_ty = remap_term(remap, &dep_map.from.1);
-            let to = remap_term(remap, &dep_map.to);
-            let t = TermDependentMap {
-                from: (from_atom.clone(), Box::new(from_ty)),
-                to: Box::new(to),
-            };
-            Term::DependentMap(t)
-        }
-        Term::App(app) => {
-            let fun = remap_term(remap, &app.fun);
-            let arg = remap_term(remap, &app.arg);
-            let t = TermApp {
-                fun: Box::new(fun),
-                arg: Box::new(arg),
-            };
-            Term::App(t)
-        }
-        Term::Match(_term_match) => {
-            panic!()
-        }
-    }
-}
-
-pub fn compute_apped_typed_term(fun: &TypedTerm, arg: &TypedTerm) -> TypedTerm {
-    match &fun.ty {
-        Term::Map(map) => {
-            let from_ty = &map.from;
-            if from_ty.as_ref() != &arg.ty {
-                panic!();
-            }
-            let to_ty = &map.to;
-            let app = Term::App(TermApp {
-                fun: Box::new(fun.term.clone()),
-                arg: Box::new(arg.term.clone()),
-            });
-            TypedTerm {
-                term: app,
-                ty: to_ty.as_ref().clone(),
-            }
-        }
-        Term::DependentMap(dep_map) => {
-            let from_ty = &dep_map.from.1;
-            if from_ty.as_ref() != &arg.ty {
-                panic!();
-            }
-            let to_ty = remap_term(&(dep_map.from.0.id(), arg.term.clone()), &dep_map.to);
-            let app = Term::App(TermApp {
-                fun: Box::new(fun.term.clone()),
-                arg: Box::new(arg.term.clone()),
-            });
-            TypedTerm {
-                term: app,
-                ty: to_ty,
-            }
-        }
-        _ => panic!(),
-    }
+    Ok(())
 }
 
 pub fn type_check_syn_expr(
@@ -178,7 +107,7 @@ pub fn type_check_syn_expr(
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
     type_def_table: &TypeDefTable,
-) -> TypedTerm {
+) -> Result<TypedTerm, TypeCheckError> {
     match expr {
         SynExpr::Ident(_) => todo!(),
         SynExpr::IdentWithPath(expr_ident_with_path) => type_check_syn_expr_ident_with_path(
@@ -189,25 +118,33 @@ pub fn type_check_syn_expr(
         ),
         SynExpr::App(app) => {
             eprintln!("app = {:?}", app);
-            let terms: Vec<_> = app
-                .exprs
-                .iter()
-                .map(|expr| {
-                    type_check_syn_expr(
-                        expr,
-                        rename_table,
-                        typed_term_table,
-                        typed_term_table_for_atom,
-                        type_def_table,
-                    )
-                })
-                .collect();
+            let mut terms = vec![];
+            for expr in &app.exprs {
+                let term = type_check_syn_expr(
+                    expr,
+                    rename_table,
+                    typed_term_table,
+                    typed_term_table_for_atom,
+                    type_def_table,
+                )?;
+                terms.push(term);
+            }
             eprintln!("terms = {:?}", terms);
             let mut res = terms[0].clone();
-            for arg in &terms[1..] {
-                res = compute_apped_typed_term(&res, arg);
+            for (i, arg) in terms.iter().enumerate().skip(1) {
+                match compute_apped_typed_term(&res, arg) {
+                    Ok(r) => {
+                        res = r;
+                    }
+                    Err(err) => {
+                        return Err(TypeCheckError::TypeMismatched {
+                            expected_ty: err.expected_ty.clone(),
+                            actual_ty: err.actual_ty.clone(),
+                        });
+                    }
+                }
             }
-            res
+            Ok(res)
         }
         SynExpr::Match(expr_match) => type_check_syn_expr_match(
             expr_match,
@@ -231,12 +168,12 @@ pub fn type_check_syn_expr_ident_with_path(
     rename_table: &SerialIdTable,
     _typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
-) -> TypedTerm {
+) -> Result<TypedTerm, TypeCheckError> {
     eprintln!("expr = {:?}", expr_ident_with_path);
     let syn_tree_id = expr_ident_with_path.ident.syn_tree_id();
     let serial_id = *rename_table.get(syn_tree_id).unwrap();
     let typed_term = typed_term_table_for_atom.get(serial_id).unwrap().clone();
-    typed_term
+    Ok(typed_term)
 }
 
 fn calc_type_of_term(term: &Term, typed_term_table_for_atom: &mut TypedTermTableForAtom) -> Term {
@@ -274,14 +211,15 @@ pub fn type_check_syn_expr_match(
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
     type_def_table: &TypeDefTable,
-) -> TypedTerm {
+) -> Result<TypedTerm, TypeCheckError> {
     let expr_typed = type_check_syn_expr(
         &expr_match.expr,
         rename_table,
         typed_term_table,
         typed_term_table_for_atom,
         type_def_table,
-    );
+    )
+    .unwrap();
     let expr_typed_ty = &expr_typed.ty;
     eprintln!("expr_typed_ty = {:?}", expr_typed_ty);
     let expr_typed_ty_args = {
@@ -406,7 +344,8 @@ pub fn type_check_syn_expr_match(
             typed_term_table,
             typed_term_table_for_atom,
             type_def_table,
-        );
+        )
+        .unwrap();
         arm_type.push(arm_expr_typed.ty.clone());
         arms.push((a, b, arm_expr_typed.term));
     }
@@ -415,10 +354,10 @@ pub fn type_check_syn_expr_match(
         expr: Box::new(expr_typed.term.clone()),
         arms,
     };
-    TypedTerm {
+    Ok(TypedTerm {
         term: Term::Match(term_match),
         ty: arm_type[0].clone(),
-    }
+    })
 }
 
 pub fn type_check_syn_type(
@@ -571,7 +510,7 @@ pub fn type_check_syn_type_def(
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
     _type_def_table: &TypeDefTable,
-) {
+) -> Result<(), TypeCheckError> {
     let typed_ty_ty = type_check_syn_type(
         &type_def.ty_ty,
         rename_table,
@@ -606,6 +545,7 @@ pub fn type_check_syn_type_def(
         let typed_term = TypedTerm { term, ty };
         typed_term_table_for_atom.insert(id2, typed_term);
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -642,7 +582,7 @@ mod test {
             term: Term::Atom(TermAtom::new(1, x_id)),
             ty: Term::Atom(TermAtom::new(2, prop_id)),
         };
-        let res = compute_apped_typed_term(&fun, &arg);
+        let res = compute_apped_typed_term(&fun, &arg).unwrap();
         let expected = TypedTerm {
             term: Term::App(TermApp {
                 fun: Box::new(Term::Atom(TermAtom::new(0, f_id))),
@@ -685,7 +625,8 @@ mod test {
             &mut typed_term_table,
             &mut typed_term_table_for_atom,
             &type_def_table,
-        );
+        )
+        .unwrap();
         assert_eq!(typed_term_table_for_atom.len(), 3);
         // Prop : *
         assert_eq!(
@@ -751,7 +692,8 @@ mod test {
             &mut typed_term_table,
             &mut typed_term_table_for_atom,
             &type_def_table,
-        );
+        )
+        .unwrap();
         assert_eq!(
             typed_term_table_for_atom.len(),
             5,
@@ -900,7 +842,8 @@ mod test {
             &mut typed_term_table,
             &mut typed_term_table_for_atom,
             &type_def_table,
-        );
+        )
+        .unwrap();
         // (4) And, conj, A, B
         // (7) Or, or_introl, A, B, or_intror, A, B
         // (8) proof, A, B, x, _, _, l, r
@@ -941,6 +884,64 @@ mod test {
             &mut typed_term_table,
             &mut typed_term_table_for_atom,
             &type_def_table,
+        )
+        .unwrap();
+        // proof, A, B, C, f, g, x
+        assert_eq!(typed_term_table_for_atom.len(), 7);
+    }
+
+    #[test]
+    fn type_check_test_5() {
+        let s = std::fs::read_to_string("../../library/wip/prop5_error_1.fe").unwrap();
+        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        /* def */
+        let defs_table = rename_defs_file(&file).unwrap();
+        /* path */
+        let path_table = construct_path_table_syn_file(&file, &defs_table).unwrap();
+        /* use */
+        let mut resolver = Resolver::new();
+        let prop_id = SerialId::new();
+        resolver.set("Prop".to_string(), prop_id);
+        path_table.setup_resolver(*defs_table.get(file.syn_tree_id()).unwrap(), &mut resolver);
+        let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
+        /* merge def and use */
+        let mut rename_table = SerialIdTable::new();
+        rename_table.merge_mut(defs_table);
+        rename_table.merge_mut(uses_table);
+        let mut typed_term_table = TypedTermTable::new();
+        let mut typed_term_table_for_atom = TypedTermTableForAtom::new();
+        typed_term_table_for_atom.insert(
+            prop_id,
+            TypedTerm {
+                term: Term::Atom(TermAtom::new(2, prop_id)),
+                ty: TermStar::new(3).into(),
+            },
+        );
+        let type_def_table = gen_type_def_table_file(&file, &rename_table);
+
+        let t = file.items[0].clone();
+        let SynFileItem::TheoremDef(theorem_def) = t else { panic!(); };
+        let ty = theorem_def.fn_def.ty.clone();
+        let SynType::DependentMap(dep_map) = ty else { panic!(); };
+        let a_id = dep_map.from.name.syn_tree_id();
+        let a_id = rename_table.get(a_id).unwrap().clone();
+        let SynType::DependentMap(dep_map) = dep_map.to.as_ref().clone() else { panic!(); };
+        let b_id = dep_map.from.name.syn_tree_id();
+        let b_id = rename_table.get(b_id).unwrap().clone();
+
+        let res = type_check_syn_file(
+            &file,
+            &rename_table,
+            &mut typed_term_table,
+            &mut typed_term_table_for_atom,
+            &type_def_table,
+        );
+        assert_eq!(
+            res,
+            Err(TypeCheckError::TypeMismatched {
+                expected_ty: Term::Atom(TermAtom { level: 1, id: b_id }),
+                actual_ty: Term::Atom(TermAtom { level: 1, id: a_id }),
+            })
         );
         // proof, A, B, C, f, g, x
         assert_eq!(typed_term_table_for_atom.len(), 7);

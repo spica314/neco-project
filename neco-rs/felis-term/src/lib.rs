@@ -33,8 +33,8 @@ impl IsTerm for Term {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TermAtom {
-    level: usize,
-    id: SerialId,
+    pub level: usize,
+    pub id: SerialId,
 }
 
 impl TermAtom {
@@ -181,3 +181,98 @@ impl IsTerm for TermMatch {
 }
 
 impl TermMatch {}
+
+pub fn remap_term(remap: &(SerialId, Term), term: &Term) -> Term {
+    match term {
+        Term::Atom(atom) => {
+            if atom.id() == remap.0 {
+                remap.1.clone()
+            } else {
+                Term::Atom(atom.clone())
+            }
+        }
+        Term::Star(star) => Term::Star(star.clone()),
+        Term::Map(map) => {
+            let from = remap_term(remap, &map.from);
+            let to = remap_term(remap, &map.to);
+            let t = TermMap {
+                from: Box::new(from),
+                to: Box::new(to),
+            };
+            Term::Map(t)
+        }
+        Term::DependentMap(dep_map) => {
+            let from_atom = &dep_map.from.0;
+            let from_ty = remap_term(remap, &dep_map.from.1);
+            let to = remap_term(remap, &dep_map.to);
+            let t = TermDependentMap {
+                from: (from_atom.clone(), Box::new(from_ty)),
+                to: Box::new(to),
+            };
+            Term::DependentMap(t)
+        }
+        Term::App(app) => {
+            let fun = remap_term(remap, &app.fun);
+            let arg = remap_term(remap, &app.arg);
+            let t = TermApp {
+                fun: Box::new(fun),
+                arg: Box::new(arg),
+            };
+            Term::App(t)
+        }
+        Term::Match(_term_match) => {
+            panic!()
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ComputeAppedTypedTermError {
+    pub expected_ty: Term,
+    pub actual_ty: Term,
+}
+
+pub fn compute_apped_typed_term(
+    fun: &TypedTerm,
+    arg: &TypedTerm,
+) -> Result<TypedTerm, ComputeAppedTypedTermError> {
+    match &fun.ty {
+        Term::Map(map) => {
+            let from_ty = &map.from;
+            if from_ty.as_ref() != &arg.ty {
+                return Err(ComputeAppedTypedTermError {
+                    expected_ty: from_ty.as_ref().clone(),
+                    actual_ty: arg.ty.clone(),
+                });
+            }
+            let to_ty = &map.to;
+            let app = Term::App(TermApp {
+                fun: Box::new(fun.term.clone()),
+                arg: Box::new(arg.term.clone()),
+            });
+            Ok(TypedTerm {
+                term: app,
+                ty: to_ty.as_ref().clone(),
+            })
+        }
+        Term::DependentMap(dep_map) => {
+            let from_ty = &dep_map.from.1;
+            if from_ty.as_ref() != &arg.ty {
+                return Err(ComputeAppedTypedTermError {
+                    expected_ty: from_ty.as_ref().clone(),
+                    actual_ty: arg.ty.clone(),
+                });
+            }
+            let to_ty = remap_term(&(dep_map.from.0.id(), arg.term.clone()), &dep_map.to);
+            let app = Term::App(TermApp {
+                fun: Box::new(fun.term.clone()),
+                arg: Box::new(arg.term.clone()),
+            });
+            Ok(TypedTerm {
+                term: app,
+                ty: to_ty,
+            })
+        }
+        _ => panic!(),
+    }
+}

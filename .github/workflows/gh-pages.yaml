@@ -40,7 +40,7 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Create llvm-cov report
-        run: cargo llvm-cov test --html --output-dir ../pages/llvm-cov
+        run: cargo llvm-cov test --html --output-dir ../pages/llvm-cov --offline
         working-directory: neco-rs
 
       # upload

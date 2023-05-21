@@ -29,7 +29,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # llvm-cov
+      # Setup Rust
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -37,11 +37,30 @@ jobs:
           toolchain: stable
           override: true
           components: llvm-tools-preview
+
+      # Setup mdbook
+      - name: Setup mdBook
+        uses: peaceiris/actions-mdbook@v1
+        with:
+          mdbook-version: 'latest'
+
+      # index.html
+      - name: Copy index.html
+        run: cp pages-src/index.html pages
+
+      # create llvm-cov report
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Create llvm-cov report
         run: cargo llvm-cov test --html --output-dir ../pages/llvm-cov --offline
         working-directory: neco-rs
+
+      # create the-felis-programming-language
+      - name: Build 'The Felis Programming Language'
+        run: |
+          mdbook build
+          cp -r book ../../pages/the-felis-programming-language
+        working-directory: pages-src/the-felis-programming-language
 
       # upload
       - name: Upload artifact

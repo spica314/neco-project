@@ -1,0 +1,6 @@
+[book]
+authors = ["Masato Mori"]
+language = "en"
+multilingual = false
+src = "src"
+title = "The Felis Programming Language"

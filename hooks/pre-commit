@@ -24,5 +24,14 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+cd $REPOSITORY_PATH/pages-src/the-felis-programming-language
+
+mdbook build
+
+if [ $? -ne 0 ]; then
+    echo -e "\033[31;1mpre-commit failed: failed to build mdbook\033[m"
+    exit 1
+fi
+
 echo -e "\033[32;1mpre-commit: success\033[m"
 exit 0

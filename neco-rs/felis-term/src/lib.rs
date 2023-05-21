@@ -21,8 +21,8 @@ pub enum Term {
 impl Term {
     pub fn final_return_type(&self) -> Term {
         match self {
-            Term::Map(map) => map.to.final_return_type().clone(),
-            Term::DependentMap(dep_map) => dep_map.to.final_return_type().clone(),
+            Term::Map(map) => map.to.final_return_type(),
+            Term::DependentMap(dep_map) => dep_map.to.final_return_type(),
             _ => self.clone(),
         }
     }

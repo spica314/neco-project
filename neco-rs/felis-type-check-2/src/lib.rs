@@ -6,7 +6,6 @@ use felis_syn::{
     syn_theorem_def::SynTheoremDef,
     syn_type::{SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap},
     syn_type_def::SynTypeDef,
-    token::FilePos,
     SynTreeId,
 };
 use felis_term::{
@@ -103,8 +102,8 @@ pub fn type_check_syn_fn_def(
     if let Some(final_ty) = final_ty {
         if final_ty.ty != final_return_type {
             return Err(TypeCheckError::TypeMismatched {
-                expected_ty: final_return_type.clone(),
-                actual_ty: final_ty.ty.clone(),
+                expected_ty: final_return_type,
+                actual_ty: final_ty.ty,
             });
         }
     }
@@ -141,15 +140,15 @@ pub fn type_check_syn_expr(
             }
             eprintln!("terms = {:?}", terms);
             let mut res = terms[0].clone();
-            for (i, arg) in terms.iter().enumerate().skip(1) {
+            for arg in &terms[1..] {
                 match compute_apped_typed_term(&res, arg) {
                     Ok(r) => {
                         res = r;
                     }
                     Err(err) => {
                         return Err(TypeCheckError::TypeMismatched {
-                            expected_ty: err.expected_ty.clone(),
-                            actual_ty: err.actual_ty.clone(),
+                            expected_ty: err.expected_ty,
+                            actual_ty: err.actual_ty,
                         });
                     }
                 }

@@ -79,23 +79,33 @@ pub fn type_check_syn_fn_def(
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
     type_def_table: &TypeDefTable,
 ) -> Result<(), TypeCheckError> {
-    type_check_syn_type(
+    let ty = type_check_syn_type(
         &fn_def.ty,
         rename_table,
         typed_term_table,
         typed_term_table_for_atom,
     );
+    let final_return_type = ty.term.final_return_type();
+    let mut final_ty = None;
     for statement in &fn_def.fn_block.statements {
         match statement {
             felis_syn::syn_fn_def::SynStatement::Expr(expr) => {
-                type_check_syn_expr(
+                final_ty = Some(type_check_syn_expr(
                     expr,
                     rename_table,
                     typed_term_table,
                     typed_term_table_for_atom,
                     type_def_table,
-                )?;
+                )?);
             }
+        }
+    }
+    if let Some(final_ty) = final_ty {
+        if final_ty.ty != final_return_type {
+            return Err(TypeCheckError::TypeMismatched {
+                expected_ty: final_return_type.clone(),
+                actual_ty: final_ty.ty.clone(),
+            });
         }
     }
     Ok(())
@@ -945,5 +955,106 @@ mod test {
         );
         // proof, A, B, C, f, g, x
         assert_eq!(typed_term_table_for_atom.len(), 7);
+    }
+
+    #[test]
+    fn type_check_test_6() {
+        let s = std::fs::read_to_string("../../library/wip/prop6.fe").unwrap();
+        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        /* def */
+        let defs_table = rename_defs_file(&file).unwrap();
+        /* path */
+        let path_table = construct_path_table_syn_file(&file, &defs_table).unwrap();
+        /* use */
+        let mut resolver = Resolver::new();
+        let prop_id = SerialId::new();
+        resolver.set("Prop".to_string(), prop_id);
+        path_table.setup_resolver(*defs_table.get(file.syn_tree_id()).unwrap(), &mut resolver);
+        let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
+        /* merge def and use */
+        let mut rename_table = SerialIdTable::new();
+        rename_table.merge_mut(defs_table);
+        rename_table.merge_mut(uses_table);
+        let mut typed_term_table = TypedTermTable::new();
+        let mut typed_term_table_for_atom = TypedTermTableForAtom::new();
+        typed_term_table_for_atom.insert(
+            prop_id,
+            TypedTerm {
+                term: Term::Atom(TermAtom::new(2, prop_id)),
+                ty: TermStar::new(3).into(),
+            },
+        );
+        let type_def_table = gen_type_def_table_file(&file, &rename_table);
+        type_check_syn_file(
+            &file,
+            &rename_table,
+            &mut typed_term_table,
+            &mut typed_term_table_for_atom,
+            &type_def_table,
+        )
+        .unwrap();
+        // (5) Exists, exists, A, p, x
+        // (6) proof, A, B, p, e, f
+        // (3) _, _, x
+        assert_eq!(typed_term_table_for_atom.len(), 14);
+    }
+
+    #[test]
+    fn type_check_test_7() {
+        let s = std::fs::read_to_string("../../library/wip/prop6_error_1.fe").unwrap();
+        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        /* def */
+        let defs_table = rename_defs_file(&file).unwrap();
+        /* path */
+        let path_table = construct_path_table_syn_file(&file, &defs_table).unwrap();
+        /* use */
+        let mut resolver = Resolver::new();
+        let prop_id = SerialId::new();
+        resolver.set("Prop".to_string(), prop_id);
+        path_table.setup_resolver(*defs_table.get(file.syn_tree_id()).unwrap(), &mut resolver);
+        let uses_table = rename_uses_file(&file, &defs_table, resolver, &path_table).unwrap();
+        /* merge def and use */
+        let mut rename_table = SerialIdTable::new();
+        rename_table.merge_mut(defs_table);
+        rename_table.merge_mut(uses_table);
+        let mut typed_term_table = TypedTermTable::new();
+        let mut typed_term_table_for_atom = TypedTermTableForAtom::new();
+        typed_term_table_for_atom.insert(
+            prop_id,
+            TypedTerm {
+                term: Term::Atom(TermAtom::new(2, prop_id)),
+                ty: TermStar::new(3).into(),
+            },
+        );
+        let type_def_table = gen_type_def_table_file(&file, &rename_table);
+
+        let t = file.items[1].clone();
+        let SynFileItem::TheoremDef(theorem_def) = t else { panic!(); };
+        let ty = theorem_def.fn_def.ty.clone();
+        let SynType::DependentMap(dep_map) = ty else { panic!(); };
+        let a_id = dep_map.from.name.syn_tree_id();
+        let a_id = rename_table.get(a_id).unwrap().clone();
+        let SynType::DependentMap(dep_map) = dep_map.to.as_ref().clone() else { panic!(); };
+        let b_id = dep_map.from.name.syn_tree_id();
+        let b_id = rename_table.get(b_id).unwrap().clone();
+
+        let res = type_check_syn_file(
+            &file,
+            &rename_table,
+            &mut typed_term_table,
+            &mut typed_term_table_for_atom,
+            &type_def_table,
+        );
+        assert_eq!(
+            res,
+            Err(TypeCheckError::TypeMismatched {
+                expected_ty: Term::Atom(TermAtom { level: 1, id: b_id }),
+                actual_ty: Term::Atom(TermAtom { level: 1, id: a_id }),
+            })
+        );
+        // (5) Exists, exists, A, p, x
+        // (6) proof, A, B, p, e, f
+        // (3) _, _, x
+        assert_eq!(typed_term_table_for_atom.len(), 14);
     }
 }

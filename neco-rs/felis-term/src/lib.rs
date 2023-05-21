@@ -18,6 +18,16 @@ pub enum Term {
     Match(TermMatch),
 }
 
+impl Term {
+    pub fn final_return_type(&self) -> Term {
+        match self {
+            Term::Map(map) => map.to.final_return_type().clone(),
+            Term::DependentMap(dep_map) => dep_map.to.final_return_type().clone(),
+            _ => self.clone(),
+        }
+    }
+}
+
 impl IsTerm for Term {
     fn level(&self) -> usize {
         match self {

@@ -1,6 +1,6 @@
 # neco-project
 
-Hobbyist-created compiler and programming language (Felis)
+Hobbyist-created compiler (neco) and programming language (Felis)
 
 ## License
 

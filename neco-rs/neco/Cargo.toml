@@ -7,4 +7,10 @@ license = "MIT OR Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+felis-rename = { workspace = true }
+felis-syn = { workspace = true }
+felis-term = { workspace = true }
+felis-type-defs = { workspace = true }
+felis-type-check-2 = { workspace = true }
 neco-resolver = { workspace = true }
+neco-table = { workspace = true }

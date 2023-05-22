@@ -577,7 +577,6 @@ mod test {
         let cs: Vec<_> = s.chars().collect();
         let file_id = FileId(0);
         let (tokens, table) = lex(file_id, &cs).unwrap();
-        eprintln!("tokens = {tokens:#?}");
         assert_eq!(tokens.len(), 155);
         assert_eq!(table.len(), tokens.len());
     }

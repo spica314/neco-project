@@ -126,7 +126,6 @@ pub fn type_check_syn_expr(
             typed_term_table_for_atom,
         ),
         SynExpr::App(app) => {
-            eprintln!("app = {:?}", app);
             let mut terms = vec![];
             for expr in &app.exprs {
                 let term = type_check_syn_expr(
@@ -138,7 +137,6 @@ pub fn type_check_syn_expr(
                 )?;
                 terms.push(term);
             }
-            eprintln!("terms = {:?}", terms);
             let mut res = terms[0].clone();
             for arg in &terms[1..] {
                 match compute_apped_typed_term(&res, arg) {
@@ -178,7 +176,6 @@ pub fn type_check_syn_expr_ident_with_path(
     _typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
 ) -> Result<TypedTerm, TypeCheckError> {
-    eprintln!("expr = {:?}", expr_ident_with_path);
     let syn_tree_id = expr_ident_with_path.ident.syn_tree_id();
     let serial_id = *rename_table.get(syn_tree_id).unwrap();
     let typed_term = typed_term_table_for_atom.get(serial_id).unwrap().clone();
@@ -194,7 +191,6 @@ fn calc_type_of_term(term: &Term, typed_term_table_for_atom: &mut TypedTermTable
             calc_type_of_term(&dependent_map.to, typed_term_table_for_atom)
         }
         Term::App(app) => {
-            eprintln!("app = {:?}", app);
             // todo: check
             match calc_type_of_term(app.fun.as_ref(), typed_term_table_for_atom) {
                 Term::Map(map) => map.to.as_ref().clone(),
@@ -230,7 +226,6 @@ pub fn type_check_syn_expr_match(
     )
     .unwrap();
     let expr_typed_ty = &expr_typed.ty;
-    eprintln!("expr_typed_ty = {:?}", expr_typed_ty);
     let expr_typed_ty_args = {
         let mut expr_typed_ty_args = vec![];
         let mut ty = expr_typed_ty.clone();
@@ -249,15 +244,12 @@ pub fn type_check_syn_expr_match(
         expr_typed_ty_args.reverse();
         expr_typed_ty_args
     };
-    eprintln!("expr_typed_ty_args = {:?}", expr_typed_ty_args);
 
     let expr_typed_ty_ty = calc_type_of_term(&expr_typed.ty, typed_term_table_for_atom);
-    eprintln!("expr_typed_ty_ty = {:?}", expr_typed_ty_ty);
     if !matches!(expr_typed_ty_ty, Term::Atom(_)) {
         panic!();
     }
     let type_serial_id = get_most_left_id(expr_typed_ty);
-    eprintln!("type_serial_id = {:?}", type_serial_id);
 
     let expr_match_arms: Vec<_> = expr_match
         .arms
@@ -269,12 +261,10 @@ pub fn type_check_syn_expr_match(
         })
         .cloned()
         .collect();
-    eprintln!("expr_match_arms = {:?}", expr_match_arms);
 
     let type_def = type_def_table.get(type_serial_id).unwrap();
     let TypeDef::User(type_def_user) = type_def;
     let type_def_arms = type_def_user.variants.clone();
-    eprintln!("type_def_arms = {:?}", type_def_arms);
 
     {
         let mut expr_match_arms = expr_match_arms;
@@ -295,7 +285,6 @@ pub fn type_check_syn_expr_match(
             .get(arm.pattern.type_constructor.ident.syn_tree_id())
             .unwrap();
         let ty_a = typed_term_table_for_atom.get(a).unwrap();
-        eprintln!("ty_a = {:?}", ty_a);
         let b: Vec<_> = arm
             .pattern
             .idents
@@ -305,7 +294,6 @@ pub fn type_check_syn_expr_match(
         {
             let mut ty = ty_a.ty.clone();
             let mut ty2 = ty.clone();
-            eprintln!("ty2 = {:?}", ty2);
             for arg in &expr_typed_ty_args {
                 match &ty2 {
                     Term::Map(map) => {

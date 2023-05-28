@@ -144,13 +144,6 @@ fn rename_defs_theorem_def(theorem_def: &SynTheoremDef) -> Result<SerialIdTable,
 fn rename_defs_type(ty: &SynType) -> Result<SerialIdTable, ()> {
     let mut table = SerialIdTable::new();
     match ty {
-        SynType::Forall(type_forall) => {
-            let id = SerialId::new();
-            table.insert(type_forall.typed_arg.name.syn_tree_id(), id);
-
-            let table2 = rename_defs_type(&type_forall.ty)?;
-            table.merge_mut(table2);
-        }
         SynType::App(_) => {}
         SynType::Atom(_) => {}
         SynType::Map(_) => {}

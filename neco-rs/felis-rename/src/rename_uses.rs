@@ -7,12 +7,8 @@ use felis_syn::{
         SynFormulaParen,
     },
     syn_theorem_def::SynTheoremDef,
-    syn_type::{
-        SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeForall, SynTypeMap,
-        SynTypeParen,
-    },
+    syn_type::{SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen},
     syn_type_def::SynTypeDef,
-    syn_typed_arg::SynTypedArg,
 };
 use neco_resolver::Resolver;
 
@@ -409,9 +405,6 @@ fn rename_uses_type(
     path_table: &PathTable,
 ) -> Result<SerialIdTable, ()> {
     match ty {
-        SynType::Forall(type_forall) => {
-            rename_uses_type_forall(type_forall, defs_table, resolver, path_table)
-        }
         SynType::App(type_app) => rename_uses_type_app(type_app, defs_table, resolver, path_table),
         SynType::Atom(type_atom) => {
             rename_uses_type_atom(type_atom, defs_table, resolver, path_table)
@@ -424,56 +417,6 @@ fn rename_uses_type(
             rename_uses_type_dep_map(type_dep_map, defs_table, resolver, path_table)
         }
     }
-}
-
-fn rename_uses_typed_arg(
-    typed_arg: &SynTypedArg,
-    defs_table: &SerialIdTable,
-    resolver: &mut Resolver<SerialId>,
-    path_table: &PathTable,
-) -> Result<SerialIdTable, ()> {
-    let mut res = SerialIdTable::new();
-    // 1
-    {
-        let table = rename_uses_type(&typed_arg.ty, defs_table, resolver, path_table)?;
-        res.merge_mut(table);
-    }
-
-    // 2
-    {
-        let a = typed_arg.name.syn_tree_id();
-        let b = typed_arg.name.as_str().to_string();
-        let Some(c) = defs_table.get(a) else {
-            panic!();
-            // return Err(());
-        };
-        resolver.set(b, *c);
-    }
-    Ok(res)
-}
-
-// #forall (name^{2,def} : <Type>^{1}), <Type>^{3}
-fn rename_uses_type_forall(
-    type_forall: &SynTypeForall,
-    defs_table: &SerialIdTable,
-    resolver: &mut Resolver<SerialId>,
-    path_table: &PathTable,
-) -> Result<SerialIdTable, ()> {
-    let mut res = SerialIdTable::new();
-    // 1
-    {
-        let table =
-            rename_uses_typed_arg(&type_forall.typed_arg, defs_table, resolver, path_table)?;
-        res.merge_mut(table);
-    }
-
-    // 3
-    {
-        let table = rename_uses_type(&type_forall.ty, defs_table, resolver, path_table)?;
-        res.merge_mut(table);
-    }
-
-    Ok(res)
 }
 
 // X^{1} X^{2}

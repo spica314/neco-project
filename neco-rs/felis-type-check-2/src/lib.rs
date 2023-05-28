@@ -364,7 +364,6 @@ pub fn type_check_syn_type(
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
 ) -> TypedTerm {
     match ty {
-        SynType::Forall(_) => todo!(),
         SynType::App(app) => type_check_syn_type_app(
             app,
             rename_table,

@@ -2,14 +2,12 @@ use crate::{
     parse::Parse,
     syn_typed_arg::SynTypedArg,
     to_felis_string::ToFelisString,
-    token::{Token, TokenArrow, TokenCamma, TokenIdent, TokenKeyword, TokenLParen, TokenRParen},
+    token::{Token, TokenArrow, TokenIdent, TokenLParen, TokenRParen},
     SynTreeId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SynType {
-    // #forall (A : Prop), A -> B
-    Forall(SynTypeForall),
     // And A B
     App(SynTypeApp),
     // A
@@ -25,7 +23,6 @@ pub enum SynType {
 impl SynType {
     pub fn syn_tree_id(&self) -> SynTreeId {
         match self {
-            SynType::Forall(_) => todo!(),
             SynType::App(app) => app.syn_tree_id(),
             SynType::Atom(atom) => atom.syn_tree_id(),
             SynType::Map(map) => map.syn_tree_id(),
@@ -44,13 +41,6 @@ impl SynType {
 impl ToFelisString for SynType {
     fn to_felis_string(&self) -> String {
         match self {
-            SynType::Forall(forall) => {
-                format!(
-                    "#forall {}, {}",
-                    forall.typed_arg.to_felis_string(),
-                    forall.ty.to_felis_string()
-                )
-            }
             SynType::App(app) => {
                 format!(
                     "{} {}",
@@ -84,11 +74,6 @@ impl Parse for SynType {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
-        if let Some(forall) = SynTypeForall::parse(tokens, &mut k)? {
-            *i = k;
-            return Ok(Some(SynType::Forall(forall)));
-        }
-
         if let Some(dependent_map) = SynTypeDependentMap::parse(tokens, &mut k)? {
             *i = k;
             return Ok(Some(SynType::DependentMap(dependent_map)));
@@ -113,47 +98,6 @@ impl Parse for SynType {
 
         *i = k;
         Ok(Some(res))
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynTypeForall {
-    pub keyword_forall: TokenKeyword,
-    pub typed_arg: Box<SynTypedArg>,
-    pub camma: TokenCamma,
-    pub ty: Box<SynType>,
-}
-
-impl Parse for SynTypeForall {
-    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
-        let mut k = *i;
-
-        let Some(keyword_forall) = TokenKeyword::parse(tokens, &mut k)? else {
-            return Ok(None);
-        };
-        if keyword_forall.keyword != "#forall" {
-            return Ok(None);
-        }
-
-        let Some(typed_arg) = SynTypedArg::parse(tokens, &mut k)? else {
-            return Err(());
-        };
-
-        let Some(camma) = TokenCamma::parse(tokens, &mut k)? else {
-            return Err(());
-        };
-
-        let Some(ty) = SynType::parse(tokens, &mut k)? else {
-            return Err(());
-        };
-
-        *i = k;
-        Ok(Some(SynTypeForall {
-            keyword_forall,
-            typed_arg: Box::new(typed_arg),
-            camma,
-            ty: Box::new(ty),
-        }))
     }
 }
 
@@ -417,29 +361,26 @@ mod test {
 
     #[test]
     fn felis_syn_type_parse_test_3() {
-        let s = "#forall (A : Prop), Hoge A";
+        let s = "(A : Prop) -> Hoge A";
         let mut parser = Parser::new();
         let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
-        assert_eq!(res.to_felis_string(), "#forall (A : Prop), Hoge A");
+        assert_eq!(res.to_felis_string(), s);
     }
 
     #[test]
     fn felis_syn_type_parse_test_4() {
-        let s = "#forall (A : Prop), #forall (B : Prop), And A B -> Or A B";
+        let s = "(A : Prop) -> (B : Prop) -> And A B -> Or A B";
         let mut parser = Parser::new();
         let res = parser.parse::<SynType>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
-        assert_eq!(
-            res.to_felis_string(),
-            "#forall (A : Prop), #forall (B : Prop), And A B -> Or A B"
-        );
+        assert_eq!(res.to_felis_string(), s);
     }
 
     #[test]

@@ -2,6 +2,10 @@ use felis_syn::{
     syn_expr::{SynExpr, SynExprApp, SynExprIdent, SynExprIdentWithPath, SynExprMatch},
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::{SynFnBlock, SynFnDef, SynStatement},
+    syn_formula::{
+        SynFormula, SynFormulaApp, SynFormulaAtom, SynFormulaForall, SynFormulaImplies,
+        SynFormulaParen,
+    },
     syn_theorem_def::SynTheoremDef,
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeForall, SynTypeMap,
@@ -265,6 +269,108 @@ fn rename_uses_expr_ident_with_path(
     Ok(res)
 }
 
+fn rename_uses_formula(
+    ty: &SynFormula,
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+    path_table: &PathTable,
+) -> Result<SerialIdTable, ()> {
+    match ty {
+        SynFormula::Forall(forall) => {
+            rename_uses_formula_forall(forall, defs_table, resolver, path_table)
+        }
+        SynFormula::App(app) => rename_uses_formula_app(app, defs_table, resolver, path_table),
+        SynFormula::Atom(atom) => rename_uses_formula_atom(atom, defs_table, resolver, path_table),
+        SynFormula::Implies(implies) => {
+            rename_uses_formula_implies(implies, defs_table, resolver, path_table)
+        }
+        SynFormula::Paren(paren) => {
+            rename_uses_formula_paren(paren, defs_table, resolver, path_table)
+        }
+    }
+}
+
+fn rename_uses_formula_forall(
+    forall: &SynFormulaForall,
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+    path_table: &PathTable,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
+    // 1
+    {
+        let table = rename_uses_formula(&forall.ty, defs_table, resolver, path_table)?;
+        res.merge_mut(table);
+    }
+    // 2
+    {
+        let a = forall.name.syn_tree_id();
+        let b = forall.name.as_str().to_string();
+        let Some(c) = defs_table.get(a) else {
+            panic!();
+        };
+        resolver.set(b, *c);
+    }
+    // 3
+    {
+        let table = rename_uses_formula(&forall.child, defs_table, resolver, path_table)?;
+        res.merge_mut(table);
+    }
+    Ok(res)
+}
+
+fn rename_uses_formula_app(
+    app: &SynFormulaApp,
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+    path_table: &PathTable,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
+    {
+        let table = rename_uses_formula(&app.fun, defs_table, resolver, path_table)?;
+        res.merge_mut(table);
+    }
+    {
+        let table = rename_uses_formula(&app.arg, defs_table, resolver, path_table)?;
+        res.merge_mut(table);
+    }
+    Ok(res)
+}
+
+fn rename_uses_formula_atom(
+    atom: &SynFormulaAtom,
+    _defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+    _path_table: &PathTable,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
+    let a = atom.ident.as_str();
+    let b = atom.ident.syn_tree_id();
+    let Some(c) = resolver.get(a) else {
+        panic!("unknown ident {a}");
+    };
+    res.insert(b, *c);
+    Ok(res)
+}
+
+fn rename_uses_formula_implies(
+    implies: &SynFormulaImplies,
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+    path_table: &PathTable,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
+    {
+        let table = rename_uses_formula(&implies.lhs, defs_table, resolver, path_table)?;
+        res.merge_mut(table);
+    }
+    {
+        let table = rename_uses_formula(&implies.rhs, defs_table, resolver, path_table)?;
+        res.merge_mut(table);
+    }
+    Ok(res)
+}
+
 fn rename_uses_theorem_def(
     theorem_def: &SynTheoremDef,
     defs_table: &SerialIdTable,
@@ -275,7 +381,7 @@ fn rename_uses_theorem_def(
     resolver.enter_scope();
     // ty
     {
-        let table = rename_uses_type(&theorem_def.ty, defs_table, resolver, path_table)?;
+        let table = rename_uses_formula(&theorem_def.formula, defs_table, resolver, path_table)?;
         res.merge_mut(table);
     }
     // fn
@@ -285,6 +391,15 @@ fn rename_uses_theorem_def(
     }
     resolver.leave_scope();
     Ok(res)
+}
+
+fn rename_uses_formula_paren(
+    paren: &SynFormulaParen,
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+    path_table: &PathTable,
+) -> Result<SerialIdTable, ()> {
+    rename_uses_formula(&paren.child, defs_table, resolver, path_table)
 }
 
 fn rename_uses_type(

@@ -312,6 +312,24 @@ pub struct TokenInfo {
 
 define_wrapper_of_table!(TokenInfoTable, SynTreeId, TokenInfo);
 
+fn add_token(
+    table: &mut TokenInfoTable,
+    res: &mut Vec<Token>,
+    file_id: FileId,
+    id: SynTreeId,
+    begin: FilePos,
+    end: FilePos,
+    token: Token,
+) {
+    table.insert(
+        id,
+        TokenInfo {
+            span: Span::new(file_id, begin, end),
+        },
+    );
+    res.push(token);
+}
+
 pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTable), ()> {
     let mut table = TokenInfoTable::new();
     let mut r = 1;
@@ -324,13 +342,16 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 1;
             c += 1;
         }
-        // 改行
+
+        // Handle newline character
         if chars[i] == '\n' {
             i += 1;
             r += 1;
             c = 1;
             continue;
         }
+
+        // Handle keyword tokens
         if chars[i] == '#' {
             let begin = FilePos::new_with_pos(r, c);
             let mut keyword = String::new();
@@ -344,15 +365,12 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             }
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::Keyword(TokenKeyword { id, keyword }));
+            let token = Token::Keyword(TokenKeyword { id, keyword });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle identifier tokens
         if is_ident_head_char(chars[i]) {
             let begin = FilePos::new_with_pos(r, c);
             let mut ident = String::new();
@@ -363,205 +381,168 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             }
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::Ident(TokenIdent {
+            let token = Token::Ident(TokenIdent {
                 id: Default::default(),
                 ident,
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle double colon tokens
         if i + 1 < chars.len() && chars[i] == ':' && chars[i + 1] == ':' {
             let begin = FilePos::new_with_pos(r, c);
             i += 2;
             c += 2;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::ColonColon(TokenColonColon {
+            let token = Token::ColonColon(TokenColonColon {
                 id: Default::default(),
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle arrow tokens
         if i + 1 < chars.len() && chars[i] == '-' && chars[i + 1] == '>' {
             let begin = FilePos::new_with_pos(r, c);
             i += 2;
             c += 2;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::Arrow(TokenArrow {
+            let token = Token::Arrow(TokenArrow {
                 id: Default::default(),
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle arrow2 tokens
         if i + 1 < chars.len() && chars[i] == '=' && chars[i + 1] == '>' {
             let begin = FilePos::new_with_pos(r, c);
             i += 2;
             c += 2;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::Arrow2(TokenArrow2 {
+            let token = Token::Arrow2(TokenArrow2 {
                 id: Default::default(),
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle lparen tokens
         if chars[i] == '(' {
             let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::LParen(TokenLParen {
+            let token = Token::LParen(TokenLParen {
                 id: Default::default(),
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle rparen tokens
         if chars[i] == ')' {
             let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::RParen(TokenRParen {
+            let token = Token::RParen(TokenRParen {
                 id: Default::default(),
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle lbracket tokens
         if chars[i] == '{' {
             let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::LBrace(TokenLBrace {
+            let token = Token::LBrace(TokenLBrace {
                 id: Default::default(),
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle rbracket tokens
         if chars[i] == '}' {
             let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::RBrace(TokenRBrace {
+            let token = Token::RBrace(TokenRBrace {
                 id: Default::default(),
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle colon tokens
         if chars[i] == ':' {
             let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::Colon(TokenColon {
+            let token = Token::Colon(TokenColon {
                 id: Default::default(),
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle camma tokens
         if chars[i] == ',' {
             let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::Camma(TokenCamma {
+            let token = Token::Camma(TokenCamma {
                 id: Default::default(),
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle semicolon tokens
         if chars[i] == ';' {
             let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::Camma(TokenCamma {
+            let token = Token::Camma(TokenCamma {
                 id: Default::default(),
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
+        // Handle eq tokens
         if chars[i] == '=' {
             let begin = FilePos::new_with_pos(r, c);
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            table.insert(
-                id,
-                TokenInfo {
-                    span: Span::new(file_id, begin, end),
-                },
-            );
-            res.push(Token::Eq(TokenEq {
+            let token = Token::Eq(TokenEq {
                 id: Default::default(),
-            }));
+            });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }
+
         panic!("unknown character '{}'", chars[i]);
     }
     Ok((res, table))

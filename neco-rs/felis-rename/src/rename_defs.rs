@@ -2,6 +2,7 @@ use felis_syn::{
     syn_expr::SynExpr,
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::SynFnDef,
+    syn_formula::SynFormula,
     syn_theorem_def::SynTheoremDef,
     syn_type::SynType,
     syn_type_def::{SynTypeDef, SynVariant},
@@ -92,7 +93,30 @@ fn rename_defs_expr(expr: &SynExpr) -> Result<SerialIdTable, ()> {
             }
         }
         SynExpr::Paren(_) => {}
-        SynExpr::IdentWithPath(_) => todo!(),
+        SynExpr::IdentWithPath(_) => {}
+    }
+    Ok(table)
+}
+
+fn rename_defs_formula(formula: &SynFormula) -> Result<SerialIdTable, ()> {
+    let mut table = SerialIdTable::new();
+    match formula {
+        SynFormula::Forall(forall) => {
+            let id = SerialId::new();
+            table.insert(forall.name.syn_tree_id(), id);
+
+            let table2 = rename_defs_formula(&forall.child)?;
+            table.merge_mut(table2);
+        }
+        SynFormula::App(_) => {}
+        SynFormula::Atom(_) => {}
+        SynFormula::Paren(_) => {}
+        SynFormula::Implies(implies) => {
+            let table2 = rename_defs_formula(&implies.lhs)?;
+            table.merge_mut(table2);
+            let table2 = rename_defs_formula(&implies.rhs)?;
+            table.merge_mut(table2);
+        }
     }
     Ok(table)
 }
@@ -106,7 +130,7 @@ fn rename_defs_theorem_def(theorem_def: &SynTheoremDef) -> Result<SerialIdTable,
     }
     // ty
     {
-        let table2 = rename_defs_type(&theorem_def.ty)?;
+        let table2 = rename_defs_formula(&theorem_def.formula)?;
         table.merge_mut(table2);
     }
     // fn_def
@@ -172,6 +196,15 @@ mod test {
         let table = rename_defs_file(&file).unwrap();
         // [file], proof, A, B, x, l, r
         assert_eq!(table.len(), 7);
+    }
+
+    #[test]
+    fn felis_rename_defs_file_test_3() {
+        let s = std::fs::read_to_string("../../library/wip/fn_def_simple.fe").unwrap();
+        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let table = rename_defs_file(&file).unwrap();
+        // [file], proof, A, x
+        assert_eq!(table.len(), 4);
     }
 
     #[test]

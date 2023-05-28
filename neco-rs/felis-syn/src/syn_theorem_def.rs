@@ -1,7 +1,7 @@
 use crate::{
     parse::Parse,
     syn_fn_def::SynFnDef,
-    syn_type::SynType,
+    syn_formula::SynFormula,
     token::{Token, TokenEq, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
@@ -10,7 +10,7 @@ pub struct SynTheoremDef {
     pub keyword_theorem: TokenKeyword,
     pub name: TokenIdent,
     pub eq: TokenEq,
-    pub ty: SynType,
+    pub formula: SynFormula,
     pub lbrace: TokenLBrace,
     pub fn_def: SynFnDef,
     pub rbrace: TokenRBrace,
@@ -35,7 +35,7 @@ impl Parse for SynTheoremDef {
             return Err(());
         };
 
-        let Some(ty) = SynType::parse(tokens, &mut k)? else {
+        let Some(formula) = SynFormula::parse(tokens, &mut k)? else {
             return Err(());
         };
 
@@ -56,7 +56,7 @@ impl Parse for SynTheoremDef {
             keyword_theorem,
             name,
             eq,
-            ty,
+            formula,
             lbrace,
             fn_def,
             rbrace,

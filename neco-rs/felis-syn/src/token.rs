@@ -1,11 +1,12 @@
 use neco_table::define_wrapper_of_table;
 
-use crate::{parse::Parse, SynTreeId};
+use crate::{parse::Parse, to_felis_string::ToFelisString, SynTreeId};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Token {
     Ident(TokenIdent),
     Keyword(TokenKeyword),
+    String(TokenString),
     LParen(TokenLParen),
     RParen(TokenRParen),
     Colon(TokenColon),
@@ -84,6 +85,38 @@ impl Parse for TokenIdent {
         if let Token::Ident(token_ident) = tokens[*i].clone() {
             *i += 1;
             Ok(Some(token_ident))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TokenString {
+    id: SynTreeId,
+    pub string: String,
+}
+
+impl TokenString {
+    pub fn syn_tree_id(&self) -> SynTreeId {
+        self.id
+    }
+}
+
+impl ToFelisString for TokenString {
+    fn to_felis_string(&self) -> String {
+        format!("\"{}\"", self.string)
+    }
+}
+
+impl Parse for TokenString {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<TokenString>, ()> {
+        if *i >= tokens.len() {
+            return Ok(None);
+        }
+        if let Token::String(token_string) = tokens[*i].clone() {
+            *i += 1;
+            Ok(Some(token_string))
         } else {
             Ok(None)
         }
@@ -366,6 +399,36 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
             let token = Token::Keyword(TokenKeyword { id, keyword });
+            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            continue;
+        }
+
+        // Handle string tokens
+        if chars[i] == '"' {
+            let begin = FilePos::new_with_pos(r, c);
+            let mut string = String::new();
+            i += 1;
+            c += 1;
+            while i < chars.len() && chars[i] != '"' {
+                if chars[i] == '\\' {
+                    i += 1;
+                    c += 1;
+                    if i >= chars.len() {
+                        return Err(());
+                    }
+                }
+                string.push(chars[i]);
+                i += 1;
+                c += 1;
+            }
+            if i >= chars.len() {
+                return Err(());
+            }
+            i += 1;
+            c += 1;
+            let end = FilePos::new_with_pos(r, c);
+            let id = SynTreeId::new();
+            let token = Token::String(TokenString { id, string });
             add_token(&mut table, &mut res, file_id, id, begin, end, token);
             continue;
         }

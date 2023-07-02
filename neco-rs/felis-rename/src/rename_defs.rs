@@ -25,6 +25,7 @@ fn rename_defs_file_item(item: &SynFileItem) -> Result<SerialIdTable, ()> {
         SynFileItem::TypeDef(type_def) => rename_defs_type_def(type_def),
         SynFileItem::FnDef(fn_def) => rename_defs_fn_def(fn_def),
         SynFileItem::TheoremDef(theorem_def) => rename_defs_theorem_def(theorem_def),
+        SynFileItem::Entrypoint(_) => Ok(SerialIdTable::new()),
     }
 }
 
@@ -94,6 +95,7 @@ fn rename_defs_expr(expr: &SynExpr) -> Result<SerialIdTable, ()> {
         }
         SynExpr::Paren(_) => {}
         SynExpr::IdentWithPath(_) => {}
+        SynExpr::String(_) => todo!(),
     }
     Ok(table)
 }
@@ -155,6 +157,7 @@ fn rename_defs_type(ty: &SynType) -> Result<SerialIdTable, ()> {
             let table2 = rename_defs_type(&dep_map.to)?;
             table.merge_mut(table2);
         }
+        SynType::Unit(_) => {}
     }
     Ok(table)
 }

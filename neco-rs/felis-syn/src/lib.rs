@@ -6,6 +6,7 @@ use token::TokenInfoTable;
 use crate::token::{lex, FileId};
 
 pub mod parse;
+pub mod syn_entrypoint;
 pub mod syn_expr;
 pub mod syn_file;
 pub mod syn_fn_def;

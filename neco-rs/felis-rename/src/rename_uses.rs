@@ -1,4 +1,5 @@
 use felis_syn::{
+    syn_entrypoint::SynEntrypoint,
     syn_expr::{SynExpr, SynExprApp, SynExprIdent, SynExprIdentWithPath, SynExprMatch},
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::{SynFnBlock, SynFnDef, SynStatement},
@@ -48,6 +49,29 @@ fn rename_uses_file_item(
             let table = rename_uses_theorem_def(theorem_def, defs_table, resolver, path_table)?;
             res.merge_mut(table);
         }
+        SynFileItem::Entrypoint(entrypoint) => {
+            let table = rename_uses_entrypoint(entrypoint, defs_table, resolver, path_table)?;
+            res.merge_mut(table);
+        }
+    }
+    Ok(res)
+}
+
+fn rename_uses_entrypoint(
+    entrypoint: &SynEntrypoint,
+    defs_table: &SerialIdTable,
+    resolver: &mut Resolver<SerialId>,
+    path_table: &PathTable,
+) -> Result<SerialIdTable, ()> {
+    let mut res = SerialIdTable::new();
+    // name
+    {
+        let a = entrypoint.ident.as_str();
+        let b = entrypoint.ident.syn_tree_id();
+        let Some(c) = resolver.get(a) else {
+            panic!("unknown ident {a}");
+        };
+        res.insert(b, *c);
     }
     Ok(res)
 }
@@ -152,6 +176,7 @@ fn rename_uses_expr(
         SynExpr::IdentWithPath(expr_ident_with_path) => {
             rename_uses_expr_ident_with_path(expr_ident_with_path, defs_table, resolver, path_table)
         }
+        SynExpr::String(_) => todo!(),
     }
 }
 
@@ -416,6 +441,7 @@ fn rename_uses_type(
         SynType::DependentMap(type_dep_map) => {
             rename_uses_type_dep_map(type_dep_map, defs_table, resolver, path_table)
         }
+        SynType::Unit(_) => Ok(SerialIdTable::new()),
     }
 }
 

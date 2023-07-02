@@ -18,6 +18,8 @@ pub enum SynType {
     Paren(SynTypeParen),
     // (A : Prop) -> B A
     DependentMap(SynTypeDependentMap),
+    // () (unit type)
+    Unit(SynTypeUnit),
 }
 
 impl SynType {
@@ -28,6 +30,7 @@ impl SynType {
             SynType::Map(map) => map.syn_tree_id(),
             SynType::Paren(_) => todo!(),
             SynType::DependentMap(dep_map) => dep_map.syn_tree_id(),
+            SynType::Unit(unit) => unit.syn_tree_id(),
         }
     }
     pub fn as_dependent_map(&self) -> Option<&SynTypeDependentMap> {
@@ -66,6 +69,7 @@ impl ToFelisString for SynType {
                     dependent_map.to.to_felis_string()
                 )
             }
+            SynType::Unit(unit) => "()".to_string(),
         }
     }
 }
@@ -102,9 +106,43 @@ impl Parse for SynType {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SynTypeUnit {
+    id: SynTreeId,
+    pub lparen: TokenLParen,
+    pub rparen: TokenRParen,
+}
+
+impl Parse for SynTypeUnit {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        let mut k = *i;
+
+        let Some(lparen) = TokenLParen::parse(tokens, &mut k)? else {
+            return Ok(None);
+        };
+        let Some(rparen) = TokenRParen::parse(tokens, &mut k)? else {
+            return Ok(None);
+        };
+
+        *i = k;
+        Ok(Some(SynTypeUnit {
+            id: SynTreeId::new(),
+            lparen,
+            rparen,
+        }))
+    }
+}
+
+impl SynTypeUnit {
+    fn syn_tree_id(&self) -> SynTreeId {
+        self.id
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum SynTypeNoMapAndApp {
     Atom(SynTypeAtom),
     Paren(SynTypeParen),
+    Unit(SynTypeUnit),
 }
 
 impl From<SynTypeNoMapAndApp> for SynTypeNoMap {
@@ -112,6 +150,7 @@ impl From<SynTypeNoMapAndApp> for SynTypeNoMap {
         match ty {
             SynTypeNoMapAndApp::Atom(atom) => SynTypeNoMap::Atom(atom),
             SynTypeNoMapAndApp::Paren(paren) => SynTypeNoMap::Paren(paren),
+            SynTypeNoMapAndApp::Unit(unit) => SynTypeNoMap::Unit(unit),
         }
     }
 }
@@ -121,6 +160,7 @@ impl From<SynTypeNoMapAndApp> for SynType {
         match ty {
             SynTypeNoMapAndApp::Atom(atom) => SynType::Atom(atom),
             SynTypeNoMapAndApp::Paren(paren) => SynType::Paren(paren),
+            SynTypeNoMapAndApp::Unit(unit) => SynType::Unit(unit),
         }
     }
 }
@@ -128,6 +168,11 @@ impl From<SynTypeNoMapAndApp> for SynType {
 impl Parse for SynTypeNoMapAndApp {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
+
+        if let Some(unit) = SynTypeUnit::parse(tokens, &mut k)? {
+            *i = k;
+            return Ok(Some(SynTypeNoMapAndApp::Unit(unit)));
+        }
 
         if let Some(paren) = SynTypeParen::parse(tokens, &mut k)? {
             *i = k;
@@ -148,6 +193,7 @@ enum SynTypeNoMap {
     App(SynTypeApp),
     Atom(SynTypeAtom),
     Paren(SynTypeParen),
+    Unit(SynTypeUnit),
 }
 
 impl From<SynTypeNoMap> for SynType {
@@ -156,6 +202,7 @@ impl From<SynTypeNoMap> for SynType {
             SynTypeNoMap::App(app) => SynType::App(app),
             SynTypeNoMap::Atom(atom) => SynType::Atom(atom),
             SynTypeNoMap::Paren(paren) => SynType::Paren(paren),
+            SynTypeNoMap::Unit(unit) => SynType::Unit(unit),
         }
     }
 }

@@ -65,6 +65,7 @@ pub fn construct_path_table_syn_file(
                 item.children
                     .insert(theorem_def.name.as_str().to_string(), id);
             }
+            SynFileItem::Entrypoint(_) => {}
         }
     }
     {
@@ -84,6 +85,7 @@ pub fn construct_path_table_syn_file(
             SynFileItem::TheoremDef(theorem_def) => {
                 construct_path_table_syn_theorem_def(theorem_def, rename_table, &mut path_table);
             }
+            SynFileItem::Entrypoint(_) => {}
         }
     }
     Ok(path_table)

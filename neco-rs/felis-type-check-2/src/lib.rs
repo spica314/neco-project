@@ -167,6 +167,7 @@ pub fn type_check_syn_expr(
             typed_term_table_for_atom,
             type_def_table,
         ),
+        SynExpr::String(_) => todo!(),
     }
 }
 
@@ -389,6 +390,7 @@ pub fn type_check_syn_type(
             typed_term_table,
             typed_term_table_for_atom,
         ),
+        SynType::Unit(_) => todo!(),
     }
 }
 

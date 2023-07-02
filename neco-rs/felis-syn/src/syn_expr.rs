@@ -3,10 +3,46 @@ use crate::{
     to_felis_string::ToFelisString,
     token::{
         Token, TokenArrow2, TokenCamma, TokenColonColon, TokenIdent, TokenKeyword, TokenLBrace,
-        TokenLParen, TokenRBrace, TokenRParen,
+        TokenLParen, TokenRBrace, TokenRParen, TokenString,
     },
     SynTreeId,
 };
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SynExprString {
+    id: SynTreeId,
+    pub token_string: TokenString,
+}
+
+impl SynExprString {
+    pub fn syn_tree_id(&self) -> SynTreeId {
+        self.id
+    }
+}
+
+impl Parse for SynExprString {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        let mut k = *i;
+
+        let token_string = if let Some(token_string) = TokenString::parse(tokens, &mut k)? {
+            token_string
+        } else {
+            return Ok(None);
+        };
+
+        *i = k;
+        Ok(Some(SynExprString {
+            id: SynTreeId::new(),
+            token_string,
+        }))
+    }
+}
+
+impl ToFelisString for SynExprString {
+    fn to_felis_string(&self) -> String {
+        self.token_string.to_felis_string()
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprMatch {
@@ -199,6 +235,7 @@ pub enum SynExpr {
     App(SynExprApp),
     Match(SynExprMatch),
     Paren(SynExprParen),
+    String(SynExprString),
 }
 
 impl SynExpr {
@@ -209,6 +246,7 @@ impl SynExpr {
             SynExpr::Match(expr_match) => expr_match.syn_tree_id(),
             SynExpr::Paren(expr_paren) => expr_paren.syn_tree_id(),
             SynExpr::IdentWithPath(expr_ident_with_path) => expr_ident_with_path.syn_tree_id(),
+            SynExpr::String(expr_string) => expr_string.syn_tree_id(),
         }
     }
 }
@@ -239,6 +277,7 @@ impl ToFelisString for SynExpr {
             SynExpr::App(expr_app) => expr_app.to_felis_string(),
             SynExpr::Paren(_) => todo!(),
             SynExpr::IdentWithPath(expr_ident_with_path) => expr_ident_with_path.to_felis_string(),
+            SynExpr::String(string) => string.to_felis_string(),
         }
     }
 }
@@ -288,11 +327,17 @@ enum SynExprNoApp {
     IdentWithPath(SynExprIdentWithPath),
     Match(SynExprMatch),
     Paren(SynExprParen),
+    String(SynExprString),
 }
 
 impl Parse for SynExprNoApp {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
+
+        if let Some(expr_string) = SynExprString::parse(tokens, &mut k)? {
+            *i = k;
+            return Ok(Some(SynExprNoApp::String(expr_string)));
+        }
 
         if let Some(expr_match) = SynExprMatch::parse(tokens, &mut k)? {
             *i = k;
@@ -321,6 +366,7 @@ impl From<SynExprNoApp> for SynExpr {
             }
             SynExprNoApp::Match(expr_match) => SynExpr::Match(expr_match),
             SynExprNoApp::Paren(expr_paren) => SynExpr::Paren(expr_paren),
+            SynExprNoApp::String(expr_string) => SynExpr::String(expr_string),
         }
     }
 }

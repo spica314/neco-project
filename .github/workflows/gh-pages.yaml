@@ -62,6 +62,16 @@ jobs:
           cp -r book ../../pages/the-felis-programming-language
         working-directory: pages-src/the-felis-programming-language
 
+      # Set the right file permissions
+      - name: Set the right file permissions
+        shell: sh
+        if: runner.os == 'Linux'
+        run: |
+          chmod -c -R +rX "$INPUT_PATH" |
+          while read line; do
+            echo "::warning title=Invalid file permissions automatically fixed::$line"
+          done
+
       # upload
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1

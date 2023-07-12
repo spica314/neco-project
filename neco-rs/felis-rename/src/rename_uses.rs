@@ -177,6 +177,7 @@ fn rename_uses_expr(
             rename_uses_expr_ident_with_path(expr_ident_with_path, defs_table, resolver, path_table)
         }
         SynExpr::String(_) => todo!(),
+        SynExpr::Block(_) => todo!(),
     }
 }
 

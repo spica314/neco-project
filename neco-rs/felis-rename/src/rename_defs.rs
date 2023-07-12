@@ -96,6 +96,7 @@ fn rename_defs_expr(expr: &SynExpr) -> Result<SerialIdTable, ()> {
         SynExpr::Paren(_) => {}
         SynExpr::IdentWithPath(_) => {}
         SynExpr::String(_) => todo!(),
+        SynExpr::Block(_) => todo!(),
     }
     Ok(table)
 }

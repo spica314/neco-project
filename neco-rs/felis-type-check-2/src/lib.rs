@@ -168,6 +168,7 @@ pub fn type_check_syn_expr(
             type_def_table,
         ),
         SynExpr::String(_) => todo!(),
+        SynExpr::Block(_) => todo!(),
     }
 }
 

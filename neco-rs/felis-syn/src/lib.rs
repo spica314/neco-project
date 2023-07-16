@@ -11,6 +11,7 @@ pub mod syn_expr;
 pub mod syn_file;
 pub mod syn_fn_def;
 pub mod syn_formula;
+pub mod syn_statement;
 pub mod syn_theorem_def;
 pub mod syn_type;
 pub mod syn_type_def;

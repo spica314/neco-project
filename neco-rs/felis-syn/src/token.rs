@@ -256,6 +256,19 @@ pub struct TokenSemicolon {
     id: SynTreeId,
 }
 
+impl Parse for TokenSemicolon {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        if *i >= tokens.len() {
+            return Err(());
+        }
+        if let Token::Semicolon(semicolon) = &tokens[*i] {
+            *i += 1;
+            return Ok(Some(semicolon.clone()));
+        }
+        Ok(None)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenCamma {
     id: SynTreeId,
@@ -585,7 +598,7 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             c += 1;
             let end = FilePos::new_with_pos(r, c);
             let id = SynTreeId::new();
-            let token = Token::Camma(TokenCamma {
+            let token = Token::Semicolon(TokenSemicolon {
                 id: Default::default(),
             });
             add_token(&mut table, &mut res, file_id, id, begin, end, token);

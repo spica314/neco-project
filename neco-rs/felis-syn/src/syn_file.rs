@@ -109,4 +109,16 @@ mod test {
         let res = res.unwrap();
         assert_eq!(res.items.len(), 2);
     }
+
+    #[test]
+    fn felis_syn_file_parse_test_4() {
+        let s = std::fs::read_to_string("../../library/wip/statement_let.fe").unwrap();
+        let mut parser = Parser::new();
+        let res = parser.parse::<SynFile>(&s);
+        assert!(res.is_ok());
+        let (res, _) = res.unwrap();
+        assert!(res.is_some());
+        let res = res.unwrap();
+        assert_eq!(res.items.len(), 1);
+    }
 }

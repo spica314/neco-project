@@ -1,4 +1,4 @@
-use crate::{parse::Parse, syn_expr::SynExpr, token::Token};
+use crate::{parse::Parse, syn_expr::SynExpr, to_felis_string::ToFelisString, token::Token};
 
 pub use syn_statement_let::*;
 
@@ -25,6 +25,15 @@ impl Parse for SynStatement {
         }
 
         Ok(None)
+    }
+}
+
+impl ToFelisString for SynStatement {
+    fn to_felis_string(&self) -> String {
+        match self {
+            SynStatement::Expr(expr) => expr.to_felis_string(),
+            SynStatement::Let(statement_let) => statement_let.to_felis_string(),
+        }
     }
 }
 

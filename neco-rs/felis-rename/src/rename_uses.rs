@@ -2,11 +2,12 @@ use felis_syn::{
     syn_entrypoint::SynEntrypoint,
     syn_expr::{SynExpr, SynExprApp, SynExprIdent, SynExprIdentWithPath, SynExprMatch},
     syn_file::{SynFile, SynFileItem},
-    syn_fn_def::{SynFnBlock, SynFnDef, SynStatement},
+    syn_fn_def::{SynFnBlock, SynFnDef},
     syn_formula::{
         SynFormula, SynFormulaApp, SynFormulaAtom, SynFormulaForall, SynFormulaImplies,
         SynFormulaParen,
     },
+    syn_statement::SynStatement,
     syn_theorem_def::SynTheoremDef,
     syn_type::{SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen},
     syn_type_def::SynTypeDef,
@@ -153,6 +154,7 @@ fn rename_uses_statement(
 ) -> Result<SerialIdTable, ()> {
     match statement {
         SynStatement::Expr(expr) => rename_uses_expr(expr, defs_table, resolver, path_table),
+        SynStatement::Let(_) => todo!(),
     }
 }
 

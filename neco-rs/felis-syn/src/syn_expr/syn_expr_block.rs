@@ -1,17 +1,16 @@
 use crate::{
     parse::Parse,
+    syn_statement::SynStatement,
     to_felis_string::ToFelisString,
     token::{Token, TokenLBrace, TokenRBrace},
     SynTreeId,
 };
 
-use super::SynExpr;
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprBlock {
     id: SynTreeId,
     pub lbrace: TokenLBrace,
-    pub expr: Box<SynExpr>,
+    pub statements: Vec<SynStatement>,
     pub rbrace: TokenRBrace,
 }
 
@@ -29,9 +28,10 @@ impl Parse for SynExprBlock {
             return Ok(None);
         };
 
-        let Some(expr) = SynExpr::parse(tokens, &mut k)? else {
-            return Err(());
-        };
+        let mut statements = vec![];
+        while let Some(statement) = SynStatement::parse(tokens, &mut k)? {
+            statements.push(statement);
+        }
 
         let Some(rbrace) = TokenRBrace::parse(tokens, &mut k)? else {
             return Err(());
@@ -41,7 +41,7 @@ impl Parse for SynExprBlock {
         Ok(Some(SynExprBlock {
             id: Default::default(),
             lbrace,
-            expr: Box::new(expr),
+            statements,
             rbrace,
         }))
     }
@@ -49,6 +49,14 @@ impl Parse for SynExprBlock {
 
 impl ToFelisString for SynExprBlock {
     fn to_felis_string(&self) -> String {
-        format!("{{ {} }}", self.expr.to_felis_string())
+        let mut res = String::new();
+        res.push('{');
+        for statement in self.statements.iter() {
+            res.push(' ');
+            res.push_str(&statement.to_felis_string());
+        }
+        res.push(' ');
+        res.push('}');
+        res
     }
 }

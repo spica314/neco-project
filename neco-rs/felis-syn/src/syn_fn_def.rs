@@ -1,6 +1,6 @@
 use crate::{
     parse::Parse,
-    syn_expr::SynExpr,
+    syn_statement::SynStatement,
     syn_type::SynType,
     token::{Token, TokenColon, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
 };
@@ -82,24 +82,6 @@ impl Parse for SynFnBlock {
             statements,
             rbrace,
         }))
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum SynStatement {
-    Expr(SynExpr),
-}
-
-impl Parse for SynStatement {
-    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
-        let mut k = *i;
-
-        if let Some(expr) = SynExpr::parse(tokens, &mut k)? {
-            *i = k;
-            return Ok(Some(SynStatement::Expr(expr)));
-        }
-
-        Ok(None)
     }
 }
 

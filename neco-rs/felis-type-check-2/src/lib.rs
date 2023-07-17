@@ -3,6 +3,7 @@ use felis_syn::{
     syn_expr::{SynExpr, SynExprIdentWithPath, SynExprMatch},
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::SynFnDef,
+    syn_statement::SynStatement,
     syn_theorem_def::SynTheoremDef,
     syn_type::{SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap},
     syn_type_def::SynTypeDef,
@@ -88,7 +89,7 @@ pub fn type_check_syn_fn_def(
     let mut final_ty = None;
     for statement in &fn_def.fn_block.statements {
         match statement {
-            felis_syn::syn_fn_def::SynStatement::Expr(expr) => {
+            SynStatement::Expr(expr) => {
                 final_ty = Some(type_check_syn_expr(
                     expr,
                     rename_table,
@@ -97,6 +98,7 @@ pub fn type_check_syn_fn_def(
                     type_def_table,
                 )?);
             }
+            SynStatement::Let(_) => todo!(),
         }
     }
     if let Some(final_ty) = final_ty {

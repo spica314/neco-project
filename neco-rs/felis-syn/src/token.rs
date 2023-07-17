@@ -77,6 +77,12 @@ impl TokenIdent {
     }
 }
 
+impl ToFelisString for TokenIdent {
+    fn to_felis_string(&self) -> String {
+        self.ident.clone()
+    }
+}
+
 impl Parse for TokenIdent {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<TokenIdent>, ()> {
         if *i >= tokens.len() {

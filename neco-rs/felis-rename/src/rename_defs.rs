@@ -3,6 +3,7 @@ use felis_syn::{
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::SynFnDef,
     syn_formula::SynFormula,
+    syn_statement::SynStatement,
     syn_theorem_def::SynTheoremDef,
     syn_type::SynType,
     syn_type_def::{SynTypeDef, SynVariant},
@@ -71,10 +72,11 @@ fn rename_defs_fn_def(fn_def: &SynFnDef) -> Result<SerialIdTable, ()> {
     // statements
     for statement in &fn_def.fn_block.statements {
         match statement {
-            felis_syn::syn_fn_def::SynStatement::Expr(expr) => {
+            SynStatement::Expr(expr) => {
                 let table2 = rename_defs_expr(expr)?;
                 table.merge_mut(table2);
             }
+            SynStatement::Let(_) => todo!(),
         }
     }
     Ok(table)

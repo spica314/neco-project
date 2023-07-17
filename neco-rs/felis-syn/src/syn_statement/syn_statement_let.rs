@@ -1,6 +1,7 @@
 use crate::{
     parse::Parse,
     syn_expr::SynExpr,
+    to_felis_string::ToFelisString,
     token::{Token, TokenEq, TokenIdent, TokenKeyword, TokenSemicolon},
     SynTreeId,
 };
@@ -57,5 +58,15 @@ impl Parse for SynStatementLet {
             expr,
             semi,
         }))
+    }
+}
+
+impl ToFelisString for SynStatementLet {
+    fn to_felis_string(&self) -> String {
+        format!(
+            "#let {} = {};",
+            self.name.to_felis_string(),
+            self.expr.to_felis_string()
+        )
     }
 }

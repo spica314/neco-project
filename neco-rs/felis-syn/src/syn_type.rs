@@ -69,7 +69,7 @@ impl ToFelisString for SynType {
                     dependent_map.to.to_felis_string()
                 )
             }
-            SynType::Unit(unit) => "()".to_string(),
+            SynType::Unit(_unit) => "()".to_string(),
         }
     }
 }

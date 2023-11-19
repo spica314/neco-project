@@ -1,14 +1,21 @@
-use crate::{parse::Parse, to_felis_string::ToFelisString, token::Token, SynTreeId};
+use crate::{
+    decoration::{Decoration, UD},
+    parse::Parse,
+    to_felis_string::ToFelisString,
+    token::Token,
+    SynTreeId,
+};
 
 use super::{SynExpr, SynExprNoApp};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynExprApp {
+pub struct SynExprApp<D: Decoration> {
     id: SynTreeId,
-    pub exprs: Vec<SynExpr>,
+    pub exprs: Vec<SynExpr<D>>,
+    ext: D::ExprApp,
 }
 
-impl ToFelisString for SynExprApp {
+impl<D: Decoration> ToFelisString for SynExprApp<D> {
     fn to_felis_string(&self) -> String {
         let mut res = String::new();
         res.push_str(&self.exprs[0].to_felis_string());
@@ -20,13 +27,13 @@ impl ToFelisString for SynExprApp {
     }
 }
 
-impl SynExprApp {
+impl<D: Decoration> SynExprApp<D> {
     pub fn syn_tree_id(&self) -> SynTreeId {
         self.id
     }
 }
 
-impl Parse for SynExprApp {
+impl Parse for SynExprApp<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -43,6 +50,7 @@ impl Parse for SynExprApp {
         Ok(Some(SynExprApp {
             id: Default::default(),
             exprs,
+            ext: (),
         }))
     }
 }

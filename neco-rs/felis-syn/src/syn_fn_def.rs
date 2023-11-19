@@ -1,4 +1,5 @@
 use crate::{
+    decoration::{Decoration, UD},
     parse::Parse,
     syn_statement::SynStatement,
     syn_type::SynType,
@@ -6,15 +7,15 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynFnDef {
+pub struct SynFnDef<D: Decoration> {
     pub keyword_fn: TokenKeyword,
     pub name: TokenIdent,
     pub colon: TokenColon,
-    pub ty: SynType,
-    pub fn_block: SynFnBlock,
+    pub ty: SynType<D>,
+    pub fn_block: SynFnBlock<D>,
 }
 
-impl Parse for SynFnDef {
+impl Parse for SynFnDef<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -53,13 +54,13 @@ impl Parse for SynFnDef {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynFnBlock {
+pub struct SynFnBlock<D: Decoration> {
     pub lbrace: TokenLBrace,
-    pub statements: Vec<SynStatement>,
+    pub statements: Vec<SynStatement<D>>,
     pub rbrace: TokenRBrace,
 }
 
-impl Parse for SynFnBlock {
+impl Parse for SynFnBlock<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -95,7 +96,7 @@ mod test {
     fn felis_syn_fn_def_parse_test_1() {
         let s = "#fn f : T { }";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynFnDef>(&s);
+        let res = parser.parse::<SynFnDef<UD>>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
@@ -109,7 +110,7 @@ mod test {
     fn felis_syn_fn_def_parse_test_2() {
         let s = "#fn f : T { x }";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynFnDef>(&s);
+        let res = parser.parse::<SynFnDef<UD>>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
@@ -124,7 +125,7 @@ mod test {
     fn felis_syn_fn_def_parse_test_3() {
         let s = "#fn f : (x : T) -> T { x }";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynFnDef>(&s);
+        let res = parser.parse::<SynFnDef<UD>>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
@@ -139,7 +140,7 @@ mod test {
     fn felis_syn_fn_def_parse_test_4() {
         let s = std::fs::read_to_string("../../library/wip/fn_def.fe").unwrap();
         let mut parser = Parser::new();
-        let res = parser.parse::<SynFnDef>(&s);
+        let res = parser.parse::<SynFnDef<UD>>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());

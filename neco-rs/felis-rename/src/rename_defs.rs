@@ -1,4 +1,5 @@
 use felis_syn::{
+    decoration::UD,
     syn_expr::SynExpr,
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::SynFnDef,
@@ -11,7 +12,7 @@ use felis_syn::{
 
 use crate::{SerialId, SerialIdTable};
 
-pub fn rename_defs_file(file: &SynFile) -> Result<SerialIdTable, ()> {
+pub fn rename_defs_file(file: &SynFile<UD>) -> Result<SerialIdTable, ()> {
     let mut res = SerialIdTable::new();
     res.insert(file.syn_tree_id(), SerialId::new());
     for item in &file.items {
@@ -21,7 +22,7 @@ pub fn rename_defs_file(file: &SynFile) -> Result<SerialIdTable, ()> {
     Ok(res)
 }
 
-fn rename_defs_file_item(item: &SynFileItem) -> Result<SerialIdTable, ()> {
+fn rename_defs_file_item(item: &SynFileItem<UD>) -> Result<SerialIdTable, ()> {
     match item {
         SynFileItem::TypeDef(type_def) => rename_defs_type_def(type_def),
         SynFileItem::FnDef(fn_def) => rename_defs_fn_def(fn_def),
@@ -30,7 +31,7 @@ fn rename_defs_file_item(item: &SynFileItem) -> Result<SerialIdTable, ()> {
     }
 }
 
-fn rename_defs_type_def(type_def: &SynTypeDef) -> Result<SerialIdTable, ()> {
+fn rename_defs_type_def(type_def: &SynTypeDef<UD>) -> Result<SerialIdTable, ()> {
     let mut table = SerialIdTable::new();
     // name
     {
@@ -45,7 +46,7 @@ fn rename_defs_type_def(type_def: &SynTypeDef) -> Result<SerialIdTable, ()> {
     Ok(table)
 }
 
-fn rename_defs_variant(variant: &SynVariant) -> Result<SerialIdTable, ()> {
+fn rename_defs_variant(variant: &SynVariant<UD>) -> Result<SerialIdTable, ()> {
     let mut table = SerialIdTable::new();
 
     let id = SerialId::new();
@@ -57,7 +58,7 @@ fn rename_defs_variant(variant: &SynVariant) -> Result<SerialIdTable, ()> {
     Ok(table)
 }
 
-fn rename_defs_fn_def(fn_def: &SynFnDef) -> Result<SerialIdTable, ()> {
+fn rename_defs_fn_def(fn_def: &SynFnDef<UD>) -> Result<SerialIdTable, ()> {
     let mut table = SerialIdTable::new();
     // name
     {
@@ -82,7 +83,7 @@ fn rename_defs_fn_def(fn_def: &SynFnDef) -> Result<SerialIdTable, ()> {
     Ok(table)
 }
 
-fn rename_defs_expr(expr: &SynExpr) -> Result<SerialIdTable, ()> {
+fn rename_defs_expr(expr: &SynExpr<UD>) -> Result<SerialIdTable, ()> {
     let mut table = SerialIdTable::new();
     match expr {
         SynExpr::Ident(_) => {}
@@ -103,7 +104,7 @@ fn rename_defs_expr(expr: &SynExpr) -> Result<SerialIdTable, ()> {
     Ok(table)
 }
 
-fn rename_defs_formula(formula: &SynFormula) -> Result<SerialIdTable, ()> {
+fn rename_defs_formula(formula: &SynFormula<UD>) -> Result<SerialIdTable, ()> {
     let mut table = SerialIdTable::new();
     match formula {
         SynFormula::Forall(forall) => {
@@ -126,7 +127,7 @@ fn rename_defs_formula(formula: &SynFormula) -> Result<SerialIdTable, ()> {
     Ok(table)
 }
 
-fn rename_defs_theorem_def(theorem_def: &SynTheoremDef) -> Result<SerialIdTable, ()> {
+fn rename_defs_theorem_def(theorem_def: &SynTheoremDef<UD>) -> Result<SerialIdTable, ()> {
     let mut table = SerialIdTable::new();
     // name
     {
@@ -146,7 +147,7 @@ fn rename_defs_theorem_def(theorem_def: &SynTheoremDef) -> Result<SerialIdTable,
     Ok(table)
 }
 
-fn rename_defs_type(ty: &SynType) -> Result<SerialIdTable, ()> {
+fn rename_defs_type(ty: &SynType<UD>) -> Result<SerialIdTable, ()> {
     let mut table = SerialIdTable::new();
     match ty {
         SynType::App(_) => {}
@@ -173,7 +174,7 @@ mod test {
     #[test]
     fn felis_rename_defs_type_def_test_1() {
         let s = "#type A : Prop { hoge : A, }";
-        let type_def = parse_from_str::<SynTypeDef>(&s).unwrap().unwrap();
+        let type_def = parse_from_str::<SynTypeDef<UD>>(&s).unwrap().unwrap();
         let table = rename_defs_type_def(&type_def).unwrap();
         // A, hoge
         assert_eq!(table.len(), 2);
@@ -182,7 +183,7 @@ mod test {
     #[test]
     fn felis_rename_defs_file_test_1() {
         let s = "#type A : Prop { hoge : A, }";
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         let table = rename_defs_file(&file).unwrap();
         // [file], A, hoge
         assert_eq!(table.len(), 3);
@@ -191,7 +192,7 @@ mod test {
     #[test]
     fn felis_rename_defs_file_test_2() {
         let s = std::fs::read_to_string("../../library/wip/fn_def.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         let table = rename_defs_file(&file).unwrap();
         // [file], proof, A, B, x, l, r
         assert_eq!(table.len(), 7);
@@ -200,7 +201,7 @@ mod test {
     #[test]
     fn felis_rename_defs_file_test_3() {
         let s = std::fs::read_to_string("../../library/wip/fn_def_simple.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         let table = rename_defs_file(&file).unwrap();
         // [file], proof, A, x
         assert_eq!(table.len(), 4);
@@ -209,7 +210,7 @@ mod test {
     #[test]
     fn felis_rename_defs_file_test_4() {
         let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         let table = rename_defs_file(&file).unwrap();
         // (1) [file]
         // (4) And, conj, A, B

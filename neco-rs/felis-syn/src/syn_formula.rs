@@ -1,4 +1,5 @@
 use crate::{
+    decoration::{Decoration, UD},
     parse::Parse,
     to_felis_string::ToFelisString,
     token::{
@@ -8,15 +9,15 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum SynFormula {
-    Forall(SynFormulaForall),
-    Implies(SynFormulaImplies),
-    Atom(SynFormulaAtom),
-    App(SynFormulaApp),
-    Paren(SynFormulaParen),
+pub enum SynFormula<D: Decoration> {
+    Forall(SynFormulaForall<D>),
+    Implies(SynFormulaImplies<D>),
+    Atom(SynFormulaAtom<D>),
+    App(SynFormulaApp<D>),
+    Paren(SynFormulaParen<D>),
 }
 
-impl ToFelisString for SynFormula {
+impl<D: Decoration> ToFelisString for SynFormula<D> {
     fn to_felis_string(&self) -> String {
         match self {
             SynFormula::Forall(forall) => forall.to_felis_string(),
@@ -28,8 +29,8 @@ impl ToFelisString for SynFormula {
     }
 }
 
-impl From<SynFormulaNoArg> for SynFormula {
-    fn from(x: SynFormulaNoArg) -> Self {
+impl<D: Decoration> From<SynFormulaNoArg<D>> for SynFormula<D> {
+    fn from(x: SynFormulaNoArg<D>) -> Self {
         match x {
             SynFormulaNoArg::Atom(atom) => SynFormula::Atom(atom),
             SynFormulaNoArg::App(app) => SynFormula::App(app),
@@ -38,7 +39,7 @@ impl From<SynFormulaNoArg> for SynFormula {
     }
 }
 
-impl Parse for SynFormula {
+impl Parse for SynFormula<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -52,7 +53,7 @@ impl Parse for SynFormula {
             return Err(());
         };
 
-        let mut res: SynFormula = res.into();
+        let mut res: SynFormula<UD> = res.into();
 
         while let Some(arrow) = TokenArrow::parse(tokens, &mut k)? {
             let rhs = SynFormula::parse(tokens, &mut k)?;
@@ -63,6 +64,7 @@ impl Parse for SynFormula {
                 lhs: Box::new(res),
                 arrow,
                 rhs: Box::new(rhs),
+                ext: (),
             });
         }
 
@@ -72,12 +74,12 @@ impl Parse for SynFormula {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum SynFormulaAtomOrParen {
-    Atom(SynFormulaAtom),
-    Paren(SynFormulaParen),
+enum SynFormulaAtomOrParen<D: Decoration> {
+    Atom(SynFormulaAtom<D>),
+    Paren(SynFormulaParen<D>),
 }
 
-impl Parse for SynFormulaAtomOrParen {
+impl Parse for SynFormulaAtomOrParen<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         if let Some(paren) = SynFormulaParen::parse(tokens, i)? {
             return Ok(Some(SynFormulaAtomOrParen::Paren(paren)));
@@ -92,14 +94,14 @@ impl Parse for SynFormulaAtomOrParen {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum SynFormulaNoArg {
-    Atom(SynFormulaAtom),
-    App(SynFormulaApp),
-    Paren(SynFormulaParen),
+enum SynFormulaNoArg<D: Decoration> {
+    Atom(SynFormulaAtom<D>),
+    App(SynFormulaApp<D>),
+    Paren(SynFormulaParen<D>),
 }
 
-impl From<SynFormulaAtomOrParen> for SynFormulaNoArg {
-    fn from(x: SynFormulaAtomOrParen) -> Self {
+impl<D: Decoration> From<SynFormulaAtomOrParen<D>> for SynFormulaNoArg<D> {
+    fn from(x: SynFormulaAtomOrParen<D>) -> Self {
         match x {
             SynFormulaAtomOrParen::Atom(atom) => SynFormulaNoArg::Atom(atom),
             SynFormulaAtomOrParen::Paren(paren) => SynFormulaNoArg::Paren(paren),
@@ -107,7 +109,7 @@ impl From<SynFormulaAtomOrParen> for SynFormulaNoArg {
     }
 }
 
-impl Parse for SynFormulaNoArg {
+impl Parse for SynFormulaNoArg<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -122,14 +124,15 @@ impl Parse for SynFormulaNoArg {
         }
 
         let res = xs[0].clone();
-        let mut res: SynFormulaNoArg = res.into();
+        let mut res: SynFormulaNoArg<UD> = res.into();
 
         for x in xs.into_iter().skip(1) {
-            let x: SynFormulaNoArg = x.into();
-            let x: SynFormula = x.into();
+            let x: SynFormulaNoArg<UD> = x.into();
+            let x: SynFormula<UD> = x.into();
             res = SynFormulaNoArg::App(SynFormulaApp {
                 fun: Box::new(res.into()),
                 arg: Box::new(x),
+                ext: (),
             });
         }
 
@@ -139,18 +142,19 @@ impl Parse for SynFormulaNoArg {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynFormulaForall {
+pub struct SynFormulaForall<D: Decoration> {
     pub keyword_forall: TokenKeyword,
     pub lparen: TokenLParen,
     pub name: TokenIdent,
     pub colon: TokenColon,
-    pub ty: Box<SynFormula>,
+    pub ty: Box<SynFormula<D>>,
     pub rparen: TokenRParen,
     pub camma: TokenCamma,
-    pub child: Box<SynFormula>,
+    pub child: Box<SynFormula<D>>,
+    ext: D::FormulaForall,
 }
 
-impl ToFelisString for SynFormulaForall {
+impl<D: Decoration> ToFelisString for SynFormulaForall<D> {
     fn to_felis_string(&self) -> String {
         format!(
             "#forall ({} : {}), {}",
@@ -161,7 +165,7 @@ impl ToFelisString for SynFormulaForall {
     }
 }
 
-impl Parse for SynFormulaForall {
+impl Parse for SynFormulaForall<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -210,18 +214,20 @@ impl Parse for SynFormulaForall {
             rparen,
             camma,
             child: Box::new(child),
+            ext: (),
         }))
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynFormulaImplies {
-    pub lhs: Box<SynFormula>,
+pub struct SynFormulaImplies<D: Decoration> {
+    pub lhs: Box<SynFormula<D>>,
     pub arrow: TokenArrow,
-    pub rhs: Box<SynFormula>,
+    pub rhs: Box<SynFormula<D>>,
+    ext: D::FormulaImplies,
 }
 
-impl ToFelisString for SynFormulaImplies {
+impl<D: Decoration> ToFelisString for SynFormulaImplies<D> {
     fn to_felis_string(&self) -> String {
         format!(
             "{} -> {}",
@@ -232,17 +238,18 @@ impl ToFelisString for SynFormulaImplies {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynFormulaAtom {
+pub struct SynFormulaAtom<D: Decoration> {
     pub ident: TokenIdent,
+    ext: D::FormulaAtom,
 }
 
-impl ToFelisString for SynFormulaAtom {
+impl<D: Decoration> ToFelisString for SynFormulaAtom<D> {
     fn to_felis_string(&self) -> String {
         self.ident.as_str().to_string()
     }
 }
 
-impl Parse for SynFormulaAtom {
+impl Parse for SynFormulaAtom<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -251,17 +258,18 @@ impl Parse for SynFormulaAtom {
         };
 
         *i = k;
-        Ok(Some(SynFormulaAtom { ident }))
+        Ok(Some(SynFormulaAtom { ident, ext: () }))
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynFormulaApp {
-    pub fun: Box<SynFormula>,
-    pub arg: Box<SynFormula>,
+pub struct SynFormulaApp<D: Decoration> {
+    pub fun: Box<SynFormula<D>>,
+    pub arg: Box<SynFormula<D>>,
+    ext: D::FormulaApp,
 }
 
-impl ToFelisString for SynFormulaApp {
+impl<D: Decoration> ToFelisString for SynFormulaApp<D> {
     fn to_felis_string(&self) -> String {
         format!(
             "{} {}",
@@ -272,19 +280,20 @@ impl ToFelisString for SynFormulaApp {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynFormulaParen {
+pub struct SynFormulaParen<D: Decoration> {
     pub lparen: TokenLParen,
-    pub child: Box<SynFormula>,
+    pub child: Box<SynFormula<D>>,
     pub rparen: TokenRParen,
+    ext: D::FormulaParen,
 }
 
-impl ToFelisString for SynFormulaParen {
+impl<D: Decoration> ToFelisString for SynFormulaParen<D> {
     fn to_felis_string(&self) -> String {
         format!("({})", self.child.to_felis_string())
     }
 }
 
-impl Parse for SynFormulaParen {
+impl Parse for SynFormulaParen<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -305,41 +314,42 @@ impl Parse for SynFormulaParen {
             lparen,
             child: Box::new(child),
             rparen,
+            ext: (),
         }))
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::{test_utils::parse_from_str, to_felis_string::ToFelisString};
+    use crate::{decoration::UD, test_utils::parse_from_str, to_felis_string::ToFelisString};
 
     use super::SynFormula;
 
     #[test]
     fn test_felis_syn_formula_1() {
         let s = "#forall (A : Prop), #forall (B : Prop), And A B -> Or A B";
-        let res = parse_from_str::<SynFormula>(s).unwrap();
+        let res = parse_from_str::<SynFormula<UD>>(s).unwrap();
         assert_eq!(res.unwrap().to_felis_string(), s);
     }
 
     #[test]
     fn test_felis_syn_formula_2() {
         let s = "And A B -> Or A B";
-        let res = parse_from_str::<SynFormula>(s).unwrap();
+        let res = parse_from_str::<SynFormula<UD>>(s).unwrap();
         assert_eq!(res.unwrap().to_felis_string(), s);
     }
 
     #[test]
     fn test_felis_syn_formula_3() {
         let s = "Or A B";
-        let res = parse_from_str::<SynFormula>(s).unwrap();
+        let res = parse_from_str::<SynFormula<UD>>(s).unwrap();
         assert_eq!(res.unwrap().to_felis_string(), s);
     }
 
     #[test]
     fn test_felis_syn_formula_4() {
         let s = "A";
-        let res = parse_from_str::<SynFormula>(s).unwrap();
+        let res = parse_from_str::<SynFormula<UD>>(s).unwrap();
         assert_eq!(res.unwrap().to_felis_string(), s);
     }
 }

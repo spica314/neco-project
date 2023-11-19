@@ -1,4 +1,5 @@
 use crate::{
+    decoration::{Decoration, UD},
     parse::Parse,
     to_felis_string::ToFelisString,
     token::{Token, TokenColonColon, TokenIdent},
@@ -6,19 +7,20 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynExprIdentWithPath {
+pub struct SynExprIdentWithPath<D: Decoration> {
     id: SynTreeId,
     pub path: Vec<(TokenIdent, TokenColonColon)>,
     pub ident: TokenIdent,
+    ext: D::ExprIdentWithPath,
 }
 
-impl SynExprIdentWithPath {
+impl<D: Decoration> SynExprIdentWithPath<D> {
     pub fn syn_tree_id(&self) -> SynTreeId {
         self.id
     }
 }
 
-impl ToFelisString for SynExprIdentWithPath {
+impl<D: Decoration> ToFelisString for SynExprIdentWithPath<D> {
     fn to_felis_string(&self) -> String {
         let mut res = String::new();
         for t in &self.path {
@@ -30,7 +32,7 @@ impl ToFelisString for SynExprIdentWithPath {
     }
 }
 
-impl Parse for SynExprIdentWithPath {
+impl Parse for SynExprIdentWithPath<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -52,6 +54,7 @@ impl Parse for SynExprIdentWithPath {
             id: SynTreeId::new(),
             path,
             ident,
+            ext: (),
         }))
     }
 }

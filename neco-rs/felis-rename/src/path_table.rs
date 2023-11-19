@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use felis_syn::{
+    decoration::UD,
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::SynFnDef,
     syn_theorem_def::SynTheoremDef,
@@ -41,7 +42,7 @@ impl PathTable {
 }
 
 pub fn construct_path_table_syn_file(
-    file: &SynFile,
+    file: &SynFile<UD>,
     rename_table: &SerialIdTable,
 ) -> Result<PathTable, ()> {
     let mut path_table = PathTable::new();
@@ -92,7 +93,7 @@ pub fn construct_path_table_syn_file(
 }
 
 fn construct_path_table_syn_type_def(
-    type_def: &SynTypeDef,
+    type_def: &SynTypeDef<UD>,
     rename_table: &SerialIdTable,
     path_table: &mut PathTable,
 ) {
@@ -110,14 +111,14 @@ fn construct_path_table_syn_type_def(
 }
 
 fn construct_path_table_syn_fn_def(
-    _fn_def: &SynFnDef,
+    _fn_def: &SynFnDef<UD>,
     _rename_table: &SerialIdTable,
     _path_table: &mut PathTable,
 ) {
 }
 
 fn construct_path_table_syn_theorem_def(
-    _theorem_def: &SynTheoremDef,
+    _theorem_def: &SynTheoremDef<UD>,
     _rename_table: &SerialIdTable,
     _path_table: &mut PathTable,
 ) {
@@ -125,14 +126,14 @@ fn construct_path_table_syn_theorem_def(
 
 #[cfg(test)]
 mod test {
-    use felis_syn::{syn_file::SynFile, test_utils::parse_from_str};
+    use felis_syn::{decoration::UD, syn_file::SynFile, test_utils::parse_from_str};
 
     use crate::{path_table::construct_path_table_syn_file, rename_defs::rename_defs_file};
 
     #[test]
     fn felis_construct_path_table_test_1() {
         let s = "#type A : Prop { hoge : A, }";
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         let def_table = rename_defs_file(&file).unwrap();
         // [file], A, hoge
         assert_eq!(def_table.len(), 3);
@@ -144,7 +145,7 @@ mod test {
     #[test]
     fn felis_construct_path_table_test_2() {
         let s = std::fs::read_to_string("../../library/wip/fn_def.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         let def_table = rename_defs_file(&file).unwrap();
         // [file], proof, A, B, x, l, r
         assert_eq!(def_table.len(), 7);
@@ -156,7 +157,7 @@ mod test {
     #[test]
     fn felis_construct_path_table_test_4() {
         let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         let def_table = rename_defs_file(&file).unwrap();
         // (1) [file]
         // (4) And, conj, A, B

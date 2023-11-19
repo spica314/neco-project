@@ -1,17 +1,19 @@
 use crate::{
+    decoration::{Decoration, UD},
     parse::Parse,
     token::{Token, TokenIdent, TokenKeyword},
     SynTreeId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynEntrypoint {
+pub struct SynEntrypoint<D: Decoration> {
     id: SynTreeId,
     pub token_entrypoint: TokenKeyword,
     pub ident: TokenIdent,
+    ext: D::Entrypoint,
 }
 
-impl Parse for SynEntrypoint {
+impl Parse for SynEntrypoint<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -33,6 +35,7 @@ impl Parse for SynEntrypoint {
             id: SynTreeId::new(),
             token_entrypoint,
             ident,
+            ext: (),
         }))
     }
 }

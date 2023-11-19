@@ -2,7 +2,7 @@ use felis_rename::{
     path_table::construct_path_table_syn_file, rename_defs::rename_defs_file,
     rename_uses::rename_uses_file, SerialId, SerialIdTable,
 };
-use felis_syn::{syn_file::SynFile, test_utils::parse_from_str};
+use felis_syn::{decoration::UD, syn_file::SynFile, test_utils::parse_from_str};
 use felis_term::{Term, TermAtom, TermStar, TypedTerm};
 use felis_type_check_2::{type_check_syn_file, TypedTermTable, TypedTermTableForAtom};
 use felis_type_defs::gen_type_def_table_file;
@@ -12,7 +12,7 @@ fn main() {
     let args: Vec<_> = std::env::args().collect();
 
     let s = std::fs::read_to_string(&args[1]).unwrap();
-    let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+    let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
     /* def */
     let defs_table = rename_defs_file(&file).unwrap();
     /* path */

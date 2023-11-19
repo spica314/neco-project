@@ -1,4 +1,5 @@
 use crate::{
+    decoration::{Decoration, UD},
     parse::Parse,
     syn_fn_def::SynFnDef,
     syn_formula::SynFormula,
@@ -6,17 +7,17 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynTheoremDef {
+pub struct SynTheoremDef<D: Decoration> {
     pub keyword_theorem: TokenKeyword,
     pub name: TokenIdent,
     pub eq: TokenEq,
-    pub formula: SynFormula,
+    pub formula: SynFormula<D>,
     pub lbrace: TokenLBrace,
-    pub fn_def: SynFnDef,
+    pub fn_def: SynFnDef<D>,
     pub rbrace: TokenRBrace,
 }
 
-impl Parse for SynTheoremDef {
+impl Parse for SynTheoremDef<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -74,7 +75,7 @@ mod test {
     fn felis_syn_theorem_def_parse_test_1() {
         let s = std::fs::read_to_string("../../library/wip/theorem.fe").unwrap();
         let mut parser = Parser::new();
-        let res = parser.parse::<SynTheoremDef>(&s);
+        let res = parser.parse::<SynTheoremDef<UD>>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());

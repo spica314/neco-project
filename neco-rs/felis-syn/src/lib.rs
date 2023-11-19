@@ -1,3 +1,4 @@
+use decoration::UD;
 use neco_table::define_wrapper_of_table_id;
 use parse::Parse;
 use syn_file::SynFile;
@@ -5,6 +6,7 @@ use token::TokenInfoTable;
 
 use crate::token::{lex, FileId};
 
+pub mod decoration;
 pub mod parse;
 pub mod syn_entrypoint;
 pub mod syn_expr;
@@ -34,8 +36,8 @@ impl Parser {
     pub fn new() -> Parser {
         Parser { next_file_id: 0 }
     }
-    pub fn parse_file(&mut self, s: &str) -> Result<(SynFile, TokenInfoTable), ()> {
-        let (syn_file, table) = self.parse::<SynFile>(s)?;
+    pub fn parse_file(&mut self, s: &str) -> Result<(SynFile<UD>, TokenInfoTable), ()> {
+        let (syn_file, table) = self.parse::<SynFile<UD>>(s)?;
         Ok((syn_file.unwrap(), table))
     }
     pub fn parse<T: Parse>(&mut self, s: &str) -> Result<(Option<T>, TokenInfoTable), ()> {

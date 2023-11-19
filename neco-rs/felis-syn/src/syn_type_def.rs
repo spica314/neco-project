@@ -1,21 +1,23 @@
 use crate::{
+    decoration::{Decoration, UD},
     parse::Parse,
     syn_type::SynType,
     token::{Token, TokenCamma, TokenColon, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynTypeDef {
+pub struct SynTypeDef<D: Decoration> {
     pub keyword_type: TokenKeyword,
     pub name: TokenIdent,
     pub colon: TokenColon,
-    pub ty_ty: Box<SynType>,
+    pub ty_ty: Box<SynType<D>>,
     pub lbrace: TokenLBrace,
-    pub variants: Vec<SynVariant>,
+    pub variants: Vec<SynVariant<D>>,
     pub rbrace: TokenRBrace,
+    ext: D::TypeDef,
 }
 
-impl Parse for SynTypeDef {
+impl Parse for SynTypeDef<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
         let Some(keyword_type) = TokenKeyword::parse(tokens, &mut k)? else {
@@ -58,19 +60,21 @@ impl Parse for SynTypeDef {
             lbrace,
             variants,
             rbrace,
+            ext: (),
         }))
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynVariant {
+pub struct SynVariant<D: Decoration> {
     pub name: TokenIdent,
     pub colon: TokenColon,
-    pub ty: SynType,
+    pub ty: SynType<D>,
     pub camma: TokenCamma,
+    ext: D::Variant,
 }
 
-impl Parse for SynVariant {
+impl Parse for SynVariant<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -96,6 +100,7 @@ impl Parse for SynVariant {
             colon,
             ty,
             camma,
+            ext: (),
         }))
     }
 }
@@ -110,7 +115,7 @@ mod test {
     fn felis_syn_type_def_parse_test_3() {
         let s = include_str!("../../../library/wip/and2.fe");
         let mut parser = Parser::new();
-        let res = parser.parse::<SynTypeDef>(&s);
+        let res = parser.parse::<SynTypeDef<UD>>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
@@ -129,7 +134,7 @@ mod test {
     fn felis_syn_type_def_parse_test_4() {
         let s = include_str!("../../../library/wip/or2.fe");
         let mut parser = Parser::new();
-        let res = parser.parse::<SynTypeDef>(&s);
+        let res = parser.parse::<SynTypeDef<UD>>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());

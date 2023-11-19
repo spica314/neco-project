@@ -1,4 +1,5 @@
 use crate::{
+    decoration::{Decoration, UD},
     parse::Parse,
     token::{Token, TokenLParen, TokenRParen},
     SynTreeId,
@@ -7,20 +8,21 @@ use crate::{
 use super::SynExpr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynExprParen {
+pub struct SynExprParen<D: Decoration> {
     id: SynTreeId,
     pub lparen: TokenLParen,
-    pub expr: Box<SynExpr>,
+    pub expr: Box<SynExpr<D>>,
     pub rparen: TokenRParen,
+    ext: D::ExprParen,
 }
 
-impl SynExprParen {
+impl<D: Decoration> SynExprParen<D> {
     pub fn syn_tree_id(&self) -> SynTreeId {
         self.id
     }
 }
 
-impl Parse for SynExprParen {
+impl Parse for SynExprParen<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -42,6 +44,7 @@ impl Parse for SynExprParen {
             lparen,
             expr: Box::new(expr),
             rparen,
+            ext: (),
         }))
     }
 }

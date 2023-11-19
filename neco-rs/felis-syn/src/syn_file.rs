@@ -1,21 +1,27 @@
 use crate::{
-    parse::Parse, syn_entrypoint::SynEntrypoint, syn_fn_def::SynFnDef,
-    syn_theorem_def::SynTheoremDef, syn_type_def::SynTypeDef, token::Token, SynTreeId,
+    decoration::{Decoration, UD},
+    parse::Parse,
+    syn_entrypoint::SynEntrypoint,
+    syn_fn_def::SynFnDef,
+    syn_theorem_def::SynTheoremDef,
+    syn_type_def::SynTypeDef,
+    token::Token,
+    SynTreeId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynFile {
+pub struct SynFile<D: Decoration> {
     id: SynTreeId,
-    pub items: Vec<SynFileItem>,
+    pub items: Vec<SynFileItem<D>>,
 }
 
-impl SynFile {
+impl<D: Decoration> SynFile<D> {
     pub fn syn_tree_id(&self) -> SynTreeId {
         self.id
     }
 }
 
-impl Parse for SynFile {
+impl Parse for SynFile<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -33,14 +39,14 @@ impl Parse for SynFile {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum SynFileItem {
-    TypeDef(SynTypeDef),
-    FnDef(SynFnDef),
-    TheoremDef(SynTheoremDef),
-    Entrypoint(SynEntrypoint),
+pub enum SynFileItem<D: Decoration> {
+    TypeDef(SynTypeDef<D>),
+    FnDef(SynFnDef<D>),
+    TheoremDef(SynTheoremDef<D>),
+    Entrypoint(SynEntrypoint<D>),
 }
 
-impl Parse for SynFileItem {
+impl Parse for SynFileItem<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -78,7 +84,7 @@ mod test {
     fn felis_syn_file_parse_test_1() {
         let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
         let mut parser = Parser::new();
-        let res = parser.parse::<SynFile>(&s);
+        let res = parser.parse::<SynFile<UD>>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
@@ -90,7 +96,7 @@ mod test {
     fn felis_syn_file_parse_test_2() {
         let s = std::fs::read_to_string("../../library/wip/prop3.fe").unwrap();
         let mut parser = Parser::new();
-        let res = parser.parse::<SynFile>(&s);
+        let res = parser.parse::<SynFile<UD>>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
@@ -102,7 +108,7 @@ mod test {
     fn felis_syn_file_parse_test_3() {
         let s = std::fs::read_to_string("../../library/wip/hello_world.fe").unwrap();
         let mut parser = Parser::new();
-        let res = parser.parse::<SynFile>(&s);
+        let res = parser.parse::<SynFile<UD>>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
@@ -114,7 +120,7 @@ mod test {
     fn felis_syn_file_parse_test_4() {
         let s = std::fs::read_to_string("../../library/wip/statement_let.fe").unwrap();
         let mut parser = Parser::new();
-        let res = parser.parse::<SynFile>(&s);
+        let res = parser.parse::<SynFile<UD>>(&s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());

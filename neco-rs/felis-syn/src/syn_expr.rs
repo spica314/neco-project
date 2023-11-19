@@ -14,20 +14,26 @@ pub use syn_expr_match::*;
 pub use syn_expr_paren::*;
 pub use syn_expr_string::*;
 
-use crate::{parse::Parse, to_felis_string::ToFelisString, token::Token, SynTreeId};
+use crate::{
+    decoration::{Decoration, UD},
+    parse::Parse,
+    to_felis_string::ToFelisString,
+    token::Token,
+    SynTreeId,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum SynExpr {
-    Ident(SynExprIdent),
-    IdentWithPath(SynExprIdentWithPath),
-    App(SynExprApp),
-    Match(SynExprMatch),
-    Paren(SynExprParen),
-    String(SynExprString),
-    Block(SynExprBlock),
+pub enum SynExpr<D: Decoration> {
+    Ident(SynExprIdent<D>),
+    IdentWithPath(SynExprIdentWithPath<D>),
+    App(SynExprApp<D>),
+    Match(SynExprMatch<D>),
+    Paren(SynExprParen<D>),
+    String(SynExprString<D>),
+    Block(SynExprBlock<D>),
 }
 
-impl SynExpr {
+impl<D: Decoration> SynExpr<D> {
     pub fn table_id(&self) -> SynTreeId {
         match self {
             SynExpr::Ident(expr_ident) => expr_ident.syn_tree_id(),
@@ -41,7 +47,7 @@ impl SynExpr {
     }
 }
 
-impl Parse for SynExpr {
+impl Parse for SynExpr<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -65,7 +71,7 @@ impl Parse for SynExpr {
     }
 }
 
-impl ToFelisString for SynExpr {
+impl<D: Decoration> ToFelisString for SynExpr<D> {
     fn to_felis_string(&self) -> String {
         match self {
             SynExpr::Ident(expr_ident) => expr_ident.ident.ident.as_str().to_string(),
@@ -80,14 +86,14 @@ impl ToFelisString for SynExpr {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum SynExprNoApp {
-    IdentWithPath(SynExprIdentWithPath),
-    Match(SynExprMatch),
-    Paren(SynExprParen),
-    String(SynExprString),
+enum SynExprNoApp<D: Decoration> {
+    IdentWithPath(SynExprIdentWithPath<D>),
+    Match(SynExprMatch<D>),
+    Paren(SynExprParen<D>),
+    String(SynExprString<D>),
 }
 
-impl Parse for SynExprNoApp {
+impl Parse for SynExprNoApp<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -115,8 +121,8 @@ impl Parse for SynExprNoApp {
     }
 }
 
-impl From<SynExprNoApp> for SynExpr {
-    fn from(value: SynExprNoApp) -> Self {
+impl<D: Decoration> From<SynExprNoApp<D>> for SynExpr<D> {
+    fn from(value: SynExprNoApp<D>) -> Self {
         match value {
             SynExprNoApp::IdentWithPath(expr_ident_with_path) => {
                 SynExpr::IdentWithPath(expr_ident_with_path)
@@ -138,13 +144,15 @@ mod test {
     fn felis_syn_expr_parse_test_1() {
         let s = "x";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynExpr>(s);
+        let res = parser.parse::<SynExpr<UD>>(s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::IdentWithPath(_)));
-        let SynExpr::IdentWithPath(ident_with_path) = res else { panic!() };
+        let SynExpr::IdentWithPath(ident_with_path) = res else {
+            panic!()
+        };
         assert_eq!(ident_with_path.ident.ident.as_str(), "x");
     }
 
@@ -152,13 +160,15 @@ mod test {
     fn felis_syn_expr_parse_test_2() {
         let s = "#match x { }";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynExpr>(s);
+        let res = parser.parse::<SynExpr<UD>>(s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::Match(_)));
-        let SynExpr::Match(expr_match) = res else { panic!() };
+        let SynExpr::Match(expr_match) = res else {
+            panic!()
+        };
         assert!(expr_match.arms.is_empty());
     }
 
@@ -166,13 +176,15 @@ mod test {
     fn felis_syn_expr_parse_test_3() {
         let s = "#match x { y z => t, }";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynExpr>(s);
+        let res = parser.parse::<SynExpr<UD>>(s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::Match(_)));
-        let SynExpr::Match(expr_match) = res else { panic!() };
+        let SynExpr::Match(expr_match) = res else {
+            panic!()
+        };
         assert_eq!(expr_match.arms.len(), 1);
         assert_eq!(expr_match.arms[0].pattern.to_felis_string(), "y z");
         assert_eq!(expr_match.arms[0].expr.to_felis_string(), "t");
@@ -182,13 +194,15 @@ mod test {
     fn felis_syn_expr_parse_test_4() {
         let s = "#match x { y z => t, a => b, }";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynExpr>(s);
+        let res = parser.parse::<SynExpr<UD>>(s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::Match(_)));
-        let SynExpr::Match(expr_match) = res else { panic!() };
+        let SynExpr::Match(expr_match) = res else {
+            panic!()
+        };
         assert_eq!(expr_match.arms.len(), 2);
         assert_eq!(expr_match.arms[0].pattern.to_felis_string(), "y z");
         assert_eq!(expr_match.arms[0].expr.to_felis_string(), "t");
@@ -200,7 +214,7 @@ mod test {
     fn felis_syn_expr_parse_test_5() {
         let s = "f (g x)";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynExpr>(s);
+        let res = parser.parse::<SynExpr<UD>>(s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
@@ -213,13 +227,15 @@ mod test {
     fn felis_syn_expr_parse_test_6() {
         let s = "#match x { y::z w => t, }";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynExpr>(s);
+        let res = parser.parse::<SynExpr<UD>>(s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::Match(_)));
-        let SynExpr::Match(expr_match) = res else { panic!() };
+        let SynExpr::Match(expr_match) = res else {
+            panic!()
+        };
         assert_eq!(expr_match.arms.len(), 1);
         assert_eq!(expr_match.arms[0].pattern.to_felis_string(), "y::z w");
         assert_eq!(expr_match.arms[0].expr.to_felis_string(), "t");
@@ -229,13 +245,15 @@ mod test {
     fn felis_syn_expr_parse_test_7() {
         let s = "#match x { y::z w => t::u, }";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynExpr>(s);
+        let res = parser.parse::<SynExpr<UD>>(s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::Match(_)));
-        let SynExpr::Match(expr_match) = res else { panic!() };
+        let SynExpr::Match(expr_match) = res else {
+            panic!()
+        };
         assert_eq!(expr_match.arms.len(), 1);
         assert_eq!(expr_match.arms[0].pattern.to_felis_string(), "y::z w");
         assert_eq!(expr_match.arms[0].expr.to_felis_string(), "t::u");
@@ -245,13 +263,15 @@ mod test {
     fn felis_syn_expr_parse_test_8() {
         let s = "#match x { y::z w => t::u a, }";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynExpr>(s);
+        let res = parser.parse::<SynExpr<UD>>(s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert!(matches!(res, SynExpr::Match(_)));
-        let SynExpr::Match(expr_match) = res else { panic!() };
+        let SynExpr::Match(expr_match) = res else {
+            panic!()
+        };
         assert_eq!(expr_match.arms.len(), 1);
         assert_eq!(expr_match.arms[0].pattern.to_felis_string(), "y::z w");
         assert_eq!(expr_match.arms[0].expr.to_felis_string(), "t::u a");
@@ -261,7 +281,7 @@ mod test {
     fn felis_syn_expr_parse_test_9() {
         let s = "{ 42 }";
         let mut parser = Parser::new();
-        let res = parser.parse::<SynExpr>(s);
+        let res = parser.parse::<SynExpr<UD>>(s);
         assert!(res.is_ok());
         let (res, _) = res.unwrap();
         assert!(res.is_some());

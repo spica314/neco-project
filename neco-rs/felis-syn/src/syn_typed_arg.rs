@@ -1,4 +1,5 @@
 use crate::{
+    decoration::{Decoration, UD},
     parse::Parse,
     syn_type::SynType,
     to_felis_string::ToFelisString,
@@ -6,15 +7,15 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynTypedArg {
+pub struct SynTypedArg<D: Decoration> {
     pub lparen: TokenLParen,
     pub name: TokenIdent,
     pub colon: TokenColon,
-    pub ty: SynType,
+    pub ty: SynType<D>,
     pub rparen: TokenRParen,
 }
 
-impl ToFelisString for SynTypedArg {
+impl<D: Decoration> ToFelisString for SynTypedArg<D> {
     fn to_felis_string(&self) -> String {
         let mut s = String::new();
         s.push('(');
@@ -26,7 +27,7 @@ impl ToFelisString for SynTypedArg {
     }
 }
 
-impl Parse for SynTypedArg {
+impl Parse for SynTypedArg<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -69,7 +70,7 @@ mod test {
     #[test]
     fn felis_syn_typed_arg_parse_test_1() {
         let s = "(A : Prop)";
-        let res = parse_from_str::<SynTypedArg>(s);
+        let res = parse_from_str::<SynTypedArg<UD>>(s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());
@@ -80,7 +81,7 @@ mod test {
     #[test]
     fn felis_syn_typed_arg_parse_test_2() {
         let s = "(x : A -> B)";
-        let res = parse_from_str::<SynTypedArg>(s);
+        let res = parse_from_str::<SynTypedArg<UD>>(s);
         assert!(res.is_ok());
         let res = res.unwrap();
         assert!(res.is_some());

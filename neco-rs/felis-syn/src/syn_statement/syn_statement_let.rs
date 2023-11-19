@@ -1,4 +1,5 @@
 use crate::{
+    decoration::{Decoration, UD},
     parse::Parse,
     syn_expr::SynExpr,
     to_felis_string::ToFelisString,
@@ -7,22 +8,22 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynStatementLet {
+pub struct SynStatementLet<D: Decoration> {
     syn_tree_id: SynTreeId,
     pub keyword_let: TokenKeyword,
     pub name: TokenIdent,
     pub eq: TokenEq,
-    pub expr: SynExpr,
+    pub expr: SynExpr<D>,
     pub semi: TokenSemicolon,
 }
 
-impl SynStatementLet {
+impl<D: Decoration> SynStatementLet<D> {
     pub fn syn_tree_id(&self) -> SynTreeId {
         self.syn_tree_id
     }
 }
 
-impl Parse for SynStatementLet {
+impl Parse for SynStatementLet<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -61,7 +62,7 @@ impl Parse for SynStatementLet {
     }
 }
 
-impl ToFelisString for SynStatementLet {
+impl<D: Decoration> ToFelisString for SynStatementLet<D> {
     fn to_felis_string(&self) -> String {
         format!(
             "#let {} = {};",

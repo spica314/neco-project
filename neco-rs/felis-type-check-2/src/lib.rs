@@ -1,5 +1,6 @@
 use felis_rename::{SerialId, SerialIdTable};
 use felis_syn::{
+    decoration::UD,
     syn_expr::{SynExpr, SynExprIdentWithPath, SynExprMatch},
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::SynFnDef,
@@ -28,7 +29,7 @@ pub enum TypeCheckError {
 }
 
 pub fn type_check_syn_file(
-    file: &SynFile,
+    file: &SynFile<UD>,
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -57,7 +58,7 @@ pub fn type_check_syn_file(
 }
 
 pub fn type_check_syn_theorem_def(
-    theorem_def: &SynTheoremDef,
+    theorem_def: &SynTheoremDef<UD>,
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -73,7 +74,7 @@ pub fn type_check_syn_theorem_def(
 }
 
 pub fn type_check_syn_fn_def(
-    fn_def: &SynFnDef,
+    fn_def: &SynFnDef<UD>,
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -113,7 +114,7 @@ pub fn type_check_syn_fn_def(
 }
 
 pub fn type_check_syn_expr(
-    expr: &SynExpr,
+    expr: &SynExpr<UD>,
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -175,7 +176,7 @@ pub fn type_check_syn_expr(
 }
 
 pub fn type_check_syn_expr_ident_with_path(
-    expr_ident_with_path: &SynExprIdentWithPath,
+    expr_ident_with_path: &SynExprIdentWithPath<UD>,
     rename_table: &SerialIdTable,
     _typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -215,7 +216,7 @@ fn get_most_left_id(term: &Term) -> SerialId {
 }
 
 pub fn type_check_syn_expr_match(
-    expr_match: &SynExprMatch,
+    expr_match: &SynExprMatch<UD>,
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -362,7 +363,7 @@ pub fn type_check_syn_expr_match(
 }
 
 pub fn type_check_syn_type(
-    ty: &SynType,
+    ty: &SynType<UD>,
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -398,7 +399,7 @@ pub fn type_check_syn_type(
 }
 
 pub fn type_check_syn_type_app(
-    ty_app: &SynTypeApp,
+    ty_app: &SynTypeApp<UD>,
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -429,7 +430,7 @@ pub fn type_check_syn_type_app(
 }
 
 pub fn type_check_syn_type_map(
-    ty_map: &SynTypeMap,
+    ty_map: &SynTypeMap<UD>,
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -458,7 +459,7 @@ pub fn type_check_syn_type_map(
 }
 
 pub fn type_check_syn_type_dep_map(
-    ty_map: &SynTypeDependentMap,
+    ty_map: &SynTypeDependentMap<UD>,
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -495,7 +496,7 @@ pub fn type_check_syn_type_dep_map(
 }
 
 pub fn type_check_syn_type_atom(
-    ty_atom: &SynTypeAtom,
+    ty_atom: &SynTypeAtom<UD>,
     rename_table: &SerialIdTable,
     _typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -506,7 +507,7 @@ pub fn type_check_syn_type_atom(
 }
 
 pub fn type_check_syn_type_def(
-    type_def: &SynTypeDef,
+    type_def: &SynTypeDef<UD>,
     rename_table: &SerialIdTable,
     typed_term_table: &mut TypedTermTable,
     typed_term_table_for_atom: &mut TypedTermTableForAtom,
@@ -597,7 +598,7 @@ mod test {
     #[test]
     fn type_check_test_1() {
         let s = "#type A : Prop { hoge : A, }";
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         /* path */
@@ -638,7 +639,9 @@ mod test {
             }
         );
         // A : Prop
-        let SynFileItem::TypeDef(ref type_def) = file.items[0] else { panic!() };
+        let SynFileItem::TypeDef(ref type_def) = file.items[0] else {
+            panic!()
+        };
         let a_id = *rename_table.get(type_def.name.syn_tree_id()).unwrap();
         assert_eq!(
             typed_term_table_for_atom.get(a_id).unwrap(),
@@ -663,7 +666,7 @@ mod test {
     #[test]
     fn type_check_test_2() {
         let s = std::fs::read_to_string("../../library/wip/and2.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         /* path */
@@ -710,7 +713,9 @@ mod test {
             }
         );
         // And : Prop -> Prop -> Prop
-        let SynFileItem::TypeDef(ref type_def) = file.items[0] else { panic!() };
+        let SynFileItem::TypeDef(ref type_def) = file.items[0] else {
+            panic!()
+        };
         let a_id = *rename_table.get(type_def.name.syn_tree_id()).unwrap();
         assert_eq!(
             typed_term_table_for_atom.get(a_id).unwrap(),
@@ -796,7 +801,7 @@ mod test {
     #[test]
     fn type_check_test_3() {
         let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         // (1) [file]
@@ -854,7 +859,7 @@ mod test {
     #[test]
     fn type_check_test_4() {
         let s = std::fs::read_to_string("../../library/wip/prop5.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         /* path */
@@ -894,7 +899,7 @@ mod test {
     #[test]
     fn type_check_test_5() {
         let s = std::fs::read_to_string("../../library/wip/prop5_error_1.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         /* path */
@@ -921,12 +926,18 @@ mod test {
         let type_def_table = gen_type_def_table_file(&file, &rename_table);
 
         let t = file.items[0].clone();
-        let SynFileItem::TheoremDef(theorem_def) = t else { panic!(); };
+        let SynFileItem::TheoremDef(theorem_def) = t else {
+            panic!();
+        };
         let ty = theorem_def.fn_def.ty.clone();
-        let SynType::DependentMap(dep_map) = ty else { panic!(); };
+        let SynType::DependentMap(dep_map) = ty else {
+            panic!();
+        };
         let a_id = dep_map.from.name.syn_tree_id();
         let a_id = rename_table.get(a_id).unwrap().clone();
-        let SynType::DependentMap(dep_map) = dep_map.to.as_ref().clone() else { panic!(); };
+        let SynType::DependentMap(dep_map) = dep_map.to.as_ref().clone() else {
+            panic!();
+        };
         let b_id = dep_map.from.name.syn_tree_id();
         let b_id = rename_table.get(b_id).unwrap().clone();
 
@@ -951,7 +962,7 @@ mod test {
     #[test]
     fn type_check_test_6() {
         let s = std::fs::read_to_string("../../library/wip/prop6.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         /* path */
@@ -993,7 +1004,7 @@ mod test {
     #[test]
     fn type_check_test_7() {
         let s = std::fs::read_to_string("../../library/wip/prop6_error_1.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         /* path */
@@ -1020,12 +1031,18 @@ mod test {
         let type_def_table = gen_type_def_table_file(&file, &rename_table);
 
         let t = file.items[1].clone();
-        let SynFileItem::TheoremDef(theorem_def) = t else { panic!(); };
+        let SynFileItem::TheoremDef(theorem_def) = t else {
+            panic!();
+        };
         let ty = theorem_def.fn_def.ty.clone();
-        let SynType::DependentMap(dep_map) = ty else { panic!(); };
+        let SynType::DependentMap(dep_map) = ty else {
+            panic!();
+        };
         let a_id = dep_map.from.name.syn_tree_id();
         let a_id = rename_table.get(a_id).unwrap().clone();
-        let SynType::DependentMap(dep_map) = dep_map.to.as_ref().clone() else { panic!(); };
+        let SynType::DependentMap(dep_map) = dep_map.to.as_ref().clone() else {
+            panic!();
+        };
         let b_id = dep_map.from.name.syn_tree_id();
         let b_id = rename_table.get(b_id).unwrap().clone();
 

@@ -1,4 +1,5 @@
 use crate::{
+    decoration::{Decoration, UD},
     parse::Parse,
     to_felis_string::ToFelisString,
     token::{Token, TokenArrow2, TokenCamma, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
@@ -8,22 +9,23 @@ use crate::{
 use super::{SynExpr, SynExprIdentWithPath};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynExprMatch {
+pub struct SynExprMatch<D: Decoration> {
     id: SynTreeId,
     pub keyword_match: TokenKeyword,
-    pub expr: Box<SynExpr>,
+    pub expr: Box<SynExpr<D>>,
     pub lbrace: TokenLBrace,
-    pub arms: Vec<SynExprMatchArm>,
+    pub arms: Vec<SynExprMatchArm<D>>,
     pub rbrace: TokenRBrace,
+    ext: D::ExprMatch,
 }
 
-impl SynExprMatch {
+impl<D: Decoration> SynExprMatch<D> {
     pub fn syn_tree_id(&self) -> SynTreeId {
         self.id
     }
 }
 
-impl Parse for SynExprMatch {
+impl Parse for SynExprMatch<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -59,19 +61,20 @@ impl Parse for SynExprMatch {
             lbrace,
             arms,
             rbrace,
+            ext: (),
         }))
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynExprMatchArm {
-    pub pattern: SynExprMatchPattern,
+pub struct SynExprMatchArm<D: Decoration> {
+    pub pattern: SynExprMatchPattern<D>,
     pub arrow2: TokenArrow2,
-    pub expr: SynExpr,
+    pub expr: SynExpr<D>,
     pub camma: TokenCamma,
 }
 
-impl Parse for SynExprMatchArm {
+impl Parse for SynExprMatchArm<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -102,12 +105,12 @@ impl Parse for SynExprMatchArm {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SynExprMatchPattern {
-    pub type_constructor: SynExprIdentWithPath,
+pub struct SynExprMatchPattern<D: Decoration> {
+    pub type_constructor: SynExprIdentWithPath<D>,
     pub idents: Vec<TokenIdent>,
 }
 
-impl Parse for SynExprMatchPattern {
+impl Parse for SynExprMatchPattern<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
 
@@ -128,7 +131,7 @@ impl Parse for SynExprMatchPattern {
     }
 }
 
-impl ToFelisString for SynExprMatchPattern {
+impl<D: Decoration> ToFelisString for SynExprMatchPattern<D> {
     fn to_felis_string(&self) -> String {
         let mut s = String::new();
         s.push_str(&self.type_constructor.to_felis_string());

@@ -1,4 +1,5 @@
 use felis_syn::{
+    decoration::UD,
     syn_entrypoint::SynEntrypoint,
     syn_expr::{SynExpr, SynExprApp, SynExprIdent, SynExprIdentWithPath, SynExprMatch},
     syn_file::{SynFile, SynFileItem},
@@ -17,7 +18,7 @@ use neco_resolver::Resolver;
 use crate::{path_table::PathTable, SerialId, SerialIdTable};
 
 pub fn rename_uses_file(
-    file: &SynFile,
+    file: &SynFile<UD>,
     defs_table: &SerialIdTable,
     mut resolver: Resolver<SerialId>,
     path_table: &PathTable,
@@ -31,7 +32,7 @@ pub fn rename_uses_file(
 }
 
 fn rename_uses_file_item(
-    item: &SynFileItem,
+    item: &SynFileItem<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -59,7 +60,7 @@ fn rename_uses_file_item(
 }
 
 fn rename_uses_entrypoint(
-    entrypoint: &SynEntrypoint,
+    entrypoint: &SynEntrypoint<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -78,7 +79,7 @@ fn rename_uses_entrypoint(
 }
 
 fn rename_uses_type_def(
-    type_def: &SynTypeDef,
+    type_def: &SynTypeDef<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -109,7 +110,7 @@ fn rename_uses_type_def(
 }
 
 fn rename_uses_fn_def(
-    fn_def: &SynFnDef,
+    fn_def: &SynFnDef<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -131,7 +132,7 @@ fn rename_uses_fn_def(
 }
 
 fn rename_uses_fn_block(
-    fn_block: &SynFnBlock,
+    fn_block: &SynFnBlock<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -147,7 +148,7 @@ fn rename_uses_fn_block(
 }
 
 fn rename_uses_statement(
-    statement: &SynStatement,
+    statement: &SynStatement<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -159,7 +160,7 @@ fn rename_uses_statement(
 }
 
 fn rename_uses_expr(
-    expr: &SynExpr,
+    expr: &SynExpr<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -184,7 +185,7 @@ fn rename_uses_expr(
 }
 
 fn rename_uses_expr_app(
-    expr_app: &SynExprApp,
+    expr_app: &SynExprApp<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -198,7 +199,7 @@ fn rename_uses_expr_app(
 }
 
 fn rename_uses_expr_match(
-    expr_match: &SynExprMatch,
+    expr_match: &SynExprMatch<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -251,7 +252,7 @@ fn rename_uses_expr_match(
 }
 
 fn rename_uses_expr_ident(
-    expr_ident: &SynExprIdent,
+    expr_ident: &SynExprIdent<UD>,
     _defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     _path_table: &PathTable,
@@ -267,7 +268,7 @@ fn rename_uses_expr_ident(
 }
 
 fn rename_uses_expr_ident_with_path(
-    expr_ident_with_path: &SynExprIdentWithPath,
+    expr_ident_with_path: &SynExprIdentWithPath<UD>,
     _defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -294,7 +295,7 @@ fn rename_uses_expr_ident_with_path(
 }
 
 fn rename_uses_formula(
-    ty: &SynFormula,
+    ty: &SynFormula<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -315,7 +316,7 @@ fn rename_uses_formula(
 }
 
 fn rename_uses_formula_forall(
-    forall: &SynFormulaForall,
+    forall: &SynFormulaForall<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -344,7 +345,7 @@ fn rename_uses_formula_forall(
 }
 
 fn rename_uses_formula_app(
-    app: &SynFormulaApp,
+    app: &SynFormulaApp<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -362,7 +363,7 @@ fn rename_uses_formula_app(
 }
 
 fn rename_uses_formula_atom(
-    atom: &SynFormulaAtom,
+    atom: &SynFormulaAtom<UD>,
     _defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     _path_table: &PathTable,
@@ -378,7 +379,7 @@ fn rename_uses_formula_atom(
 }
 
 fn rename_uses_formula_implies(
-    implies: &SynFormulaImplies,
+    implies: &SynFormulaImplies<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -396,7 +397,7 @@ fn rename_uses_formula_implies(
 }
 
 fn rename_uses_theorem_def(
-    theorem_def: &SynTheoremDef,
+    theorem_def: &SynTheoremDef<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -418,7 +419,7 @@ fn rename_uses_theorem_def(
 }
 
 fn rename_uses_formula_paren(
-    paren: &SynFormulaParen,
+    paren: &SynFormulaParen<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -427,7 +428,7 @@ fn rename_uses_formula_paren(
 }
 
 fn rename_uses_type(
-    ty: &SynType,
+    ty: &SynType<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -450,7 +451,7 @@ fn rename_uses_type(
 
 // X^{1} X^{2}
 fn rename_uses_type_app(
-    type_app: &SynTypeApp,
+    type_app: &SynTypeApp<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -471,7 +472,7 @@ fn rename_uses_type_app(
 
 // X^{use,1}
 fn rename_uses_type_atom(
-    type_atom: &SynTypeAtom,
+    type_atom: &SynTypeAtom<UD>,
     _defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     _path_table: &PathTable,
@@ -487,7 +488,7 @@ fn rename_uses_type_atom(
 
 // X^{1} -> Y^{2}
 fn rename_uses_type_map(
-    type_map: &SynTypeMap,
+    type_map: &SynTypeMap<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -508,7 +509,7 @@ fn rename_uses_type_map(
 
 // (X^{2} : Y^{1}) -> Z^{3}
 fn rename_uses_type_dep_map(
-    type_dep_map: &SynTypeDependentMap,
+    type_dep_map: &SynTypeDependentMap<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -538,7 +539,7 @@ fn rename_uses_type_dep_map(
 
 // X^{1}
 fn rename_uses_type_paren(
-    type_paren: &SynTypeParen,
+    type_paren: &SynTypeParen<UD>,
     defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
     path_table: &PathTable,
@@ -556,7 +557,7 @@ mod test {
     #[test]
     fn felis_rename_uses_test_1() {
         let s = "#type A : Prop { hoge : A, }";
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         // [file], A, hoge
@@ -576,7 +577,7 @@ mod test {
     #[test]
     fn felis_rename_uses_test_2() {
         let s = std::fs::read_to_string("../../library/wip/fn_def.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         // [file], proof, A, B, x, l, r
@@ -599,7 +600,7 @@ mod test {
     #[test]
     fn felis_rename_uses_test_4() {
         let s = std::fs::read_to_string("../../library/wip/and2.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         // [file], And, conj, A, B
@@ -619,7 +620,7 @@ mod test {
     #[test]
     fn felis_rename_uses_test_5() {
         let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
-        let file = parse_from_str::<SynFile>(&s).unwrap().unwrap();
+        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
         /* def */
         let defs_table = rename_defs_file(&file).unwrap();
         // (1) [file]

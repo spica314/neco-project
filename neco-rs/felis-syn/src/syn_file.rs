@@ -11,8 +11,9 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynFile<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub items: Vec<SynFileItem<D>>,
+    pub ext: D::File,
 }
 
 impl<D: Decoration> SynFile<D> {
@@ -34,6 +35,7 @@ impl Parse for SynFile<UD> {
         Ok(Some(SynFile {
             id: SynTreeId::new(),
             items,
+            ext: (),
         }))
     }
 }

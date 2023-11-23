@@ -151,7 +151,7 @@ pub struct SynFormulaForall<D: Decoration> {
     pub rparen: TokenRParen,
     pub camma: TokenCamma,
     pub child: Box<SynFormula<D>>,
-    ext: D::FormulaForall,
+    pub ext: D::FormulaForall,
 }
 
 impl<D: Decoration> ToFelisString for SynFormulaForall<D> {
@@ -224,7 +224,7 @@ pub struct SynFormulaImplies<D: Decoration> {
     pub lhs: Box<SynFormula<D>>,
     pub arrow: TokenArrow,
     pub rhs: Box<SynFormula<D>>,
-    ext: D::FormulaImplies,
+    pub ext: D::FormulaImplies,
 }
 
 impl<D: Decoration> ToFelisString for SynFormulaImplies<D> {
@@ -240,7 +240,7 @@ impl<D: Decoration> ToFelisString for SynFormulaImplies<D> {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynFormulaAtom<D: Decoration> {
     pub ident: TokenIdent,
-    ext: D::FormulaAtom,
+    pub ext: D::FormulaAtom,
 }
 
 impl<D: Decoration> ToFelisString for SynFormulaAtom<D> {
@@ -266,7 +266,7 @@ impl Parse for SynFormulaAtom<UD> {
 pub struct SynFormulaApp<D: Decoration> {
     pub fun: Box<SynFormula<D>>,
     pub arg: Box<SynFormula<D>>,
-    ext: D::FormulaApp,
+    pub ext: D::FormulaApp,
 }
 
 impl<D: Decoration> ToFelisString for SynFormulaApp<D> {
@@ -284,7 +284,7 @@ pub struct SynFormulaParen<D: Decoration> {
     pub lparen: TokenLParen,
     pub child: Box<SynFormula<D>>,
     pub rparen: TokenRParen,
-    ext: D::FormulaParen,
+    pub ext: D::FormulaParen,
 }
 
 impl<D: Decoration> ToFelisString for SynFormulaParen<D> {

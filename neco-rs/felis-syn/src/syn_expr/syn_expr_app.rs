@@ -10,9 +10,9 @@ use super::{SynExpr, SynExprNoApp};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprApp<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub exprs: Vec<SynExpr<D>>,
-    ext: D::ExprApp,
+    pub ext: D::ExprApp,
 }
 
 impl<D: Decoration> ToFelisString for SynExprApp<D> {

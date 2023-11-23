@@ -13,6 +13,7 @@ pub struct SynFnDef<D: Decoration> {
     pub colon: TokenColon,
     pub ty: SynType<D>,
     pub fn_block: SynFnBlock<D>,
+    pub ext: D::FnDef,
 }
 
 impl Parse for SynFnDef<UD> {
@@ -49,6 +50,7 @@ impl Parse for SynFnDef<UD> {
             colon,
             ty,
             fn_block,
+            ext: (),
         }))
     }
 }

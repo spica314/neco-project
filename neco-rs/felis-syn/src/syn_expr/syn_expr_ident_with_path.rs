@@ -8,10 +8,10 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprIdentWithPath<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub path: Vec<(TokenIdent, TokenColonColon)>,
     pub ident: TokenIdent,
-    ext: D::ExprIdentWithPath,
+    pub ext: D::ExprIdentWithPath,
 }
 
 impl<D: Decoration> SynExprIdentWithPath<D> {

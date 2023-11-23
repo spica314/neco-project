@@ -23,6 +23,11 @@ pub trait Decoration {
     type TypeParen: Debug + Clone + PartialEq + Eq + Hash;
     type TypeDependentMap: Debug + Clone + PartialEq + Eq + Hash;
     type TypeUnit: Debug + Clone + PartialEq + Eq + Hash;
+    type File: Debug + Clone + PartialEq + Eq + Hash;
+    type FnDef: Debug + Clone + PartialEq + Eq + Hash;
+    type TheoremDef: Debug + Clone + PartialEq + Eq + Hash;
+    type TypedArg: Debug + Clone + PartialEq + Eq + Hash;
+    type ExprMatchPattern: Debug + Clone + PartialEq + Eq + Hash;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -49,4 +54,9 @@ impl Decoration for UD {
     type TypeParen = ();
     type TypeDependentMap = ();
     type TypeUnit = ();
+    type File = ();
+    type FnDef = ();
+    type TheoremDef = ();
+    type TypedArg = ();
+    type ExprMatchPattern = ();
 }

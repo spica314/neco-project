@@ -13,6 +13,7 @@ pub struct SynTypedArg<D: Decoration> {
     pub colon: TokenColon,
     pub ty: SynType<D>,
     pub rparen: TokenRParen,
+    pub ext: D::TypedArg,
 }
 
 impl<D: Decoration> ToFelisString for SynTypedArg<D> {
@@ -58,6 +59,7 @@ impl Parse for SynTypedArg<UD> {
             colon,
             ty,
             rparen,
+            ext: (),
         }))
     }
 }

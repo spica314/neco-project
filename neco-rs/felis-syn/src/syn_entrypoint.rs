@@ -7,10 +7,10 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynEntrypoint<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub token_entrypoint: TokenKeyword,
     pub ident: TokenIdent,
-    ext: D::Entrypoint,
+    pub ext: D::Entrypoint,
 }
 
 impl Parse for SynEntrypoint<UD> {

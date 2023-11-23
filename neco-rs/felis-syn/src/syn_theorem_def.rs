@@ -15,6 +15,7 @@ pub struct SynTheoremDef<D: Decoration> {
     pub lbrace: TokenLBrace,
     pub fn_def: SynFnDef<D>,
     pub rbrace: TokenRBrace,
+    pub ext: D::TheoremDef,
 }
 
 impl Parse for SynTheoremDef<UD> {
@@ -61,6 +62,7 @@ impl Parse for SynTheoremDef<UD> {
             lbrace,
             fn_def,
             rbrace,
+            ext: (),
         }))
     }
 }

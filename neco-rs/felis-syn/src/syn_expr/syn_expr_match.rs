@@ -10,13 +10,13 @@ use super::{SynExpr, SynExprIdentWithPath};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprMatch<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub keyword_match: TokenKeyword,
     pub expr: Box<SynExpr<D>>,
     pub lbrace: TokenLBrace,
     pub arms: Vec<SynExprMatchArm<D>>,
     pub rbrace: TokenRBrace,
-    ext: D::ExprMatch,
+    pub ext: D::ExprMatch,
 }
 
 impl<D: Decoration> SynExprMatch<D> {
@@ -108,6 +108,7 @@ impl Parse for SynExprMatchArm<UD> {
 pub struct SynExprMatchPattern<D: Decoration> {
     pub type_constructor: SynExprIdentWithPath<D>,
     pub idents: Vec<TokenIdent>,
+    pub ext: D::ExprMatchPattern,
 }
 
 impl Parse for SynExprMatchPattern<UD> {
@@ -127,6 +128,7 @@ impl Parse for SynExprMatchPattern<UD> {
         Ok(Some(SynExprMatchPattern {
             type_constructor,
             idents,
+            ext: (),
         }))
     }
 }

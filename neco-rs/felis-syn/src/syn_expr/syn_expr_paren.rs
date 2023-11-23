@@ -9,11 +9,11 @@ use super::SynExpr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprParen<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub lparen: TokenLParen,
     pub expr: Box<SynExpr<D>>,
     pub rparen: TokenRParen,
-    ext: D::ExprParen,
+    pub ext: D::ExprParen,
 }
 
 impl<D: Decoration> SynExprParen<D> {

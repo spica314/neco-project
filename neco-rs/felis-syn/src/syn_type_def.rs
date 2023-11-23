@@ -14,7 +14,7 @@ pub struct SynTypeDef<D: Decoration> {
     pub lbrace: TokenLBrace,
     pub variants: Vec<SynVariant<D>>,
     pub rbrace: TokenRBrace,
-    ext: D::TypeDef,
+    pub ext: D::TypeDef,
 }
 
 impl Parse for SynTypeDef<UD> {
@@ -71,7 +71,7 @@ pub struct SynVariant<D: Decoration> {
     pub colon: TokenColon,
     pub ty: SynType<D>,
     pub camma: TokenCamma,
-    ext: D::Variant,
+    pub ext: D::Variant,
 }
 
 impl Parse for SynVariant<UD> {

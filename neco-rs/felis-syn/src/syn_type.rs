@@ -109,10 +109,10 @@ impl Parse for SynType<UD> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeUnit<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub lparen: TokenLParen,
     pub rparen: TokenRParen,
-    ext: D::TypeUnit,
+    pub ext: D::TypeUnit,
 }
 
 impl Parse for SynTypeUnit<UD> {
@@ -236,10 +236,10 @@ impl Parse for SynTypeNoMap<UD> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeApp<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub left: Box<SynType<D>>,
     pub right: Box<SynType<D>>,
-    ext: D::TypeApp,
+    pub ext: D::TypeApp,
 }
 
 impl<D: Decoration> SynTypeApp<D> {
@@ -256,11 +256,11 @@ impl Parse for SynTypeApp<UD> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeDependentMap<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub from: Box<SynTypedArg<D>>,
     pub arrow: TokenArrow,
     pub to: Box<SynType<D>>,
-    ext: D::TypeDependentMap,
+    pub ext: D::TypeDependentMap,
 }
 
 impl<D: Decoration> SynTypeDependentMap<D> {
@@ -301,11 +301,11 @@ impl Parse for SynTypeDependentMap<UD> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeMap<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub from: Box<SynType<D>>,
     pub arrow: TokenArrow,
     pub to: Box<SynType<D>>,
-    ext: D::TypeMap,
+    pub ext: D::TypeMap,
 }
 
 impl<D: Decoration> SynTypeMap<D> {
@@ -323,7 +323,7 @@ impl Parse for SynTypeMap<UD> {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeAtom<D: Decoration> {
     pub ident: TokenIdent,
-    ext: D::TypeAtom,
+    pub ext: D::TypeAtom,
 }
 
 impl<D: Decoration> SynTypeAtom<D> {
@@ -359,7 +359,7 @@ pub struct SynTypeParen<D: Decoration> {
     pub lparen: TokenLParen,
     pub ty: Box<SynType<D>>,
     pub rparen: TokenRParen,
-    ext: D::TypeParen,
+    pub ext: D::TypeParen,
 }
 
 impl Parse for SynTypeParen<UD> {

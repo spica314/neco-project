@@ -7,9 +7,9 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprIdent<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub ident: TokenIdent,
-    ext: D::ExprIdent,
+    pub ext: D::ExprIdent,
 }
 
 impl<D: Decoration> SynExprIdent<D> {

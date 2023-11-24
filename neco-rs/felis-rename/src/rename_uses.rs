@@ -61,9 +61,9 @@ fn rename_uses_file_item(
 
 fn rename_uses_entrypoint(
     entrypoint: &SynEntrypoint<UD>,
-    defs_table: &SerialIdTable,
+    _defs_table: &SerialIdTable,
     resolver: &mut Resolver<SerialId>,
-    path_table: &PathTable,
+    _path_table: &PathTable,
 ) -> Result<SerialIdTable, ()> {
     let mut res = SerialIdTable::new();
     // name

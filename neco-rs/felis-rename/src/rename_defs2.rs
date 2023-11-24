@@ -22,8 +22,6 @@ use felis_syn::{
     SynTreeId,
 };
 
-use crate::{SerialId, SerialIdTable};
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DefDecoration;
 impl Decoration for DefDecoration {
@@ -147,6 +145,12 @@ impl RenameDefContext {
 
     pub fn def_count(&self) -> usize {
         self.next_id.0 - 1
+    }
+}
+
+impl Default for RenameDefContext {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -302,6 +306,7 @@ fn rename_defs_expr_ident(
     _context: &mut RenameDefContext,
     ident: &SynExprIdent<UD>,
 ) -> Result<SynExprIdent<DefDecoration>, ()> {
+    #[allow(clippy::let_unit_value)]
     let ext = ();
     Ok(SynExprIdent {
         id: SynTreeId::new(),
@@ -319,6 +324,7 @@ fn rename_defs_expr_app(
         let expr = rename_defs_expr(context, expr)?;
         exprs.push(expr);
     }
+    #[allow(clippy::let_unit_value)]
     let ext = ();
     Ok(SynExprApp {
         id: SynTreeId::new(),
@@ -331,6 +337,7 @@ fn rename_defs_expr_paren(
     context: &mut RenameDefContext,
     paren: &SynExprParen<UD>,
 ) -> Result<SynExprParen<DefDecoration>, ()> {
+    #[allow(clippy::let_unit_value)]
     let ext = ();
     Ok(SynExprParen {
         id: SynTreeId::new(),
@@ -350,6 +357,7 @@ fn rename_defs_expr_match(
         let arm = rename_defs_expr_arm(context, arm)?;
         arms.push(arm);
     }
+    #[allow(clippy::let_unit_value)]
     let ext = ();
     Ok(SynExprMatch {
         id: SynTreeId::new(),
@@ -398,6 +406,7 @@ fn rename_defs_expr_ident_with_path(
     _context: &mut RenameDefContext,
     ident_with_path: &SynExprIdentWithPath<UD>,
 ) -> Result<SynExprIdentWithPath<DefDecoration>, ()> {
+    #[allow(clippy::let_unit_value)]
     let ext = ();
     Ok(SynExprIdentWithPath {
         id: SynTreeId::new(),
@@ -455,6 +464,7 @@ fn rename_defs_formula(
         SynFormula::App(app) => {
             let fun = rename_defs_formula(context, &app.fun)?;
             let arg = rename_defs_formula(context, &app.arg)?;
+            #[allow(clippy::let_unit_value)]
             let ext = ();
             Ok(SynFormula::App(SynFormulaApp {
                 fun: Box::new(fun),
@@ -468,6 +478,7 @@ fn rename_defs_formula(
         })),
         SynFormula::Paren(paren) => {
             let child = rename_defs_formula(context, &paren.child)?;
+            #[allow(clippy::let_unit_value)]
             let ext = ();
             Ok(SynFormula::Paren(SynFormulaParen {
                 lparen: paren.lparen.clone(),
@@ -479,6 +490,7 @@ fn rename_defs_formula(
         SynFormula::Implies(implies) => {
             let lhs = rename_defs_formula(context, &implies.lhs)?;
             let rhs = rename_defs_formula(context, &implies.rhs)?;
+            #[allow(clippy::let_unit_value)]
             let ext = ();
             Ok(SynFormula::Implies(SynFormulaImplies {
                 lhs: Box::new(lhs),
@@ -528,6 +540,7 @@ fn rename_defs_type(
         SynType::App(app) => {
             let left = rename_defs_type(context, &app.left)?;
             let right = rename_defs_type(context, &app.right)?;
+            #[allow(clippy::let_unit_value)]
             let ext = ();
             Ok(SynType::App(SynTypeApp {
                 id: SynTreeId::new(),
@@ -537,6 +550,7 @@ fn rename_defs_type(
             }))
         }
         SynType::Atom(atom) => {
+            #[allow(clippy::let_unit_value)]
             let ext = ();
             Ok(SynType::Atom(SynTypeAtom {
                 ident: atom.ident.clone(),
@@ -545,6 +559,7 @@ fn rename_defs_type(
         }
         SynType::Paren(paren) => {
             let ty = rename_defs_type(context, &paren.ty)?;
+            #[allow(clippy::let_unit_value)]
             let ext = ();
             Ok(SynType::Paren(SynTypeParen {
                 lparen: paren.lparen.clone(),
@@ -556,6 +571,7 @@ fn rename_defs_type(
         SynType::Map(map) => {
             let from = rename_defs_type(context, &map.from)?;
             let to = rename_defs_type(context, &map.to)?;
+            #[allow(clippy::let_unit_value)]
             let ext = ();
             Ok(SynType::Map(SynTypeMap {
                 id: SynTreeId::new(),
@@ -566,6 +582,7 @@ fn rename_defs_type(
             }))
         }
         SynType::Unit(unit) => {
+            #[allow(clippy::let_unit_value)]
             let ext = ();
             Ok(SynType::Unit(SynTypeUnit {
                 id: SynTreeId::new(),
@@ -597,6 +614,7 @@ fn rename_defs_type_arg(
     typed_arg: &SynTypedArg<UD>,
 ) -> Result<SynTypedArg<DefDecoration>, ()> {
     let ty = rename_defs_type(context, &typed_arg.ty)?;
+    #[allow(clippy::let_unit_value)]
     let ext = ();
     Ok(SynTypedArg {
         lparen: typed_arg.lparen.clone(),

@@ -5,6 +5,7 @@ pub mod path_table;
 pub mod rename_defs;
 pub mod rename_uses;
 
+pub mod path_table2;
 pub mod rename_defs2;
 
 define_wrapper_of_table_id!(SerialId);

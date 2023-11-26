@@ -417,7 +417,7 @@ pub fn rename_uses_ident(
     context.use_count += 1;
 
     let ident2 = SynExprIdent {
-        id: ident.id.clone(),
+        id: ident.id,
         ident: ident.ident.clone(),
         ext,
     };
@@ -471,7 +471,7 @@ pub fn rename_uses_ident_with_path(
     context.use_count += 1;
 
     let ident_with_path2 = SynExprIdentWithPath {
-        id: ident_with_path.id.clone(),
+        id: ident_with_path.id,
         path: ident_with_path.path.clone(),
         ident: ident_with_path.ident.clone(),
         ext,
@@ -490,7 +490,7 @@ pub fn rename_uses_app(
     }
 
     let app2 = SynExprApp {
-        id: app.id.clone(),
+        id: app.id,
         exprs,
         ext: (),
     };
@@ -504,7 +504,7 @@ pub fn rename_uses_paren(
     let expr = rename_uses_expr(context, &paren.expr)?;
 
     let paren2 = SynExprParen {
-        id: paren.id.clone(),
+        id: paren.id,
         lparen: paren.lparen.clone(),
         expr: Box::new(expr),
         rparen: paren.rparen.clone(),
@@ -524,7 +524,7 @@ pub fn rename_uses_block(
     }
 
     let block2 = SynExprBlock {
-        id: block.id.clone(),
+        id: block.id,
         lbrace: block.lbrace.clone(),
         statements,
         rbrace: block.rbrace.clone(),
@@ -534,11 +534,11 @@ pub fn rename_uses_block(
 }
 
 pub fn rename_uses_string(
-    context: &mut RenameUseContext,
+    _context: &mut RenameUseContext,
     string: &SynExprString<DefDecoration>,
 ) -> Result<SynExprString<RenameDecoration>, RenameError> {
     let string2 = SynExprString {
-        id: string.id.clone(),
+        id: string.id,
         token_string: string.token_string.clone(),
         ext: (),
     };
@@ -643,6 +643,7 @@ pub fn rename_uses_formula_app(
     let fun = rename_uses_formula(context, &formula_app.fun)?;
     let arg = rename_uses_formula(context, &formula_app.arg)?;
 
+    #[allow(clippy::let_unit_value)]
     let ext = ();
 
     let formula_app2 = SynFormulaApp {
@@ -655,8 +656,8 @@ pub fn rename_uses_formula_app(
 }
 
 pub fn rename_uses_formula_paren(
-    context: &mut RenameUseContext,
-    formula_paren: &SynFormulaParen<DefDecoration>,
+    _context: &mut RenameUseContext,
+    _formula_paren: &SynFormulaParen<DefDecoration>,
 ) -> Result<SynFormulaParen<RenameDecoration>, RenameError> {
     todo!()
 }
@@ -700,10 +701,11 @@ pub fn rename_uses_type_app(
     let left = rename_uses_type(context, &ty_app.left)?;
     let right = rename_uses_type(context, &ty_app.right)?;
 
+    #[allow(clippy::let_unit_value)]
     let ext = ();
 
     let ty_app2 = SynTypeApp {
-        id: ty_app.id.clone(),
+        id: ty_app.id,
         left: Box::new(left),
         right: Box::new(right),
         ext,
@@ -735,10 +737,11 @@ pub fn rename_uses_type_map(
     let from = rename_uses_type(context, &ty_map.from)?;
     let to = rename_uses_type(context, &ty_map.to)?;
 
+    #[allow(clippy::let_unit_value)]
     let ext = ();
 
     let ty_map2 = SynTypeMap {
-        id: ty_map.id.clone(),
+        id: ty_map.id,
         from: Box::new(from),
         arrow: ty_map.arrow.clone(),
         to: Box::new(to),
@@ -749,8 +752,8 @@ pub fn rename_uses_type_map(
 }
 
 pub fn rename_uses_type_paren(
-    context: &mut RenameUseContext,
-    ty_paren: &SynTypeParen<DefDecoration>,
+    _context: &mut RenameUseContext,
+    _ty_paren: &SynTypeParen<DefDecoration>,
 ) -> Result<SynTypeParen<RenameDecoration>, RenameError> {
     todo!()
 }
@@ -762,10 +765,11 @@ pub fn rename_uses_type_dependent_map(
     let from = rename_uses_typed_arg(context, &ty_dependent_map.from)?;
     let to = rename_uses_type(context, &ty_dependent_map.to)?;
 
+    #[allow(clippy::let_unit_value)]
     let ext = ();
 
     let ty_dependent_map_2 = SynTypeDependentMap {
-        id: ty_dependent_map.id.clone(),
+        id: ty_dependent_map.id,
         from: Box::new(from),
         arrow: ty_dependent_map.arrow.clone(),
         to: Box::new(to),
@@ -776,8 +780,8 @@ pub fn rename_uses_type_dependent_map(
 }
 
 pub fn rename_uses_type_unit(
-    context: &mut RenameUseContext,
-    ty_unit: &SynTypeUnit<DefDecoration>,
+    _context: &mut RenameUseContext,
+    _ty_unit: &SynTypeUnit<DefDecoration>,
 ) -> Result<SynTypeUnit<RenameDecoration>, RenameError> {
     todo!()
 }
@@ -812,12 +816,12 @@ pub fn rename_uses_match(
 
     let mut arms = vec![];
     for arm in &expr_match.arms {
-        let arm2 = rename_uses_expr_match_arm(context, &arm)?;
+        let arm2 = rename_uses_expr_match_arm(context, arm)?;
         arms.push(arm2);
     }
 
     let expr_match2 = SynExprMatch {
-        id: expr_match.id.clone(),
+        id: expr_match.id,
         keyword_match: expr_match.keyword_match.clone(),
         expr: Box::new(expr),
         lbrace: expr_match.lbrace.clone(),
@@ -874,8 +878,8 @@ pub fn rename_uses_expr_match_pattern(
 }
 
 pub fn rename_uses_match_pattern(
-    context: &mut RenameUseContext,
-    expr_match_pattern: &SynExpr<DefDecoration>,
+    _context: &mut RenameUseContext,
+    _expr_match_pattern: &SynExpr<DefDecoration>,
 ) -> Result<SynExpr<RenameDecoration>, RenameError> {
     todo!()
 }

@@ -631,6 +631,7 @@ fn rename_defs_type(
         SynType::DependentMap(dependent_map) => {
             let from = rename_defs_type_arg(context, &dependent_map.from)?;
             let to = rename_defs_type(context, &dependent_map.to)?;
+            #[allow(clippy::let_unit_value)]
             let ext = ();
             Ok(SynType::DependentMap(SynTypeDependentMap {
                 id: SynTreeId::new(),

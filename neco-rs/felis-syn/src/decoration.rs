@@ -28,6 +28,7 @@ pub trait Decoration {
     type TheoremDef: Debug + Clone + PartialEq + Eq + Hash;
     type TypedArg: Debug + Clone + PartialEq + Eq + Hash;
     type ExprMatchPattern: Debug + Clone + PartialEq + Eq + Hash;
+    type StatementLet: Debug + Clone + PartialEq + Eq + Hash;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -59,4 +60,5 @@ impl Decoration for UD {
     type TheoremDef = ();
     type TypedArg = ();
     type ExprMatchPattern = ();
+    type StatementLet = ();
 }

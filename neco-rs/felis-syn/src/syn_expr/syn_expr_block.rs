@@ -9,11 +9,11 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprBlock<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub lbrace: TokenLBrace,
     pub statements: Vec<SynStatement<D>>,
     pub rbrace: TokenRBrace,
-    ext: D::ExprBlock,
+    pub ext: D::ExprBlock,
 }
 
 impl<D: Decoration> SynExprBlock<D> {

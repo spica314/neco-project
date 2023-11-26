@@ -11,7 +11,7 @@ use felis_syn::{
         SynFormula, SynFormulaApp, SynFormulaAtom, SynFormulaForall, SynFormulaImplies,
         SynFormulaParen,
     },
-    syn_statement::SynStatement,
+    syn_statement::{SynStatement, SynStatementLet},
     syn_theorem_def::SynTheoremDef,
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -64,7 +64,7 @@ impl Decoration for DefDecoration {
     // ok
     type TypeParen = ();
     // ok
-    type TypeDependentMap = DefTypeDependentMap;
+    type TypeDependentMap = ();
     // ok
     type TypeUnit = ();
     // ok
@@ -74,9 +74,11 @@ impl Decoration for DefDecoration {
     // ok
     type TheoremDef = DefTheoremDef;
     // ok
-    type TypedArg = ();
+    type TypedArg = DefTypedArg;
     // ok
     type ExprMatchPattern = DefExprMatchPattern;
+    // ok
+    type StatementLet = DefStatementLet;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
@@ -126,6 +128,18 @@ pub struct DefTypeDependentMap {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DefExprMatchPattern {
     pub ids: Vec<(String, DefId)>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DefStatementLet {
+    pub name: String,
+    pub id: DefId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DefTypedArg {
+    pub name: String,
+    pub id: DefId,
 }
 
 pub struct RenameDefContext {
@@ -268,8 +282,31 @@ fn rename_defs_statement(
             let expr = rename_defs_expr(context, expr)?;
             Ok(SynStatement::Expr(expr))
         }
-        SynStatement::Let(_) => todo!(),
+        SynStatement::Let(statement_let) => {
+            let statement_let = rename_defs_statement_let(context, statement_let)?;
+            Ok(SynStatement::Let(statement_let))
+        }
     }
+}
+
+fn rename_defs_statement_let(
+    context: &mut RenameDefContext,
+    statement_let: &SynStatementLet<UD>,
+) -> Result<SynStatementLet<DefDecoration>, ()> {
+    let expr = rename_defs_expr(context, &statement_let.expr)?;
+    let ext = DefStatementLet {
+        name: statement_let.name.as_str().to_string(),
+        id: context.new_id(),
+    };
+    Ok(SynStatementLet {
+        syn_tree_id: statement_let.syn_tree_id,
+        keyword_let: statement_let.keyword_let.clone(),
+        name: statement_let.name.clone(),
+        eq: statement_let.eq.clone(),
+        expr,
+        semi: statement_let.semi.clone(),
+        ext,
+    })
 }
 
 fn rename_defs_expr(
@@ -594,10 +631,7 @@ fn rename_defs_type(
         SynType::DependentMap(dependent_map) => {
             let from = rename_defs_type_arg(context, &dependent_map.from)?;
             let to = rename_defs_type(context, &dependent_map.to)?;
-            let ext = DefTypeDependentMap {
-                name: from.name.ident.as_str().to_string(),
-                id: context.new_id(),
-            };
+            let ext = ();
             Ok(SynType::DependentMap(SynTypeDependentMap {
                 id: SynTreeId::new(),
                 from: Box::new(from),
@@ -614,8 +648,12 @@ fn rename_defs_type_arg(
     typed_arg: &SynTypedArg<UD>,
 ) -> Result<SynTypedArg<DefDecoration>, ()> {
     let ty = rename_defs_type(context, &typed_arg.ty)?;
-    #[allow(clippy::let_unit_value)]
-    let ext = ();
+
+    let ext = DefTypedArg {
+        name: typed_arg.name.as_str().to_string(),
+        id: context.new_id(),
+    };
+
     Ok(SynTypedArg {
         lparen: typed_arg.lparen.clone(),
         name: typed_arg.name.clone(),

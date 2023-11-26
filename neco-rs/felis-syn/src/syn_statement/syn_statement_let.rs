@@ -9,12 +9,13 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynStatementLet<D: Decoration> {
-    syn_tree_id: SynTreeId,
+    pub syn_tree_id: SynTreeId,
     pub keyword_let: TokenKeyword,
     pub name: TokenIdent,
     pub eq: TokenEq,
     pub expr: SynExpr<D>,
     pub semi: TokenSemicolon,
+    pub ext: D::StatementLet,
 }
 
 impl<D: Decoration> SynStatementLet<D> {
@@ -58,6 +59,7 @@ impl Parse for SynStatementLet<UD> {
             eq,
             expr,
             semi,
+            ext: (),
         }))
     }
 }

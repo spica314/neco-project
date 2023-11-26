@@ -8,9 +8,9 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprString<D: Decoration> {
-    id: SynTreeId,
+    pub id: SynTreeId,
     pub token_string: TokenString,
-    ext: D::ExprString,
+    pub ext: D::ExprString,
 }
 
 impl<D: Decoration> SynExprString<D> {

@@ -55,7 +55,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynStatement<UD>>(&s);
         assert!(res.is_ok());
-        let (statement, _) = res.unwrap();
+        let statement = res.unwrap();
         assert!(statement.is_some());
         let statement = statement.unwrap();
         assert!(matches!(statement, SynStatement::Let(_)));

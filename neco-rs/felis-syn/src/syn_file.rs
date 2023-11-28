@@ -6,20 +6,12 @@ use crate::{
     syn_theorem_def::SynTheoremDef,
     syn_type_def::SynTypeDef,
     token::Token,
-    SynTreeId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynFile<D: Decoration> {
-    pub id: SynTreeId,
     pub items: Vec<SynFileItem<D>>,
     pub ext: D::File,
-}
-
-impl<D: Decoration> SynFile<D> {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.id
-    }
 }
 
 impl Parse for SynFile<UD> {
@@ -32,11 +24,7 @@ impl Parse for SynFile<UD> {
         }
 
         *i = k;
-        Ok(Some(SynFile {
-            id: SynTreeId::new(),
-            items,
-            ext: (),
-        }))
+        Ok(Some(SynFile { items, ext: () }))
     }
 }
 
@@ -88,7 +76,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynFile<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.items.len(), 3);
@@ -100,7 +88,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynFile<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.items.len(), 1);
@@ -112,7 +100,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynFile<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.items.len(), 2);
@@ -124,7 +112,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynFile<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.items.len(), 1);

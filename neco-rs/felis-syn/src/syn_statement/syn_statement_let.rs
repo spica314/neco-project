@@ -4,24 +4,16 @@ use crate::{
     syn_expr::SynExpr,
     to_felis_string::ToFelisString,
     token::{Token, TokenEq, TokenIdent, TokenKeyword, TokenSemicolon},
-    SynTreeId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynStatementLet<D: Decoration> {
-    pub syn_tree_id: SynTreeId,
     pub keyword_let: TokenKeyword,
     pub name: TokenIdent,
     pub eq: TokenEq,
     pub expr: SynExpr<D>,
     pub semi: TokenSemicolon,
     pub ext: D::StatementLet,
-}
-
-impl<D: Decoration> SynStatementLet<D> {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.syn_tree_id
-    }
 }
 
 impl Parse for SynStatementLet<UD> {
@@ -53,7 +45,6 @@ impl Parse for SynStatementLet<UD> {
 
         *i = k;
         Ok(Some(SynStatementLet {
-            syn_tree_id: Default::default(),
             keyword_let,
             name,
             eq,

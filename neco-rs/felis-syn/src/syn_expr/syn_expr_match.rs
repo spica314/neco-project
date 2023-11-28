@@ -3,26 +3,18 @@ use crate::{
     parse::Parse,
     to_felis_string::ToFelisString,
     token::{Token, TokenArrow2, TokenCamma, TokenIdent, TokenKeyword, TokenLBrace, TokenRBrace},
-    SynTreeId,
 };
 
 use super::{SynExpr, SynExprIdentWithPath};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprMatch<D: Decoration> {
-    pub id: SynTreeId,
     pub keyword_match: TokenKeyword,
     pub expr: Box<SynExpr<D>>,
     pub lbrace: TokenLBrace,
     pub arms: Vec<SynExprMatchArm<D>>,
     pub rbrace: TokenRBrace,
     pub ext: D::ExprMatch,
-}
-
-impl<D: Decoration> SynExprMatch<D> {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.id
-    }
 }
 
 impl Parse for SynExprMatch<UD> {
@@ -55,7 +47,6 @@ impl Parse for SynExprMatch<UD> {
 
         *i = k;
         Ok(Some(SynExprMatch {
-            id: SynTreeId::new(),
             keyword_match,
             expr: Box::new(expr),
             lbrace,

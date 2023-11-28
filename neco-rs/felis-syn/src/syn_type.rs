@@ -4,7 +4,6 @@ use crate::{
     syn_typed_arg::SynTypedArg,
     to_felis_string::ToFelisString,
     token::{Token, TokenArrow, TokenIdent, TokenLParen, TokenRParen},
-    SynTreeId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -24,16 +23,6 @@ pub enum SynType<D: Decoration> {
 }
 
 impl<D: Decoration> SynType<D> {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        match self {
-            SynType::App(app) => app.syn_tree_id(),
-            SynType::Atom(atom) => atom.syn_tree_id(),
-            SynType::Map(map) => map.syn_tree_id(),
-            SynType::Paren(_) => todo!(),
-            SynType::DependentMap(dep_map) => dep_map.syn_tree_id(),
-            SynType::Unit(unit) => unit.syn_tree_id(),
-        }
-    }
     pub fn as_dependent_map(&self) -> Option<&SynTypeDependentMap<D>> {
         match self {
             SynType::DependentMap(dep_map) => Some(dep_map),
@@ -94,7 +83,6 @@ impl Parse for SynType<UD> {
                 return Err(());
             };
             res = SynType::Map(SynTypeMap {
-                id: SynTreeId::new(),
                 from: Box::new(res),
                 arrow,
                 to: Box::new(to),
@@ -109,7 +97,6 @@ impl Parse for SynType<UD> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeUnit<D: Decoration> {
-    pub id: SynTreeId,
     pub lparen: TokenLParen,
     pub rparen: TokenRParen,
     pub ext: D::TypeUnit,
@@ -128,17 +115,10 @@ impl Parse for SynTypeUnit<UD> {
 
         *i = k;
         Ok(Some(SynTypeUnit {
-            id: SynTreeId::new(),
             lparen,
             rparen,
             ext: (),
         }))
-    }
-}
-
-impl<D: Decoration> SynTypeUnit<D> {
-    fn syn_tree_id(&self) -> SynTreeId {
-        self.id
     }
 }
 
@@ -222,7 +202,6 @@ impl Parse for SynTypeNoMap<UD> {
 
         while let Some(right) = SynTypeNoMapAndApp::parse(tokens, &mut k)? {
             res = SynTypeNoMap::App(SynTypeApp {
-                id: SynTreeId::new(),
                 left: Box::new(res.into()),
                 right: Box::new(right.into()),
                 ext: (),
@@ -236,16 +215,9 @@ impl Parse for SynTypeNoMap<UD> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeApp<D: Decoration> {
-    pub id: SynTreeId,
     pub left: Box<SynType<D>>,
     pub right: Box<SynType<D>>,
     pub ext: D::TypeApp,
-}
-
-impl<D: Decoration> SynTypeApp<D> {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.id
-    }
 }
 
 impl Parse for SynTypeApp<UD> {
@@ -256,17 +228,10 @@ impl Parse for SynTypeApp<UD> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeDependentMap<D: Decoration> {
-    pub id: SynTreeId,
     pub from: Box<SynTypedArg<D>>,
     pub arrow: TokenArrow,
     pub to: Box<SynType<D>>,
     pub ext: D::TypeDependentMap,
-}
-
-impl<D: Decoration> SynTypeDependentMap<D> {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.id
-    }
 }
 
 impl Parse for SynTypeDependentMap<UD> {
@@ -290,7 +255,6 @@ impl Parse for SynTypeDependentMap<UD> {
 
         *i = k;
         Ok(Some(SynTypeDependentMap {
-            id: SynTreeId::new(),
             from: Box::new(from),
             arrow,
             to: Box::new(to),
@@ -301,17 +265,10 @@ impl Parse for SynTypeDependentMap<UD> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynTypeMap<D: Decoration> {
-    pub id: SynTreeId,
     pub from: Box<SynType<D>>,
     pub arrow: TokenArrow,
     pub to: Box<SynType<D>>,
     pub ext: D::TypeMap,
-}
-
-impl<D: Decoration> SynTypeMap<D> {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.id
-    }
 }
 
 impl Parse for SynTypeMap<UD> {
@@ -324,12 +281,6 @@ impl Parse for SynTypeMap<UD> {
 pub struct SynTypeAtom<D: Decoration> {
     pub ident: TokenIdent,
     pub ext: D::TypeAtom,
-}
-
-impl<D: Decoration> SynTypeAtom<D> {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.ident.syn_tree_id()
-    }
 }
 
 impl Parse for SynTypeAtom<UD> {
@@ -400,7 +351,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynType<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.to_felis_string(), "And A B");
@@ -412,7 +363,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynType<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.to_felis_string(), "(And A B)");
@@ -424,7 +375,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynType<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.to_felis_string(), s);
@@ -436,7 +387,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynType<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.to_felis_string(), s);
@@ -448,7 +399,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynType<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.to_felis_string(), "(A -> B)");
@@ -460,7 +411,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynType<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.to_felis_string(), "(x : Nat) -> P x");

@@ -3,14 +3,12 @@ use crate::{
     parse::Parse,
     to_felis_string::ToFelisString,
     token::Token,
-    SynTreeId,
 };
 
 use super::{SynExpr, SynExprNoApp};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprApp<D: Decoration> {
-    pub id: SynTreeId,
     pub exprs: Vec<SynExpr<D>>,
     pub ext: D::ExprApp,
 }
@@ -24,12 +22,6 @@ impl<D: Decoration> ToFelisString for SynExprApp<D> {
             res.push_str(&expr.to_felis_string());
         }
         res
-    }
-}
-
-impl<D: Decoration> SynExprApp<D> {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.id
     }
 }
 
@@ -47,10 +39,6 @@ impl Parse for SynExprApp<UD> {
         }
 
         *i = k;
-        Ok(Some(SynExprApp {
-            id: Default::default(),
-            exprs,
-            ext: (),
-        }))
+        Ok(Some(SynExprApp { exprs, ext: () }))
     }
 }

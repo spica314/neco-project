@@ -1,6 +1,6 @@
 use neco_table::define_wrapper_of_table;
 
-use crate::{parse::Parse, to_felis_string::ToFelisString, SynTreeId};
+use crate::{parse::Parse, to_felis_string::ToFelisString};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Token {
@@ -64,16 +64,13 @@ impl Span {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenIdent {
-    id: SynTreeId,
+    pub info: TokenInfo,
     pub ident: String,
 }
 
 impl TokenIdent {
     pub fn as_str(&self) -> &str {
         &self.ident
-    }
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.id
     }
 }
 
@@ -99,14 +96,8 @@ impl Parse for TokenIdent {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenString {
-    id: SynTreeId,
+    pub info: TokenInfo,
     pub string: String,
-}
-
-impl TokenString {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.id
-    }
 }
 
 impl ToFelisString for TokenString {
@@ -131,7 +122,7 @@ impl Parse for TokenString {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenKeyword {
-    id: SynTreeId,
+    pub info: TokenInfo,
     pub keyword: String,
 }
 
@@ -151,7 +142,7 @@ impl Parse for TokenKeyword {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenLParen {
-    id: SynTreeId,
+    pub info: TokenInfo,
 }
 
 impl Parse for TokenLParen {
@@ -169,7 +160,7 @@ impl Parse for TokenLParen {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenRParen {
-    id: SynTreeId,
+    pub info: TokenInfo,
 }
 
 impl Parse for TokenRParen {
@@ -187,7 +178,7 @@ impl Parse for TokenRParen {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenLBrace {
-    id: SynTreeId,
+    pub info: TokenInfo,
 }
 
 impl Parse for TokenLBrace {
@@ -205,7 +196,7 @@ impl Parse for TokenLBrace {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenRBrace {
-    id: SynTreeId,
+    pub info: TokenInfo,
 }
 
 impl Parse for TokenRBrace {
@@ -223,7 +214,7 @@ impl Parse for TokenRBrace {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenColon {
-    id: SynTreeId,
+    pub info: TokenInfo,
 }
 
 impl Parse for TokenColon {
@@ -241,7 +232,7 @@ impl Parse for TokenColon {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenColonColon {
-    id: SynTreeId,
+    pub info: TokenInfo,
 }
 
 impl Parse for TokenColonColon {
@@ -259,7 +250,7 @@ impl Parse for TokenColonColon {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenSemicolon {
-    id: SynTreeId,
+    pub info: TokenInfo,
 }
 
 impl Parse for TokenSemicolon {
@@ -277,7 +268,7 @@ impl Parse for TokenSemicolon {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenCamma {
-    id: SynTreeId,
+    pub info: TokenInfo,
 }
 
 impl Parse for TokenCamma {
@@ -295,7 +286,7 @@ impl Parse for TokenCamma {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenEq {
-    id: SynTreeId,
+    pub info: TokenInfo,
 }
 
 impl Parse for TokenEq {
@@ -313,7 +304,7 @@ impl Parse for TokenEq {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenArrow {
-    id: SynTreeId,
+    pub info: TokenInfo,
 }
 
 impl Parse for TokenArrow {
@@ -331,7 +322,7 @@ impl Parse for TokenArrow {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenArrow2 {
-    id: SynTreeId,
+    pub info: TokenInfo,
 }
 
 impl Parse for TokenArrow2 {
@@ -357,33 +348,12 @@ fn is_ident_tail_char(c: char) -> bool {
     c.is_ascii_alphanumeric() || "-_".contains(c)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TokenInfo {
     pub span: Span,
 }
 
-define_wrapper_of_table!(TokenInfoTable, SynTreeId, TokenInfo);
-
-fn add_token(
-    table: &mut TokenInfoTable,
-    res: &mut Vec<Token>,
-    file_id: FileId,
-    id: SynTreeId,
-    begin: FilePos,
-    end: FilePos,
-    token: Token,
-) {
-    table.insert(
-        id,
-        TokenInfo {
-            span: Span::new(file_id, begin, end),
-        },
-    );
-    res.push(token);
-}
-
-pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTable), ()> {
-    let mut table = TokenInfoTable::new();
+pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
     let mut r = 1;
     let mut c = 1;
     let mut i = 0;
@@ -416,9 +386,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
                 c += 1;
             }
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::Keyword(TokenKeyword { id, keyword });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::Keyword(TokenKeyword { info, keyword });
+            res.push(token);
             continue;
         }
 
@@ -446,9 +418,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::String(TokenString { id, string });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::String(TokenString { info, string });
+            res.push(token);
             continue;
         }
 
@@ -462,12 +436,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
                 c += 1;
             }
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::Ident(TokenIdent {
-                id: Default::default(),
-                ident,
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::Ident(TokenIdent { info, ident });
+            res.push(token);
             continue;
         }
 
@@ -477,11 +450,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 2;
             c += 2;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::ColonColon(TokenColonColon {
-                id: Default::default(),
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::ColonColon(TokenColonColon { info });
+            res.push(token);
             continue;
         }
 
@@ -491,11 +464,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 2;
             c += 2;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::Arrow(TokenArrow {
-                id: Default::default(),
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::Arrow(TokenArrow { info });
+            res.push(token);
             continue;
         }
 
@@ -505,11 +478,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 2;
             c += 2;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::Arrow2(TokenArrow2 {
-                id: Default::default(),
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::Arrow2(TokenArrow2 { info });
+            res.push(token);
             continue;
         }
 
@@ -519,11 +492,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::LParen(TokenLParen {
-                id: Default::default(),
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::LParen(TokenLParen { info });
+            res.push(token);
             continue;
         }
 
@@ -533,11 +506,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::RParen(TokenRParen {
-                id: Default::default(),
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::RParen(TokenRParen { info });
+            res.push(token);
             continue;
         }
 
@@ -547,11 +520,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::LBrace(TokenLBrace {
-                id: Default::default(),
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::LBrace(TokenLBrace { info });
+            res.push(token);
             continue;
         }
 
@@ -561,11 +534,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::RBrace(TokenRBrace {
-                id: Default::default(),
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::RBrace(TokenRBrace { info });
+            res.push(token);
             continue;
         }
 
@@ -575,11 +548,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::Colon(TokenColon {
-                id: Default::default(),
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::Colon(TokenColon { info });
+            res.push(token);
             continue;
         }
 
@@ -589,11 +562,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::Camma(TokenCamma {
-                id: Default::default(),
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::Camma(TokenCamma { info });
+            res.push(token);
             continue;
         }
 
@@ -603,11 +576,11 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::Semicolon(TokenSemicolon {
-                id: Default::default(),
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::Semicolon(TokenSemicolon { info });
+            res.push(token);
             continue;
         }
 
@@ -617,17 +590,17 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<(Vec<Token>, TokenInfoTabl
             i += 1;
             c += 1;
             let end = FilePos::new_with_pos(r, c);
-            let id = SynTreeId::new();
-            let token = Token::Eq(TokenEq {
-                id: Default::default(),
-            });
-            add_token(&mut table, &mut res, file_id, id, begin, end, token);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::Eq(TokenEq { info });
+            res.push(token);
             continue;
         }
 
         panic!("unknown character '{}'", chars[i]);
     }
-    Ok((res, table))
+    Ok(res)
 }
 
 #[cfg(test)]
@@ -639,9 +612,8 @@ mod test {
         let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
         let cs: Vec<_> = s.chars().collect();
         let file_id = FileId(0);
-        let (tokens, table) = lex(file_id, &cs).unwrap();
+        let tokens = lex(file_id, &cs).unwrap();
         assert_eq!(tokens.len(), 155);
-        assert_eq!(table.len(), tokens.len());
     }
 
     #[test]
@@ -649,9 +621,8 @@ mod test {
         let s = "test test_1 test-1 __test";
         let cs: Vec<_> = s.chars().collect();
         let file_id = FileId(0);
-        let (tokens, table) = lex(file_id, &cs).unwrap();
+        let tokens = lex(file_id, &cs).unwrap();
         assert_eq!(tokens.len(), 4);
         assert!(tokens.iter().all(|t| matches!(t, Token::Ident(_))));
-        assert_eq!(table.len(), tokens.len());
     }
 }

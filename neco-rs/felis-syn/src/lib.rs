@@ -1,8 +1,6 @@
 use decoration::UD;
-use neco_table::define_wrapper_of_table_id;
 use parse::Parse;
 use syn_file::SynFile;
-use token::TokenInfoTable;
 
 use crate::token::{lex, FileId};
 
@@ -36,20 +34,18 @@ impl Parser {
     pub fn new() -> Parser {
         Parser { next_file_id: 0 }
     }
-    pub fn parse_file(&mut self, s: &str) -> Result<(SynFile<UD>, TokenInfoTable), ()> {
-        let (syn_file, table) = self.parse::<SynFile<UD>>(s)?;
-        Ok((syn_file.unwrap(), table))
+    pub fn parse_file(&mut self, s: &str) -> Result<SynFile<UD>, ()> {
+        let syn_file = self.parse::<SynFile<UD>>(s)?;
+        Ok(syn_file.unwrap())
     }
-    pub fn parse<T: Parse>(&mut self, s: &str) -> Result<(Option<T>, TokenInfoTable), ()> {
+    pub fn parse<T: Parse>(&mut self, s: &str) -> Result<Option<T>, ()> {
         let cs: Vec<_> = s.chars().collect();
         let file_id = FileId(self.next_file_id);
         self.next_file_id += 1;
-        let (tokens, table) = lex(file_id, &cs).unwrap();
+        let tokens = lex(file_id, &cs).unwrap();
         let mut i = 0;
         let res = T::parse(&tokens, &mut i)?;
         assert_eq!(i, tokens.len());
-        Ok((res, table))
+        Ok(res)
     }
 }
-
-define_wrapper_of_table_id!(SynTreeId);

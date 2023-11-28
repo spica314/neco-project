@@ -5,9 +5,6 @@ members = [
     "felis-package",
     "felis-rename",
     "felis-syn",
-    # "felis-type-check",
-    "felis-type-check-2",
-    "felis-type-defs",
     "felis-term",
     "neco",
     "neco-resolver",
@@ -18,9 +15,6 @@ members = [
 felis-package = { path = "./felis-package" }
 felis-rename = { path = "./felis-rename" }
 felis-syn = { path = "./felis-syn" }
-# felis-type-check = { path = "./felis-type-check" }
-felis-type-check-2 = { path = "./felis-type-check-2" }
-felis-type-defs = { path = "./felis-type-defs" }
 felis-term = { path = "./felis-term" }
 neco = { path = "./neco" }
 neco-resolver = { path = "./neco-resolver" }

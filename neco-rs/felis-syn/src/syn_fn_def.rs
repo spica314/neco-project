@@ -100,7 +100,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynFnDef<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.name.ident.as_str(), "f");
@@ -114,7 +114,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynFnDef<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.name.ident.as_str(), "f");
@@ -129,7 +129,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynFnDef<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.name.ident.as_str(), "f");
@@ -144,7 +144,7 @@ mod test {
         let mut parser = Parser::new();
         let res = parser.parse::<SynFnDef<UD>>(&s);
         assert!(res.is_ok());
-        let (res, _) = res.unwrap();
+        let res = res.unwrap();
         assert!(res.is_some());
         let res = res.unwrap();
         assert_eq!(res.name.ident.as_str(), "proof");

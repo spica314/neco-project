@@ -10,7 +10,5 @@ license = "MIT OR Apache-2.0"
 felis-rename = { workspace = true }
 felis-syn = { workspace = true }
 felis-term = { workspace = true }
-felis-type-defs = { workspace = true }
-felis-type-check-2 = { workspace = true }
 neco-resolver = { workspace = true }
 neco-table = { workspace = true }

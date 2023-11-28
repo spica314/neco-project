@@ -35,35 +35,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "felis-type-check-2"
-version = "0.1.0"
-dependencies = [
- "felis-rename",
- "felis-syn",
- "felis-term",
- "felis-type-defs",
- "neco-resolver",
- "neco-table",
-]
-
-[[package]]
-name = "felis-type-defs"
-version = "0.1.0"
-dependencies = [
- "felis-rename",
- "felis-syn",
- "neco-table",
-]
-
-[[package]]
 name = "neco"
 version = "0.1.0"
 dependencies = [
  "felis-rename",
  "felis-syn",
  "felis-term",
- "felis-type-check-2",
- "felis-type-defs",
  "neco-resolver",
  "neco-table",
 ]

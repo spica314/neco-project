@@ -1,0 +1,4 @@
+#entrypoint main
+
+#fn main : () {
+}

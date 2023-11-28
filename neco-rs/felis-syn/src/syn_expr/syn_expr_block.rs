@@ -4,22 +4,14 @@ use crate::{
     syn_statement::SynStatement,
     to_felis_string::ToFelisString,
     token::{Token, TokenLBrace, TokenRBrace},
-    SynTreeId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprBlock<D: Decoration> {
-    pub id: SynTreeId,
     pub lbrace: TokenLBrace,
     pub statements: Vec<SynStatement<D>>,
     pub rbrace: TokenRBrace,
     pub ext: D::ExprBlock,
-}
-
-impl<D: Decoration> SynExprBlock<D> {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.id
-    }
 }
 
 impl Parse for SynExprBlock<UD> {
@@ -41,7 +33,6 @@ impl Parse for SynExprBlock<UD> {
 
         *i = k;
         Ok(Some(SynExprBlock {
-            id: Default::default(),
             lbrace,
             statements,
             rbrace,

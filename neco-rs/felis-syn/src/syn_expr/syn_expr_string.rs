@@ -3,20 +3,12 @@ use crate::{
     parse::Parse,
     to_felis_string::ToFelisString,
     token::{Token, TokenString},
-    SynTreeId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynExprString<D: Decoration> {
-    pub id: SynTreeId,
     pub token_string: TokenString,
     pub ext: D::ExprString,
-}
-
-impl<D: Decoration> SynExprString<D> {
-    pub fn syn_tree_id(&self) -> SynTreeId {
-        self.id
-    }
 }
 
 impl Parse for SynExprString<UD> {
@@ -31,7 +23,6 @@ impl Parse for SynExprString<UD> {
 
         *i = k;
         Ok(Some(SynExprString {
-            id: SynTreeId::new(),
             token_string,
             ext: (),
         }))

@@ -9,4 +9,3 @@ edition = "2021"
 felis-package = { workspace = true }
 felis-syn = { workspace = true }
 neco-resolver = { workspace = true }
-neco-table = { workspace = true }

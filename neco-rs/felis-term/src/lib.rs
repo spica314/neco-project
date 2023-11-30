@@ -1,4 +1,4 @@
-use felis_rename::SerialId;
+use felis_rename::rename_defs::DefId;
 
 pub trait IsTerm {
     // value: 0
@@ -44,14 +44,14 @@ impl IsTerm for Term {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TermAtom {
     pub level: usize,
-    pub id: SerialId,
+    pub id: DefId,
 }
 
 impl TermAtom {
-    pub fn new(level: usize, id: SerialId) -> TermAtom {
+    pub fn new(level: usize, id: DefId) -> TermAtom {
         TermAtom { level, id }
     }
-    pub fn id(&self) -> SerialId {
+    pub fn id(&self) -> DefId {
         self.id
     }
 }
@@ -181,7 +181,7 @@ pub struct TypedTerm {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TermMatch {
     pub expr: Box<Term>,
-    pub arms: Vec<(SerialId, Vec<SerialId>, Term)>,
+    pub arms: Vec<(DefId, Vec<DefId>, Term)>,
 }
 
 impl IsTerm for TermMatch {
@@ -192,7 +192,7 @@ impl IsTerm for TermMatch {
 
 impl TermMatch {}
 
-pub fn remap_term(remap: &(SerialId, Term), term: &Term) -> Term {
+pub fn remap_term(remap: &(DefId, Term), term: &Term) -> Term {
     match term {
         Term::Atom(atom) => {
             if atom.id() == remap.0 {

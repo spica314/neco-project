@@ -16,22 +16,17 @@ dependencies = [
  "felis-package",
  "felis-syn",
  "neco-resolver",
- "neco-table",
 ]
 
 [[package]]
 name = "felis-syn"
 version = "0.1.0"
-dependencies = [
- "neco-table",
-]
 
 [[package]]
 name = "felis-term"
 version = "0.1.0"
 dependencies = [
  "felis-rename",
- "neco-table",
 ]
 
 [[package]]
@@ -51,13 +46,8 @@ dependencies = [
  "felis-syn",
  "felis-term",
  "neco-resolver",
- "neco-table",
 ]
 
 [[package]]
 name = "neco-resolver"
-version = "0.1.0"
-
-[[package]]
-name = "neco-table"
 version = "0.1.0"

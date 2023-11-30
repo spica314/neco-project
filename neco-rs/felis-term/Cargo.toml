@@ -7,4 +7,3 @@ edition = "2021"
 
 [dependencies]
 felis-rename = { workspace = true }
-neco-table = { workspace = true }

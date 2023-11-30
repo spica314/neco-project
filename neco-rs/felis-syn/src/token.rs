@@ -1,5 +1,3 @@
-use neco_table::define_wrapper_of_table;
-
 use crate::{parse::Parse, to_felis_string::ToFelisString};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

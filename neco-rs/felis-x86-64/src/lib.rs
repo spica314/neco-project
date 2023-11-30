@@ -76,30 +76,27 @@ _start:
 
         for statement in &proc.proc_block.statements {
             match statement {
-                SynStatement::Expr(expr) => match expr {
-                    SynExpr::App(app) => {
-                        let fun = app.exprs[0].clone();
-                        let SynExpr::IdentWithPath(fun) = fun else {
-                            panic!("fun = {:?}", fun)
-                        };
-                        let fun = fun.ident.as_str();
-                        if fun == "__write_to_stdout" {
-                            let arg = app.exprs[1].clone();
-                            let SynExpr::String(s) = arg else { panic!() };
-                            let s = s.token_string.string.clone();
-                            let label = format!("__string_{}", strings.len());
-                            strings.push((label.clone(), s.clone()));
-                            res.push_str(format!("    mov rax, 1\n").as_str());
-                            res.push_str(format!("    mov rdi, 1\n").as_str());
-                            res.push_str(format!("    lea rsi, {}\n", label).as_str());
-                            res.push_str(format!("    mov rdx, {}\n", string_length(&s)).as_str());
-                            res.push_str(format!("    syscall\n").as_str());
-                        } else {
-                            panic!();
-                        }
+                SynStatement::Expr(SynExpr::App(app)) => {
+                    let fun = app.exprs[0].clone();
+                    let SynExpr::IdentWithPath(fun) = fun else {
+                        panic!("fun = {:?}", fun)
+                    };
+                    let fun = fun.ident.as_str();
+                    if fun == "__write_to_stdout" {
+                        let arg = app.exprs[1].clone();
+                        let SynExpr::String(s) = arg else { panic!() };
+                        let s = s.token_string.string.clone();
+                        let label = format!("__string_{}", strings.len());
+                        strings.push((label.clone(), s.clone()));
+                        res.push_str("    mov rax, 1\n");
+                        res.push_str("    mov rdi, 1\n");
+                        res.push_str(format!("    lea rsi, {}\n", label).as_str());
+                        res.push_str(format!("    mov rdx, {}\n", string_length(&s)).as_str());
+                        res.push_str("    syscall\n");
+                    } else {
+                        panic!();
                     }
-                    _ => panic!(),
-                },
+                }
                 _ => panic!(),
             }
         }
@@ -118,7 +115,7 @@ _start:
     res
 }
 
-fn setup_resolver_for_prelude(context: &mut RenameDefContext, resolver: &mut Resolver<DefId>) {
+pub fn setup_resolver_for_prelude(context: &mut RenameDefContext, resolver: &mut Resolver<DefId>) {
     let id = context.new_id();
     resolver.set("__write_to_stdout".to_string(), id);
 }

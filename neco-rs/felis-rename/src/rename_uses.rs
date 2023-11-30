@@ -2,8 +2,8 @@ use felis_syn::{
     decoration::Decoration,
     syn_entrypoint::SynEntrypoint,
     syn_expr::{
-        SynExpr, SynExprApp, SynExprBlock, SynExprIdent, SynExprIdentWithPath, SynExprMatch,
-        SynExprMatchArm, SynExprMatchPattern, SynExprParen, SynExprString,
+        SynExpr, SynExprApp, SynExprBlock, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
+        SynExprMatchPattern, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::{SynFnBlock, SynFnDef},
@@ -429,10 +429,6 @@ pub fn rename_uses_expr(
     expr: &SynExpr<DefDecoration>,
 ) -> Result<SynExpr<RenameDecoration>, RenameError> {
     match expr {
-        SynExpr::Ident(ident) => {
-            let ident2 = rename_uses_ident(context, ident)?;
-            Ok(SynExpr::Ident(ident2))
-        }
         SynExpr::App(app) => {
             let app2 = rename_uses_app(context, app)?;
             Ok(SynExpr::App(app2))
@@ -458,21 +454,6 @@ pub fn rename_uses_expr(
             Ok(SynExpr::Match(expr_match2))
         }
     }
-}
-
-pub fn rename_uses_ident(
-    context: &mut RenameUseContext,
-    ident: &SynExprIdent<DefDecoration>,
-) -> Result<SynExprIdent<RenameDecoration>, RenameError> {
-    let id = context.resolver.get(ident.ident.as_str()).unwrap();
-    let ext = RenameDecorationExprIdent { use_id: *id };
-    context.use_count += 1;
-
-    let ident2 = SynExprIdent {
-        ident: ident.ident.clone(),
-        ext,
-    };
-    Ok(ident2)
 }
 
 pub fn rename_uses_ident_with_path(

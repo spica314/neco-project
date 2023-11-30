@@ -2,7 +2,7 @@ use felis_syn::{
     decoration::{Decoration, UD},
     syn_entrypoint::SynEntrypoint,
     syn_expr::{
-        SynExpr, SynExprApp, SynExprIdent, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
+        SynExpr, SynExprApp, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
         SynExprMatchPattern, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
@@ -335,10 +335,6 @@ fn rename_defs_expr(
     expr: &SynExpr<UD>,
 ) -> Result<SynExpr<DefDecoration>, ()> {
     match expr {
-        SynExpr::Ident(ident) => {
-            let t = rename_defs_expr_ident(context, ident)?;
-            Ok(SynExpr::Ident(t))
-        }
         SynExpr::App(app) => {
             let t = rename_defs_expr_app(context, app)?;
             Ok(SynExpr::App(t))
@@ -361,18 +357,6 @@ fn rename_defs_expr(
         }
         SynExpr::Block(_) => todo!(),
     }
-}
-
-fn rename_defs_expr_ident(
-    _context: &mut RenameDefContext,
-    ident: &SynExprIdent<UD>,
-) -> Result<SynExprIdent<DefDecoration>, ()> {
-    #[allow(clippy::let_unit_value)]
-    let ext = ();
-    Ok(SynExprIdent {
-        ident: ident.ident.clone(),
-        ext,
-    })
 }
 
 fn rename_defs_expr_string(

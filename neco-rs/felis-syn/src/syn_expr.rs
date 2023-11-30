@@ -1,6 +1,5 @@
 mod syn_expr_app;
 mod syn_expr_block;
-mod syn_expr_ident;
 mod syn_expr_ident_with_path;
 mod syn_expr_match;
 mod syn_expr_paren;
@@ -8,7 +7,6 @@ mod syn_expr_string;
 
 pub use syn_expr_app::*;
 pub use syn_expr_block::*;
-pub use syn_expr_ident::*;
 pub use syn_expr_ident_with_path::*;
 pub use syn_expr_match::*;
 pub use syn_expr_paren::*;
@@ -23,7 +21,6 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SynExpr<D: Decoration> {
-    Ident(SynExprIdent<D>),
     IdentWithPath(SynExprIdentWithPath<D>),
     App(SynExprApp<D>),
     Match(SynExprMatch<D>),
@@ -59,7 +56,6 @@ impl Parse for SynExpr<UD> {
 impl<D: Decoration> ToFelisString for SynExpr<D> {
     fn to_felis_string(&self) -> String {
         match self {
-            SynExpr::Ident(expr_ident) => expr_ident.ident.ident.as_str().to_string(),
             SynExpr::Match(_expr_match) => todo!(),
             SynExpr::App(expr_app) => expr_app.to_felis_string(),
             SynExpr::Paren(_) => todo!(),

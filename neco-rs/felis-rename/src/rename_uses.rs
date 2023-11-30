@@ -11,6 +11,7 @@ use felis_syn::{
         SynFormula, SynFormulaApp, SynFormulaAtom, SynFormulaForall, SynFormulaImplies,
         SynFormulaParen,
     },
+    syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{SynStatement, SynStatementLet},
     syn_theorem_def::SynTheoremDef,
     syn_type::{
@@ -54,6 +55,7 @@ impl Decoration for RenameDecoration {
     type TypeUnit = ();
     type File = RenameDecorationFile;
     type FnDef = RenameDecorationFnDef;
+    type ProcDef = RenameDecorationProcDef;
     type TheoremDef = RenameDecorationTheoremDef;
     type TypedArg = RenameDecorationTypedArg;
     type ExprMatchPattern = RenameDecorationExprMatchPattern;
@@ -73,6 +75,12 @@ pub struct RenameDecorationTypeDef {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RenameDecorationFnDef {
+    pub name: String,
+    pub id: DefId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RenameDecorationProcDef {
     pub name: String,
     pub id: DefId,
 }
@@ -196,6 +204,10 @@ pub fn rename_uses_file_item(
             let entrypoint2 = rename_uses_entrypoint(context, entrypoint)?;
             Ok(SynFileItem::Entrypoint(entrypoint2))
         }
+        SynFileItem::ProcDef(proc_def) => {
+            let proc_def2 = rename_uses_proc_def(context, proc_def)?;
+            Ok(SynFileItem::ProcDef(proc_def2))
+        }
     }
 }
 
@@ -264,6 +276,34 @@ pub fn rename_uses_fn_def(
     Ok(fn_def2)
 }
 
+pub fn rename_uses_proc_def(
+    context: &mut RenameUseContext,
+    proc_def: &SynProcDef<DefDecoration>,
+) -> Result<SynProcDef<RenameDecoration>, RenameError> {
+    context.resolver.enter_scope();
+
+    let ty = rename_uses_type(context, &proc_def.ty)?;
+
+    let proc_block = rename_uses_proc_block(context, &proc_def.proc_block)?;
+
+    let ext = RenameDecorationProcDef {
+        name: proc_def.ext.name.clone(),
+        id: proc_def.ext.id,
+    };
+
+    context.resolver.leave_scope();
+
+    let proc_def2 = SynProcDef {
+        keyword_proc: proc_def.keyword_proc.clone(),
+        name: proc_def.name.clone(),
+        colon: proc_def.colon.clone(),
+        ty,
+        proc_block,
+        ext,
+    };
+    Ok(proc_def2)
+}
+
 pub fn rename_uses_theorem_def(
     context: &mut RenameUseContext,
     theorem_def: &SynTheoremDef<DefDecoration>,
@@ -326,6 +366,24 @@ pub fn rename_uses_fn_block(
         rbrace: fn_block.rbrace.clone(),
     };
     Ok(fn_block2)
+}
+
+pub fn rename_uses_proc_block(
+    context: &mut RenameUseContext,
+    proc_block: &SynProcBlock<DefDecoration>,
+) -> Result<SynProcBlock<RenameDecoration>, RenameError> {
+    let mut statements = vec![];
+    for statement in &proc_block.statements {
+        let statement2 = rename_uses_statement(context, statement)?;
+        statements.push(statement2);
+    }
+
+    let proc_block2 = SynProcBlock {
+        lbrace: proc_block.lbrace.clone(),
+        statements,
+        rbrace: proc_block.rbrace.clone(),
+    };
+    Ok(proc_block2)
 }
 
 pub fn rename_uses_statement(

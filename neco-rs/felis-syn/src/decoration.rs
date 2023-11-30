@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::hash::Hash;
 
-pub trait Decoration {
+pub trait Decoration: Debug {
     type Entrypoint: Debug + Clone + PartialEq + Eq + Hash;
     type ExprApp: Debug + Clone + PartialEq + Eq + Hash;
     type ExprBlock: Debug + Clone + PartialEq + Eq + Hash;
@@ -25,6 +25,7 @@ pub trait Decoration {
     type TypeUnit: Debug + Clone + PartialEq + Eq + Hash;
     type File: Debug + Clone + PartialEq + Eq + Hash;
     type FnDef: Debug + Clone + PartialEq + Eq + Hash;
+    type ProcDef: Debug + Clone + PartialEq + Eq + Hash;
     type TheoremDef: Debug + Clone + PartialEq + Eq + Hash;
     type TypedArg: Debug + Clone + PartialEq + Eq + Hash;
     type ExprMatchPattern: Debug + Clone + PartialEq + Eq + Hash;
@@ -57,6 +58,7 @@ impl Decoration for UD {
     type TypeUnit = ();
     type File = ();
     type FnDef = ();
+    type ProcDef = ();
     type TheoremDef = ();
     type TypedArg = ();
     type ExprMatchPattern = ();

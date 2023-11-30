@@ -6,6 +6,7 @@ members = [
     "felis-rename",
     "felis-syn",
     "felis-term",
+    "felis-x86-64",
     "neco",
     "neco-resolver",
     "neco-table",
@@ -16,6 +17,7 @@ felis-package = { path = "./felis-package" }
 felis-rename = { path = "./felis-rename" }
 felis-syn = { path = "./felis-syn" }
 felis-term = { path = "./felis-term" }
+felis-x86-64 = { path = "./felis-x86-64" }
 neco = { path = "./neco" }
 neco-resolver = { path = "./neco-resolver" }
 neco-table = { path = "./neco-table" }

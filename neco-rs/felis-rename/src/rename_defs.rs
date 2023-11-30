@@ -11,6 +11,7 @@ use felis_syn::{
         SynFormula, SynFormulaApp, SynFormulaAtom, SynFormulaForall, SynFormulaImplies,
         SynFormulaParen,
     },
+    syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{SynStatement, SynStatementLet},
     syn_theorem_def::SynTheoremDef,
     syn_type::{
@@ -24,64 +25,44 @@ use felis_syn::{
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DefDecoration;
 impl Decoration for DefDecoration {
-    // ok
     type Entrypoint = ();
-    // ok
     type ExprApp = ();
-    // ok
     type ExprBlock = ();
-    // ok
     type ExprIdentWithPath = ();
-    // ok
     type ExprIdent = ();
-    // ok
     type ExprMatch = ();
-    // ok
     type ExprParen = ();
-    // ok
     type ExprString = ();
-    // ?
     type FormulaForall = DefFormulaForall;
-    // ok?
     type FormulaImplies = ();
-    // ok
     type FormulaAtom = ();
-    // ok
     type FormulaApp = ();
-    // ok
     type FormulaParen = ();
-    // ok
     type Variant = DefVariant;
-    // ok
     type TypeDef = DefDecorationTypeDef;
-    // ok
     type TypeApp = ();
-    // ok
     type TypeAtom = ();
-    // ok
     type TypeMap = ();
-    // ok
     type TypeParen = ();
-    // ok
     type TypeDependentMap = ();
-    // ok
     type TypeUnit = ();
-    // ok
     type File = DefDecorationFile;
-    // ok
-    type FnDef = DefDecorationFndef;
-    // ok
+    type FnDef = DefDecorationFnDef;
+    type ProcDef = DefDecorationProcDef;
     type TheoremDef = DefTheoremDef;
-    // ok
     type TypedArg = DefTypedArg;
-    // ok
     type ExprMatchPattern = DefExprMatchPattern;
-    // ok
     type StatementLet = DefStatementLet;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub struct DefId(usize);
+
+impl DefId {
+    pub fn as_usize(&self) -> usize {
+        self.0
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DefDecorationFile {
@@ -101,7 +82,13 @@ pub struct DefFormulaForall {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct DefDecorationFndef {
+pub struct DefDecorationFnDef {
+    pub name: String,
+    pub id: DefId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DefDecorationProcDef {
     pub name: String,
     pub id: DefId,
 }
@@ -203,6 +190,10 @@ fn rename_defs_file_item(
             let t = rename_defs_entrypoint(context, entrypoint)?;
             Ok(SynFileItem::Entrypoint(t))
         }
+        SynFileItem::ProcDef(proc_def) => {
+            let t = rename_defs_proc_def(context, proc_def)?;
+            Ok(SynFileItem::ProcDef(t))
+        }
     }
 }
 
@@ -238,7 +229,7 @@ fn rename_defs_fn_def(
 ) -> Result<SynFnDef<DefDecoration>, ()> {
     let ty = rename_defs_type(context, &fn_def.ty)?;
     let fn_block = rename_defs_fn_block(context, &fn_def.fn_block)?;
-    let ext = DefDecorationFndef {
+    let ext = DefDecorationFnDef {
         name: fn_def.name.as_str().to_string(),
         id: context.new_id(),
     };
@@ -265,6 +256,42 @@ fn rename_defs_fn_block(
         lbrace: fn_block.lbrace.clone(),
         statements,
         rbrace: fn_block.rbrace.clone(),
+    })
+}
+
+fn rename_defs_proc_def(
+    context: &mut RenameDefContext,
+    proc_def: &SynProcDef<UD>,
+) -> Result<SynProcDef<DefDecoration>, ()> {
+    let ty = rename_defs_type(context, &proc_def.ty)?;
+    let proc_block = rename_defs_proc_block(context, &proc_def.proc_block)?;
+    let ext = DefDecorationProcDef {
+        name: proc_def.name.as_str().to_string(),
+        id: context.new_id(),
+    };
+    Ok(SynProcDef {
+        keyword_proc: proc_def.keyword_proc.clone(),
+        name: proc_def.name.clone(),
+        colon: proc_def.colon.clone(),
+        ty,
+        proc_block,
+        ext,
+    })
+}
+
+fn rename_defs_proc_block(
+    context: &mut RenameDefContext,
+    proc_block: &SynProcBlock<UD>,
+) -> Result<SynProcBlock<DefDecoration>, ()> {
+    let mut statements = vec![];
+    for statement in &proc_block.statements {
+        let statement = rename_defs_statement(context, statement)?;
+        statements.push(statement);
+    }
+    Ok(SynProcBlock {
+        lbrace: proc_block.lbrace.clone(),
+        statements,
+        rbrace: proc_block.rbrace.clone(),
     })
 }
 

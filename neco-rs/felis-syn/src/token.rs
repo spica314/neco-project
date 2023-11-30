@@ -402,6 +402,7 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
             c += 1;
             while i < chars.len() && chars[i] != '"' {
                 if chars[i] == '\\' {
+                    string.push('\\');
                     i += 1;
                     c += 1;
                     if i >= chars.len() {

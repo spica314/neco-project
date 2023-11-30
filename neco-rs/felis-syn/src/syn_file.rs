@@ -3,6 +3,7 @@ use crate::{
     parse::Parse,
     syn_entrypoint::SynEntrypoint,
     syn_fn_def::SynFnDef,
+    syn_proc::SynProcDef,
     syn_theorem_def::SynTheoremDef,
     syn_type_def::SynTypeDef,
     token::Token,
@@ -34,6 +35,7 @@ pub enum SynFileItem<D: Decoration> {
     FnDef(SynFnDef<D>),
     TheoremDef(SynTheoremDef<D>),
     Entrypoint(SynEntrypoint<D>),
+    ProcDef(SynProcDef<D>),
 }
 
 impl Parse for SynFileItem<UD> {
@@ -58,6 +60,11 @@ impl Parse for SynFileItem<UD> {
         if let Some(theorem_def) = SynTheoremDef::parse(tokens, &mut k)? {
             *i = k;
             return Ok(Some(SynFileItem::TheoremDef(theorem_def)));
+        }
+
+        if let Some(proc_def) = SynProcDef::parse(tokens, &mut k)? {
+            *i = k;
+            return Ok(Some(SynFileItem::ProcDef(proc_def)));
         }
 
         Ok(None)

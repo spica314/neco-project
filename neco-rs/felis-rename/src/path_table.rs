@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use felis_syn::{
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::SynFnDef,
+    syn_proc::SynProcDef,
     syn_theorem_def::SynTheoremDef,
     syn_type_def::SynTypeDef,
 };
@@ -87,6 +88,10 @@ pub fn construct_path_table_syn_file(file: &SynFile<DefDecoration>) -> Result<Pa
                 item.children
                     .insert(theorem_def.name.as_str().to_string(), id);
             }
+            SynFileItem::ProcDef(proc_def) => {
+                let id = proc_def.ext.id;
+                item.children.insert(proc_def.name.as_str().to_string(), id);
+            }
             SynFileItem::Entrypoint(_) => {}
         }
     }
@@ -105,6 +110,9 @@ pub fn construct_path_table_syn_file(file: &SynFile<DefDecoration>) -> Result<Pa
             }
             SynFileItem::TheoremDef(theorem_def) => {
                 construct_path_table_syn_theorem_def(theorem_def, &mut path_table);
+            }
+            SynFileItem::ProcDef(proc_def) => {
+                construct_path_table_syn_proc_def(proc_def, &mut path_table);
             }
             SynFileItem::Entrypoint(_) => {}
         }
@@ -128,6 +136,12 @@ fn construct_path_table_syn_type_def(
 }
 
 fn construct_path_table_syn_fn_def(_fn_def: &SynFnDef<DefDecoration>, _path_table: &mut PathTable) {
+}
+
+fn construct_path_table_syn_proc_def(
+    _proc_def: &SynProcDef<DefDecoration>,
+    _path_table: &mut PathTable,
+) {
 }
 
 fn construct_path_table_syn_theorem_def(

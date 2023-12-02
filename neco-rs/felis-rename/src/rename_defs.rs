@@ -32,7 +32,7 @@ impl Decoration for DefDecoration {
     type ExprIdent = ();
     type ExprMatch = ();
     type ExprParen = ();
-    type ExprString = ();
+    type ExprString = DefDecorationExprString;
     type FormulaForall = DefFormulaForall;
     type FormulaImplies = ();
     type FormulaAtom = ();
@@ -125,6 +125,11 @@ pub struct DefStatementLet {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DefTypedArg {
     pub name: String,
+    pub id: DefId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DefDecorationExprString {
     pub id: DefId,
 }
 
@@ -367,11 +372,11 @@ fn rename_defs_expr(
 }
 
 fn rename_defs_expr_string(
-    _context: &mut RenameDefContext,
+    context: &mut RenameDefContext,
     expr_string: &SynExprString<UD>,
 ) -> Result<SynExprString<DefDecoration>, ()> {
-    #[allow(clippy::let_unit_value)]
-    let ext = ();
+    let id = context.new_id();
+    let ext = DefDecorationExprString { id };
     Ok(SynExprString {
         token_string: expr_string.token_string.clone(),
         ext,

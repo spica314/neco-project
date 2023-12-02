@@ -37,7 +37,7 @@ impl TypeChecker {
     pub fn expand(&self, t: &TypeTerm) -> TypeTerm {
         match t {
             TypeTerm::Base(base) => TypeTerm::Base(*base),
-            TypeTerm::Var(var) => self.expand(self.vars.get(&var).unwrap()),
+            TypeTerm::Var(var) => self.expand(self.vars.get(var).unwrap()),
             TypeTerm::App(s, t) => {
                 let s = self.expand(s);
                 let t = self.expand(t);
@@ -52,6 +52,14 @@ impl TypeChecker {
             TypeTerm::Candidates(_) => todo!(),
             TypeTerm::Unknown => TypeTerm::Unknown,
         }
+    }
+
+    pub fn get_all(&self) -> HashMap<VarId, TypeTerm> {
+        let mut map = HashMap::new();
+        for (id, ty) in &self.vars {
+            map.insert(*id, self.expand(ty));
+        }
+        map
     }
 
     pub fn resolve(&mut self) {
@@ -90,14 +98,14 @@ impl TypeChecker {
                         let t1 = self.expand(t1);
                         if let TypeTerm::Arrow(t11, t12) = t1 {
                             add_rel.push((*t11.clone(), *t2.clone()));
-                            add_rel.push((TypeTerm::Var(s.clone()), *t12.clone()));
+                            add_rel.push((TypeTerm::Var(*s), *t12.clone()));
                         }
                     }
                     (TypeTerm::App(s1, s2), TypeTerm::Var(t)) => {
                         let s1 = self.expand(s1);
                         if let TypeTerm::Arrow(s11, s12) = s1 {
                             add_rel.push((*s11.clone(), *s2.clone()));
-                            add_rel.push((TypeTerm::Var(t.clone()), *s12.clone()));
+                            add_rel.push((TypeTerm::Var(*t), *s12.clone()));
                         }
                     }
                     _ => {}
@@ -121,6 +129,12 @@ impl TypeChecker {
 
     pub fn get(&self, id: VarId) -> Option<&TypeTerm> {
         self.vars.get(&id)
+    }
+}
+
+impl Default for TypeChecker {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -1,0 +1,12 @@
+[package]
+name = "felis-type-checker"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+neco-type-checker = { workspace = true }
+felis-syn = { workspace = true }
+felis-rename = { workspace = true }
+neco-resolver = { workspace = true }

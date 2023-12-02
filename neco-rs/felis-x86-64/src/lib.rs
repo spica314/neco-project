@@ -1,13 +1,9 @@
-use felis_rename::{
-    rename_defs::{DefId, RenameDefContext},
-    rename_uses::RenameDecoration,
-};
+use felis_rename::rename_uses::RenameDecoration;
 use felis_syn::{
     syn_expr::SynExpr,
     syn_file::{SynFile, SynFileItem},
     syn_statement::SynStatement,
 };
-use neco_resolver::Resolver;
 
 fn string_length(s: &str) -> usize {
     let cs: Vec<_> = s.chars().collect();
@@ -146,11 +142,6 @@ _start:
     res
 }
 
-pub fn setup_resolver_for_prelude(context: &mut RenameDefContext, resolver: &mut Resolver<DefId>) {
-    let id = context.new_id();
-    resolver.set("__write_to_stdout".to_string(), id);
-}
-
 #[cfg(test)]
 mod test {
     use std::{path::Path, process::Command};
@@ -160,6 +151,7 @@ mod test {
         path_table::construct_path_table_syn_file,
         rename_defs::{rename_defs_file, RenameDefContext},
         rename_uses::{rename_uses_file, RenameUseContext},
+        setup_resolver_for_prelude,
     };
     use felis_syn::{decoration::UD, syn_file::SynFile, test_utils::parse_from_str};
     use neco_resolver::Resolver;

@@ -30,6 +30,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "felis-type-checker"
+version = "0.1.0"
+dependencies = [
+ "felis-rename",
+ "felis-syn",
+ "neco-resolver",
+ "neco-type-checker",
+]
+
+[[package]]
 name = "felis-x86-64"
 version = "0.1.0"
 dependencies = [

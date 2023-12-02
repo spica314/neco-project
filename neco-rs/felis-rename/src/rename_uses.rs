@@ -39,7 +39,7 @@ impl Decoration for RenameDecoration {
     type ExprIdent = RenameDecorationExprIdent;
     type ExprMatch = ();
     type ExprParen = ();
-    type ExprString = ();
+    type ExprString = RenmaeDecorationExprString;
     type FormulaForall = RenameDecorationFormulaForall;
     type FormulaImplies = ();
     type FormulaAtom = RenameDecorationFormulaAtom;
@@ -144,6 +144,11 @@ pub struct RenameDecorationFormulaForall {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RenameDecorationFormulaAtom {
     pub use_id: DefId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RenmaeDecorationExprString {
+    pub id: DefId,
 }
 
 #[derive(Debug, Clone)]
@@ -583,9 +588,10 @@ pub fn rename_uses_string(
     _context: &mut RenameUseContext,
     string: &SynExprString<DefDecoration>,
 ) -> Result<SynExprString<RenameDecoration>, RenameError> {
+    let ext = RenmaeDecorationExprString { id: string.ext.id };
     let string2 = SynExprString {
         token_string: string.token_string.clone(),
-        ext: (),
+        ext,
     };
     Ok(string2)
 }

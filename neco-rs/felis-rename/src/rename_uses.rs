@@ -12,7 +12,7 @@ use felis_syn::{
         SynFormulaParen,
     },
     syn_proc::{SynProcBlock, SynProcDef},
-    syn_statement::{SynStatement, SynStatementLet},
+    syn_statement::{syn_statement_expr_semi::SynStatementExprSemi, SynStatement, SynStatementLet},
     syn_theorem_def::SynTheoremDef,
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -399,6 +399,10 @@ pub fn rename_uses_statement(
             let let_2 = rename_uses_let(context, let_)?;
             Ok(SynStatement::Let(let_2))
         }
+        SynStatement::ExprSemi(expr_semi) => {
+            let expr_semi2 = rename_uses_statement_expr_semi(context, expr_semi)?;
+            Ok(SynStatement::ExprSemi(expr_semi2))
+        }
     }
 }
 
@@ -406,6 +410,10 @@ pub fn rename_uses_let(
     context: &mut RenameUseContext,
     let_: &SynStatementLet<DefDecoration>,
 ) -> Result<SynStatementLet<RenameDecoration>, RenameError> {
+    context
+        .resolver
+        .set(let_.name.as_str().to_string(), let_.ext.id);
+
     let expr = rename_uses_expr(context, &let_.expr)?;
 
     let ext = RenameDecorationStatementLet {
@@ -422,6 +430,19 @@ pub fn rename_uses_let(
         ext,
     };
     Ok(let_2)
+}
+
+pub fn rename_uses_statement_expr_semi(
+    context: &mut RenameUseContext,
+    expr_semi: &SynStatementExprSemi<DefDecoration>,
+) -> Result<SynStatementExprSemi<RenameDecoration>, RenameError> {
+    let expr = rename_uses_expr(context, &expr_semi.expr)?;
+
+    let expr_semi2 = SynStatementExprSemi {
+        expr,
+        semi: expr_semi.semi.clone(),
+    };
+    Ok(expr_semi2)
 }
 
 pub fn rename_uses_expr(

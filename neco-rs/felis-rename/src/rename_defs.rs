@@ -12,7 +12,7 @@ use felis_syn::{
         SynFormulaParen,
     },
     syn_proc::{SynProcBlock, SynProcDef},
-    syn_statement::{SynStatement, SynStatementLet},
+    syn_statement::{syn_statement_expr_semi::SynStatementExprSemi, SynStatement, SynStatementLet},
     syn_theorem_def::SynTheoremDef,
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -307,6 +307,13 @@ fn rename_defs_statement(
         SynStatement::Let(statement_let) => {
             let statement_let = rename_defs_statement_let(context, statement_let)?;
             Ok(SynStatement::Let(statement_let))
+        }
+        SynStatement::ExprSemi(expr_semi) => {
+            let expr = rename_defs_expr(context, &expr_semi.expr)?;
+            Ok(SynStatement::ExprSemi(SynStatementExprSemi {
+                expr,
+                semi: expr_semi.semi.clone(),
+            }))
         }
     }
 }

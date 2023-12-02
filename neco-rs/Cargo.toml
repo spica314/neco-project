@@ -9,6 +9,7 @@ members = [
     "felis-x86-64",
     "neco",
     "neco-resolver",
+    "neco-type-checker",
 ]
 
 [workspace.dependencies]
@@ -19,3 +20,4 @@ felis-term = { path = "./felis-term" }
 felis-x86-64 = { path = "./felis-x86-64" }
 neco = { path = "./neco" }
 neco-resolver = { path = "./neco-resolver" }
+neco-type-checker = { path = "./neco-type-checker" }

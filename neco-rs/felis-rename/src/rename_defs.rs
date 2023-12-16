@@ -7,13 +7,8 @@ use felis_syn::{
     },
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::{SynFnBlock, SynFnDef},
-    syn_formula::{
-        SynFormula, SynFormulaApp, SynFormulaAtom, SynFormulaForall, SynFormulaImplies,
-        SynFormulaParen,
-    },
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{syn_statement_expr_semi::SynStatementExprSemi, SynStatement, SynStatementLet},
-    syn_theorem_def::SynTheoremDef,
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
         SynTypeUnit,
@@ -186,10 +181,6 @@ fn rename_defs_file_item(
         SynFileItem::FnDef(fn_def) => {
             let t = rename_defs_fn_def(context, fn_def)?;
             Ok(SynFileItem::FnDef(t))
-        }
-        SynFileItem::TheoremDef(theorem_def) => {
-            let t = rename_defs_theorem_def(context, theorem_def)?;
-            Ok(SynFileItem::TheoremDef(t))
         }
         SynFileItem::Entrypoint(entrypoint) => {
             let t = rename_defs_entrypoint(context, entrypoint)?;
@@ -477,92 +468,6 @@ fn rename_defs_expr_ident_with_path(
     })
 }
 
-fn rename_defs_theorem_def(
-    context: &mut RenameDefContext,
-    theorem_def: &SynTheoremDef<UD>,
-) -> Result<SynTheoremDef<DefDecoration>, ()> {
-    let formula = rename_defs_formula(context, &theorem_def.formula)?;
-    let fn_def = rename_defs_fn_def(context, &theorem_def.fn_def)?;
-    let ext = DefTheoremDef {
-        name: theorem_def.name.as_str().to_string(),
-        id: context.new_id(),
-    };
-    Ok(SynTheoremDef {
-        keyword_theorem: theorem_def.keyword_theorem.clone(),
-        name: theorem_def.name.clone(),
-        eq: theorem_def.eq.clone(),
-        formula,
-        lbrace: theorem_def.lbrace.clone(),
-        fn_def,
-        rbrace: theorem_def.rbrace.clone(),
-        ext,
-    })
-}
-
-fn rename_defs_formula(
-    context: &mut RenameDefContext,
-    formula: &SynFormula<UD>,
-) -> Result<SynFormula<DefDecoration>, ()> {
-    match formula {
-        SynFormula::Forall(forall) => {
-            let child = rename_defs_formula(context, &forall.child)?;
-            let ext = DefFormulaForall {
-                name: forall.name.as_str().to_string(),
-                id: context.new_id(),
-            };
-            Ok(SynFormula::Forall(SynFormulaForall {
-                keyword_forall: forall.keyword_forall.clone(),
-                lparen: forall.lparen.clone(),
-                name: forall.name.clone(),
-                colon: forall.colon.clone(),
-                ty: Box::new(rename_defs_formula(context, &forall.ty)?),
-                rparen: forall.rparen.clone(),
-                camma: forall.camma.clone(),
-                child: Box::new(child),
-                ext,
-            }))
-        }
-        SynFormula::App(app) => {
-            let fun = rename_defs_formula(context, &app.fun)?;
-            let arg = rename_defs_formula(context, &app.arg)?;
-            #[allow(clippy::let_unit_value)]
-            let ext = ();
-            Ok(SynFormula::App(SynFormulaApp {
-                fun: Box::new(fun),
-                arg: Box::new(arg),
-                ext,
-            }))
-        }
-        SynFormula::Atom(atom) => Ok(SynFormula::Atom(SynFormulaAtom {
-            ident: atom.ident.clone(),
-            ext: (),
-        })),
-        SynFormula::Paren(paren) => {
-            let child = rename_defs_formula(context, &paren.child)?;
-            #[allow(clippy::let_unit_value)]
-            let ext = ();
-            Ok(SynFormula::Paren(SynFormulaParen {
-                lparen: paren.lparen.clone(),
-                child: Box::new(child),
-                rparen: paren.rparen.clone(),
-                ext,
-            }))
-        }
-        SynFormula::Implies(implies) => {
-            let lhs = rename_defs_formula(context, &implies.lhs)?;
-            let rhs = rename_defs_formula(context, &implies.rhs)?;
-            #[allow(clippy::let_unit_value)]
-            let ext = ();
-            Ok(SynFormula::Implies(SynFormulaImplies {
-                lhs: Box::new(lhs),
-                arrow: implies.arrow.clone(),
-                rhs: Box::new(rhs),
-                ext,
-            }))
-        }
-    }
-}
-
 fn rename_defs_entrypoint(
     _context: &mut RenameDefContext,
     entrypoint: &SynEntrypoint<UD>,
@@ -727,18 +632,5 @@ mod test {
         let _file_2 = rename_defs_file(&mut context, &file).unwrap();
         // [file], proof, A, x
         assert_eq!(context.def_count(), 4);
-    }
-
-    #[test]
-    fn felis_rename_defs_file_test_4() {
-        let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
-        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
-        let mut context = RenameDefContext::new();
-        let _file_2 = rename_defs_file(&mut context, &file).unwrap();
-        // (1) [file]
-        // (4) And, conj, A, B
-        // (7) Or or_introl, A, B, or_intror, A, B
-        // (11) theorem1, A, B, proof, A, B, x, _, _, l, r
-        assert_eq!(context.def_count(), 23);
     }
 }

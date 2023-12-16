@@ -58,9 +58,6 @@ fn retrieve_file_item(context: &mut RetrieveContext, item: &SynFileItem<RenameDe
         SynFileItem::FnDef(_fn_def) => {
             todo!()
         }
-        SynFileItem::TheoremDef(_theorem_def) => {
-            todo!()
-        }
         SynFileItem::Entrypoint(_entrypoint) => {}
         SynFileItem::ProcDef(proc_def) => {
             retrieve_proc_def(context, proc_def);

@@ -4,7 +4,6 @@ use felis_syn::{
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::SynFnDef,
     syn_proc::SynProcDef,
-    syn_theorem_def::SynTheoremDef,
     syn_type_def::SynTypeDef,
 };
 use neco_resolver::Resolver;
@@ -83,11 +82,6 @@ pub fn construct_path_table_syn_file(file: &SynFile<DefDecoration>) -> Result<Pa
                 let id = fn_def.ext.id;
                 item.children.insert(fn_def.name.as_str().to_string(), id);
             }
-            SynFileItem::TheoremDef(theorem_def) => {
-                let id = theorem_def.ext.id;
-                item.children
-                    .insert(theorem_def.name.as_str().to_string(), id);
-            }
             SynFileItem::ProcDef(proc_def) => {
                 let id = proc_def.ext.id;
                 item.children.insert(proc_def.name.as_str().to_string(), id);
@@ -107,9 +101,6 @@ pub fn construct_path_table_syn_file(file: &SynFile<DefDecoration>) -> Result<Pa
             }
             SynFileItem::FnDef(fn_def) => {
                 construct_path_table_syn_fn_def(fn_def, &mut path_table);
-            }
-            SynFileItem::TheoremDef(theorem_def) => {
-                construct_path_table_syn_theorem_def(theorem_def, &mut path_table);
             }
             SynFileItem::ProcDef(proc_def) => {
                 construct_path_table_syn_proc_def(proc_def, &mut path_table);
@@ -140,12 +131,6 @@ fn construct_path_table_syn_fn_def(_fn_def: &SynFnDef<DefDecoration>, _path_tabl
 
 fn construct_path_table_syn_proc_def(
     _proc_def: &SynProcDef<DefDecoration>,
-    _path_table: &mut PathTable,
-) {
-}
-
-fn construct_path_table_syn_theorem_def(
-    _theorem_def: &SynTheoremDef<DefDecoration>,
     _path_table: &mut PathTable,
 ) {
 }
@@ -187,23 +172,5 @@ mod test {
         let path_table = construct_path_table_syn_file(&file_with_def).unwrap();
         // [file] -> proof
         assert_eq!(path_table.len(), 1);
-    }
-
-    #[test]
-    fn felis_construct_path_table_test_4() {
-        let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
-        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
-
-        let mut rename_def_context = RenameDefContext::new();
-        let file_with_def = rename_defs_file(&mut rename_def_context, &file).unwrap();
-        // (1) [file]
-        // (4) And, conj, A, B
-        // (7) Or or_introl, A, B, or_intror, A, B
-        // (11) theorem1, A, B, proof, A, B, x, _, _, l, r
-        assert_eq!(rename_def_context.def_count(), 23);
-
-        let path_table = construct_path_table_syn_file(&file_with_def).unwrap();
-        // [file] -> (And, Or, theorem1), And -> (conj), Or -> (or_introl, or_intror)
-        assert_eq!(path_table.len(), 3);
     }
 }

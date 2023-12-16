@@ -7,13 +7,8 @@ use felis_syn::{
     },
     syn_file::{SynFile, SynFileItem},
     syn_fn_def::{SynFnBlock, SynFnDef},
-    syn_formula::{
-        SynFormula, SynFormulaApp, SynFormulaAtom, SynFormulaForall, SynFormulaImplies,
-        SynFormulaParen,
-    },
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{syn_statement_expr_semi::SynStatementExprSemi, SynStatement, SynStatementLet},
-    syn_theorem_def::SynTheoremDef,
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
         SynTypeUnit,
@@ -201,10 +196,6 @@ pub fn rename_uses_file_item(
             let fn_def2 = rename_uses_fn_def(context, fn_def)?;
             Ok(SynFileItem::FnDef(fn_def2))
         }
-        SynFileItem::TheoremDef(theorem_def) => {
-            let theorem_def2 = rename_uses_theorem_def(context, theorem_def)?;
-            Ok(SynFileItem::TheoremDef(theorem_def2))
-        }
         SynFileItem::Entrypoint(entrypoint) => {
             let entrypoint2 = rename_uses_entrypoint(context, entrypoint)?;
             Ok(SynFileItem::Entrypoint(entrypoint2))
@@ -307,36 +298,6 @@ pub fn rename_uses_proc_def(
         ext,
     };
     Ok(proc_def2)
-}
-
-pub fn rename_uses_theorem_def(
-    context: &mut RenameUseContext,
-    theorem_def: &SynTheoremDef<DefDecoration>,
-) -> Result<SynTheoremDef<RenameDecoration>, RenameError> {
-    context.resolver.enter_scope();
-
-    let formula = rename_uses_formula(context, &theorem_def.formula)?;
-
-    context.resolver.leave_scope();
-
-    let fn_def = rename_uses_fn_def(context, &theorem_def.fn_def)?;
-
-    let ext = RenameDecorationTheoremDef {
-        name: theorem_def.ext.name.clone(),
-        id: theorem_def.ext.id,
-    };
-
-    let theorem_def2 = SynTheoremDef {
-        keyword_theorem: theorem_def.keyword_theorem.clone(),
-        name: theorem_def.name.clone(),
-        eq: theorem_def.eq.clone(),
-        formula,
-        lbrace: theorem_def.lbrace.clone(),
-        fn_def,
-        rbrace: theorem_def.rbrace.clone(),
-        ext,
-    };
-    Ok(theorem_def2)
 }
 
 pub fn rename_uses_entrypoint(
@@ -594,123 +555,6 @@ pub fn rename_uses_string(
         ext,
     };
     Ok(string2)
-}
-
-pub fn rename_uses_formula(
-    context: &mut RenameUseContext,
-    formula: &SynFormula<DefDecoration>,
-) -> Result<SynFormula<RenameDecoration>, RenameError> {
-    match formula {
-        SynFormula::Forall(formula_forall) => {
-            let formula_forall2 = rename_uses_formula_forall(context, formula_forall)?;
-            Ok(SynFormula::Forall(formula_forall2))
-        }
-        SynFormula::Implies(formula_implies) => {
-            let formula_implies2 = rename_uses_formula_implies(context, formula_implies)?;
-            Ok(SynFormula::Implies(formula_implies2))
-        }
-        SynFormula::Atom(formula_atom) => {
-            let formula_atom2 = rename_uses_formula_atom(context, formula_atom)?;
-            Ok(SynFormula::Atom(formula_atom2))
-        }
-        SynFormula::App(formula_app) => {
-            let formula_app2 = rename_uses_formula_app(context, formula_app)?;
-            Ok(SynFormula::App(formula_app2))
-        }
-        SynFormula::Paren(formula_paren) => {
-            let formula_paren2 = rename_uses_formula_paren(context, formula_paren)?;
-            Ok(SynFormula::Paren(formula_paren2))
-        }
-    }
-}
-
-pub fn rename_uses_formula_forall(
-    context: &mut RenameUseContext,
-    formula_forall: &SynFormulaForall<DefDecoration>,
-) -> Result<SynFormulaForall<RenameDecoration>, RenameError> {
-    context.resolver.set(
-        formula_forall.name.as_str().to_string(),
-        formula_forall.ext.id,
-    );
-
-    let ty = rename_uses_formula(context, &formula_forall.ty)?;
-    let child = rename_uses_formula(context, &formula_forall.child)?;
-
-    let ext = RenameDecorationFormulaForall {
-        name: formula_forall.ext.name.clone(),
-        id: formula_forall.ext.id,
-    };
-
-    let formula_forall2 = SynFormulaForall {
-        keyword_forall: formula_forall.keyword_forall.clone(),
-        lparen: formula_forall.lparen.clone(),
-        name: formula_forall.name.clone(),
-        colon: formula_forall.colon.clone(),
-        ty: Box::new(ty),
-        rparen: formula_forall.rparen.clone(),
-        camma: formula_forall.camma.clone(),
-        child: Box::new(child),
-        ext,
-    };
-    Ok(formula_forall2)
-}
-
-pub fn rename_uses_formula_implies(
-    context: &mut RenameUseContext,
-    formula_implies: &SynFormulaImplies<DefDecoration>,
-) -> Result<SynFormulaImplies<RenameDecoration>, RenameError> {
-    let lhs = rename_uses_formula(context, &formula_implies.lhs)?;
-    let rhs = rename_uses_formula(context, &formula_implies.rhs)?;
-
-    let formula_implies2 = SynFormulaImplies {
-        lhs: Box::new(lhs),
-        arrow: formula_implies.arrow.clone(),
-        rhs: Box::new(rhs),
-        ext: (),
-    };
-    Ok(formula_implies2)
-}
-
-pub fn rename_uses_formula_atom(
-    context: &mut RenameUseContext,
-    formula_atom: &SynFormulaAtom<DefDecoration>,
-) -> Result<SynFormulaAtom<RenameDecoration>, RenameError> {
-    let id = context.resolver.get(formula_atom.ident.as_str()).unwrap();
-    let ext = RenameDecorationFormulaAtom { use_id: *id };
-    context.use_count += 1;
-
-    let formula_atom2 = SynFormulaAtom {
-        ident: formula_atom.ident.clone(),
-        ext,
-    };
-
-    Ok(formula_atom2)
-}
-
-pub fn rename_uses_formula_app(
-    context: &mut RenameUseContext,
-    formula_app: &SynFormulaApp<DefDecoration>,
-) -> Result<SynFormulaApp<RenameDecoration>, RenameError> {
-    let fun = rename_uses_formula(context, &formula_app.fun)?;
-    let arg = rename_uses_formula(context, &formula_app.arg)?;
-
-    #[allow(clippy::let_unit_value)]
-    let ext = ();
-
-    let formula_app2 = SynFormulaApp {
-        fun: Box::new(fun),
-        arg: Box::new(arg),
-        ext,
-    };
-
-    Ok(formula_app2)
-}
-
-pub fn rename_uses_formula_paren(
-    _context: &mut RenameUseContext,
-    _formula_paren: &SynFormulaParen<DefDecoration>,
-) -> Result<SynFormulaParen<RenameDecoration>, RenameError> {
-    todo!()
 }
 
 pub fn rename_uses_type(
@@ -1205,38 +1049,6 @@ mod test {
         // (3) Prop, Prop, Prop
         // (7) Prop, Prop, A, B, And, A, B
         assert_eq!(context2.use_count, 10);
-    }
-
-    #[test]
-    fn felis_rename_uses_test_5() {
-        let s = std::fs::read_to_string("../../library/wip/prop4.fe").unwrap();
-        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
-        let mut context = RenameDefContext::new();
-        let file_2 = rename_defs_file(&mut context, &file).unwrap();
-        // (1) [file]
-        // (4) And, conj, A, B
-        // (7) Or, or_introl, A, B, or_intror, A, B
-        // (11) theorem1, A, B, proof, A, B, x, _, _, l, r
-        assert_eq!(context.def_count(), 23);
-
-        let mut resolver = Resolver::new();
-        let prop_def_id = context.new_id();
-        resolver.set("Prop".to_string(), prop_def_id);
-        let path_table = construct_path_table_syn_file(&file_2).unwrap();
-        path_table.setup_resolver(file_2.ext.id, &mut resolver);
-        let mut context2 = RenameUseContext::new(resolver, path_table);
-        let _file_3 = rename_uses_file(&mut context2, &file_2).unwrap();
-
-        // (3) Prop, Prop, Prop
-        // (7) Prop, Prop, A, B, And, A, B
-        // (3) Prop, Prop, Prop
-        // (6) Prop, Prop, A, Or, A, B
-        // (6) Prop, Prop, B, Or, A, B
-        // (8) Prop, Prop, And A, B, Or, A, B
-        // (8) Prop, Prop, And, A, B, Or, A, B
-        // (1) x
-        // (5) And::conj, Or::or_introl, A, B, l
-        assert_eq!(context2.use_count, 47);
     }
 
     #[test]

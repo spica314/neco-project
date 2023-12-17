@@ -45,6 +45,7 @@ version = "0.1.0"
 dependencies = [
  "felis-rename",
  "felis-syn",
+ "felis-type-checker",
  "neco-resolver",
 ]
 

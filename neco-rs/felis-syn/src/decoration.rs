@@ -6,15 +6,9 @@ pub trait Decoration: Debug {
     type ExprApp: Debug + Clone + PartialEq + Eq + Hash;
     type ExprBlock: Debug + Clone + PartialEq + Eq + Hash;
     type ExprIdentWithPath: Debug + Clone + PartialEq + Eq + Hash;
-    type ExprIdent: Debug + Clone + PartialEq + Eq + Hash;
     type ExprMatch: Debug + Clone + PartialEq + Eq + Hash;
     type ExprParen: Debug + Clone + PartialEq + Eq + Hash;
     type ExprString: Debug + Clone + PartialEq + Eq + Hash;
-    type FormulaForall: Debug + Clone + PartialEq + Eq + Hash;
-    type FormulaImplies: Debug + Clone + PartialEq + Eq + Hash;
-    type FormulaAtom: Debug + Clone + PartialEq + Eq + Hash;
-    type FormulaApp: Debug + Clone + PartialEq + Eq + Hash;
-    type FormulaParen: Debug + Clone + PartialEq + Eq + Hash;
     type Variant: Debug + Clone + PartialEq + Eq + Hash;
     type TypeDef: Debug + Clone + PartialEq + Eq + Hash;
     type TypeApp: Debug + Clone + PartialEq + Eq + Hash;
@@ -26,7 +20,6 @@ pub trait Decoration: Debug {
     type File: Debug + Clone + PartialEq + Eq + Hash;
     type FnDef: Debug + Clone + PartialEq + Eq + Hash;
     type ProcDef: Debug + Clone + PartialEq + Eq + Hash;
-    type TheoremDef: Debug + Clone + PartialEq + Eq + Hash;
     type TypedArg: Debug + Clone + PartialEq + Eq + Hash;
     type ExprMatchPattern: Debug + Clone + PartialEq + Eq + Hash;
     type StatementLet: Debug + Clone + PartialEq + Eq + Hash;
@@ -39,15 +32,9 @@ impl Decoration for UD {
     type ExprApp = ();
     type ExprBlock = ();
     type ExprIdentWithPath = ();
-    type ExprIdent = ();
     type ExprMatch = ();
     type ExprParen = ();
     type ExprString = ();
-    type FormulaForall = ();
-    type FormulaImplies = ();
-    type FormulaAtom = ();
-    type FormulaApp = ();
-    type FormulaParen = ();
     type Variant = ();
     type TypeDef = ();
     type TypeApp = ();
@@ -59,7 +46,6 @@ impl Decoration for UD {
     type File = ();
     type FnDef = ();
     type ProcDef = ();
-    type TheoremDef = ();
     type TypedArg = ();
     type ExprMatchPattern = ();
     type StatementLet = ();

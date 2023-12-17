@@ -9,6 +9,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SynStatementLet<D: Decoration> {
     pub keyword_let: TokenKeyword,
+    pub keyword_mut: Option<TokenKeyword>,
     pub name: TokenIdent,
     pub eq: TokenEq,
     pub expr: SynExpr<D>,
@@ -26,6 +27,14 @@ impl Parse for SynStatementLet<UD> {
         if keyword_let.keyword.as_str() != "#let" {
             return Ok(None);
         }
+
+        let keyword_mut = TokenKeyword::parse(tokens, &mut k)?;
+        let keyword_mut =
+            if keyword_mut.is_some() && keyword_mut.as_ref().unwrap().keyword.as_str() == "#mut" {
+                keyword_mut
+            } else {
+                None
+            };
 
         let Some(name) = TokenIdent::parse(tokens, &mut k)? else {
             return Err(());
@@ -46,6 +55,7 @@ impl Parse for SynStatementLet<UD> {
         *i = k;
         Ok(Some(SynStatementLet {
             keyword_let,
+            keyword_mut,
             name,
             eq,
             expr,

@@ -24,15 +24,9 @@ impl Decoration for DefDecoration {
     type ExprApp = ();
     type ExprBlock = ();
     type ExprIdentWithPath = ();
-    type ExprIdent = ();
     type ExprMatch = ();
     type ExprParen = ();
     type ExprString = DefDecorationExprString;
-    type FormulaForall = DefFormulaForall;
-    type FormulaImplies = ();
-    type FormulaAtom = ();
-    type FormulaApp = ();
-    type FormulaParen = ();
     type Variant = DefVariant;
     type TypeDef = DefDecorationTypeDef;
     type TypeApp = ();
@@ -44,7 +38,6 @@ impl Decoration for DefDecoration {
     type File = DefDecorationFile;
     type FnDef = DefDecorationFnDef;
     type ProcDef = DefDecorationProcDef;
-    type TheoremDef = DefTheoremDef;
     type TypedArg = DefTypedArg;
     type ExprMatchPattern = DefExprMatchPattern;
     type StatementLet = DefStatementLet;
@@ -325,6 +318,7 @@ fn rename_defs_statement_let(
     };
     Ok(SynStatementLet {
         keyword_let: statement_let.keyword_let.clone(),
+        keyword_mut: statement_let.keyword_mut.clone(),
         name: statement_let.name.clone(),
         eq: statement_let.eq.clone(),
         expr,

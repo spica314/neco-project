@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-felis-syn = { path = "../felis-syn" }
-felis-rename = { path = "../felis-rename" }
-neco-resolver = { path = "../neco-resolver" }
+felis-syn = { workspace = true }
+felis-rename = { workspace = true }
+neco-resolver = { workspace = true }
+felis-type-checker = { workspace = true }

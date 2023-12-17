@@ -31,15 +31,9 @@ impl Decoration for RenameDecoration {
     type ExprApp = ();
     type ExprBlock = ();
     type ExprIdentWithPath = RenameDecorationExprIdentWithPath;
-    type ExprIdent = RenameDecorationExprIdent;
     type ExprMatch = ();
     type ExprParen = ();
-    type ExprString = RenmaeDecorationExprString;
-    type FormulaForall = RenameDecorationFormulaForall;
-    type FormulaImplies = ();
-    type FormulaAtom = RenameDecorationFormulaAtom;
-    type FormulaApp = ();
-    type FormulaParen = ();
+    type ExprString = RenameDecorationExprString;
     type Variant = RenameDecorationVariant;
     type TypeDef = RenameDecorationTypeDef;
     type TypeApp = ();
@@ -51,7 +45,6 @@ impl Decoration for RenameDecoration {
     type File = RenameDecorationFile;
     type FnDef = RenameDecorationFnDef;
     type ProcDef = RenameDecorationProcDef;
-    type TheoremDef = RenameDecorationTheoremDef;
     type TypedArg = RenameDecorationTypedArg;
     type ExprMatchPattern = RenameDecorationExprMatchPattern;
     type StatementLet = RenameDecorationStatementLet;
@@ -142,7 +135,7 @@ pub struct RenameDecorationFormulaAtom {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct RenmaeDecorationExprString {
+pub struct RenameDecorationExprString {
     pub id: DefId,
 }
 
@@ -389,6 +382,7 @@ pub fn rename_uses_let(
 
     let let_2 = SynStatementLet {
         keyword_let: let_.keyword_let.clone(),
+        keyword_mut: let_.keyword_mut.clone(),
         name: let_.name.clone(),
         eq: let_.eq.clone(),
         expr,
@@ -549,7 +543,7 @@ pub fn rename_uses_string(
     _context: &mut RenameUseContext,
     string: &SynExprString<DefDecoration>,
 ) -> Result<SynExprString<RenameDecoration>, RenameError> {
-    let ext = RenmaeDecorationExprString { id: string.ext.id };
+    let ext = RenameDecorationExprString { id: string.ext.id };
     let string2 = SynExprString {
         token_string: string.token_string.clone(),
         ext,

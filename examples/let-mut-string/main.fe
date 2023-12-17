@@ -1,0 +1,7 @@
+#entrypoint main
+
+#proc main : () {
+    #let #mut s = "Hello, world!\n";
+    s = "Hello, world!!\n";
+    __write_to_stdout s;
+}

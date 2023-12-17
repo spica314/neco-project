@@ -1,9 +1,9 @@
-use felis_rename::rename_uses::RenameDecoration;
 use felis_syn::{
     syn_expr::SynExpr,
     syn_file::{SynFile, SynFileItem},
     syn_statement::SynStatement,
 };
+use felis_type_checker::typing::TypedDecoration;
 
 fn string_length(s: &str) -> usize {
     let cs: Vec<_> = s.chars().collect();
@@ -19,7 +19,7 @@ fn string_length(s: &str) -> usize {
     res
 }
 
-pub fn compile(file: SynFile<RenameDecoration>) -> String {
+pub fn compile(file: SynFile<TypedDecoration>) -> String {
     let mut res = String::new();
 
     // get entrypoint
@@ -154,6 +154,10 @@ mod test {
         setup_resolver_for_prelude,
     };
     use felis_syn::{decoration::UD, syn_file::SynFile, test_utils::parse_from_str};
+    use felis_type_checker::{
+        retrieve::{retrieve_file, setup_retrieve_context},
+        typing::typing_file,
+    };
     use neco_resolver::Resolver;
 
     fn test_name_to_file_name(name: &str) -> String {
@@ -169,11 +173,21 @@ mod test {
         let mut resolver = Resolver::new();
         let path_table = construct_path_table_syn_file(&file_2).unwrap();
         path_table.setup_resolver(file_2.ext.id, &mut resolver);
-        setup_resolver_for_prelude(&mut context, &mut resolver);
+        let prelude_map = setup_resolver_for_prelude(&mut context, &mut resolver);
         let mut context2 = RenameUseContext::new(resolver, path_table);
         let file_3 = rename_uses_file(&mut context2, &file_2).unwrap();
 
-        let res = compile(file_3);
+        let mut context = setup_retrieve_context(&prelude_map);
+        retrieve_file(&mut context, &file_3);
+        context.type_checker.resolve();
+        let var_types = context.type_checker.get_all();
+        for (var_id, ty) in &var_types {
+            eprintln!("{:?}: {:?}", var_id, ty);
+        }
+        assert_eq!(var_types.len(), 2);
+        let file_4 = typing_file(&mut context, &file_3);
+
+        let res = compile(file_4);
         let base_path = format!("/tmp/{}", test_name_to_file_name("felis_compile_test_1"));
         {
             let base_path = Path::new(&base_path);
@@ -218,11 +232,21 @@ mod test {
     //     let mut resolver = Resolver::new();
     //     let path_table = construct_path_table_syn_file(&file_2).unwrap();
     //     path_table.setup_resolver(file_2.ext.id, &mut resolver);
-    //     setup_resolver_for_prelude(&mut context, &mut resolver);
+    //     let prelude_map = setup_resolver_for_prelude(&mut context, &mut resolver);
     //     let mut context2 = RenameUseContext::new(resolver, path_table);
     //     let file_3 = rename_uses_file(&mut context2, &file_2).unwrap();
 
-    //     let res = compile(file_3);
+    //     let mut context = setup_retrieve_context(&prelude_map);
+    //     retrieve_file(&mut context, &file_3);
+    //     context.type_checker.resolve();
+    //     let var_types = context.type_checker.get_all();
+    //     for (var_id, ty) in &var_types {
+    //         eprintln!("{:?}: {:?}", var_id, ty);
+    //     }
+    //     assert_eq!(var_types.len(), 4);
+    //     let file_4 = typing_file(&mut context, &file_3);
+
+    //     let res = compile(file_4);
     //     let base_path = format!("/tmp/{}", test_name_to_file_name("felis_compile_test_2"));
     //     {
     //         let base_path = Path::new(&base_path);

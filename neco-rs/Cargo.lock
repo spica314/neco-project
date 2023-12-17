@@ -3,6 +3,17 @@
 version = 3
 
 [[package]]
+name = "felis-code-gen-prepared"
+version = "0.1.0"
+dependencies = [
+ "felis-rename",
+ "felis-syn",
+ "felis-type-checker",
+ "neco-resolver",
+ "neco-type-checker",
+]
+
+[[package]]
 name = "felis-package"
 version = "0.1.0"
 dependencies = [

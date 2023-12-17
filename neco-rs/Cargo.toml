@@ -8,6 +8,7 @@ members = [
     "felis-term",
     "felis-x86-64",
     "felis-type-checker",
+    "felis-code-gen-prepared",
     "neco",
     "neco-resolver",
     "neco-type-checker",
@@ -20,6 +21,7 @@ felis-syn = { path = "./felis-syn" }
 felis-term = { path = "./felis-term" }
 felis-x86-64 = { path = "./felis-x86-64" }
 felis-type-checker = { path = "./felis-type-checker" }
+felis-code-gen-prepared = { path = "./felis-code-gen-prepared" }
 neco = { path = "./neco" }
 neco-resolver = { path = "./neco-resolver" }
 neco-type-checker = { path = "./neco-type-checker" }

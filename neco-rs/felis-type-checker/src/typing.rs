@@ -671,6 +671,6 @@ mod test {
             eprintln!("{:?}: {:?}", var_id, ty);
         }
         assert_eq!(var_types.len(), 4);
-        let file_4 = typing_file(&mut context, &file_3);
+        let _file_4 = typing_file(&mut context, &file_3);
     }
 }

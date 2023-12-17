@@ -54,6 +54,7 @@ dependencies = [
 name = "felis-x86-64"
 version = "0.1.0"
 dependencies = [
+ "felis-code-gen-prepared",
  "felis-rename",
  "felis-syn",
  "felis-type-checker",

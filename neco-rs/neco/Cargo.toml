@@ -11,3 +11,6 @@ felis-rename = { workspace = true }
 felis-syn = { workspace = true }
 felis-term = { workspace = true }
 neco-resolver = { workspace = true }
+felis-type-checker = { workspace = true }
+felis-code-gen-prepared = { workspace = true }
+felis-x86-64 = { workspace = true }

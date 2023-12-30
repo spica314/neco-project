@@ -65,9 +65,12 @@ dependencies = [
 name = "neco"
 version = "0.1.0"
 dependencies = [
+ "felis-code-gen-prepared",
  "felis-rename",
  "felis-syn",
  "felis-term",
+ "felis-type-checker",
+ "felis-x86-64",
  "neco-resolver",
 ]
 

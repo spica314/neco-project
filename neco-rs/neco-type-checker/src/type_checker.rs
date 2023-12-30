@@ -116,11 +116,11 @@ impl TypeChecker {
                     changed = true;
                 }
             }
-            eprintln!("---rel ---");
-            for rel in &self.relations {
-                eprintln!("{:?}", rel);
-            }
-            eprintln!();
+            // eprintln!("---rel ---");
+            // for rel in &self.relations {
+            //     eprintln!("{:?}", rel);
+            // }
+            // eprintln!();
             if !changed {
                 break;
             }

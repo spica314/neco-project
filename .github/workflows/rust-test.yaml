@@ -40,5 +40,5 @@ jobs:
           toolchain: stable
           override: true
       - name: Test
-        run: cargo test --workspace --offline --test-threads 1
+        run: cargo test --workspace --offline -- --test-threads 1
         working-directory: neco-rs

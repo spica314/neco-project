@@ -6,9 +6,11 @@ use felis_syn::{
         SynExprMatchPattern, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
-    syn_fn_def::{SynFnBlock, SynFnDef},
     syn_proc::{SynProcBlock, SynProcDef},
-    syn_statement::{syn_statement_expr_semi::SynStatementExprSemi, SynStatement, SynStatementLet},
+    syn_statement::{
+        syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
+        SynStatement, SynStatementLet,
+    },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
         SynTypeUnit,
@@ -185,10 +187,6 @@ pub fn rename_uses_file_item(
             let type_def2 = rename_uses_type_def(context, type_def)?;
             Ok(SynFileItem::TypeDef(type_def2))
         }
-        SynFileItem::FnDef(fn_def) => {
-            let fn_def2 = rename_uses_fn_def(context, fn_def)?;
-            Ok(SynFileItem::FnDef(fn_def2))
-        }
         SynFileItem::Entrypoint(entrypoint) => {
             let entrypoint2 = rename_uses_entrypoint(context, entrypoint)?;
             Ok(SynFileItem::Entrypoint(entrypoint2))
@@ -237,34 +235,6 @@ pub fn rename_uses_type_def(
     Ok(type_def2)
 }
 
-pub fn rename_uses_fn_def(
-    context: &mut RenameUseContext,
-    fn_def: &SynFnDef<DefDecoration>,
-) -> Result<SynFnDef<RenameDecoration>, RenameError> {
-    context.resolver.enter_scope();
-
-    let ty = rename_uses_type(context, &fn_def.ty)?;
-
-    let fn_block = rename_uses_fn_block(context, &fn_def.fn_block)?;
-
-    let ext = RenameDecorationFnDef {
-        name: fn_def.ext.name.clone(),
-        id: fn_def.ext.id,
-    };
-
-    context.resolver.leave_scope();
-
-    let fn_def2 = SynFnDef {
-        keyword_fn: fn_def.keyword_fn.clone(),
-        name: fn_def.name.clone(),
-        colon: fn_def.colon.clone(),
-        ty,
-        fn_block,
-        ext,
-    };
-    Ok(fn_def2)
-}
-
 pub fn rename_uses_proc_def(
     context: &mut RenameUseContext,
     proc_def: &SynProcDef<DefDecoration>,
@@ -309,24 +279,6 @@ pub fn rename_uses_entrypoint(
     Ok(entrypoint2)
 }
 
-pub fn rename_uses_fn_block(
-    context: &mut RenameUseContext,
-    fn_block: &SynFnBlock<DefDecoration>,
-) -> Result<SynFnBlock<RenameDecoration>, RenameError> {
-    let mut statements = vec![];
-    for statement in &fn_block.statements {
-        let statement2 = rename_uses_statement(context, statement)?;
-        statements.push(statement2);
-    }
-
-    let fn_block2 = SynFnBlock {
-        lbrace: fn_block.lbrace.clone(),
-        statements,
-        rbrace: fn_block.rbrace.clone(),
-    };
-    Ok(fn_block2)
-}
-
 pub fn rename_uses_proc_block(
     context: &mut RenameUseContext,
     proc_block: &SynProcBlock<DefDecoration>,
@@ -362,7 +314,27 @@ pub fn rename_uses_statement(
             let expr_semi2 = rename_uses_statement_expr_semi(context, expr_semi)?;
             Ok(SynStatement::ExprSemi(expr_semi2))
         }
+        SynStatement::Assign(assign) => {
+            let assign2 = rename_uses_statement_assign(context, assign)?;
+            Ok(SynStatement::Assign(assign2))
+        }
     }
+}
+
+pub fn rename_uses_statement_assign(
+    context: &mut RenameUseContext,
+    assign: &SynStatementAssign<DefDecoration>,
+) -> Result<SynStatementAssign<RenameDecoration>, RenameError> {
+    let lhs = rename_uses_expr(context, &assign.lhs)?;
+    let rhs = rename_uses_expr(context, &assign.rhs)?;
+
+    let assign2 = SynStatementAssign {
+        lhs,
+        eq: assign.eq.clone(),
+        rhs,
+        semi: assign.semi.clone(),
+    };
+    Ok(assign2)
 }
 
 pub fn rename_uses_let(
@@ -902,129 +874,6 @@ mod test {
     }
 
     #[test]
-    fn felis_rename_uses_test_2() {
-        let s = std::fs::read_to_string("../../library/wip/fn_def.fe").unwrap();
-        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
-        let mut context = RenameDefContext::new();
-        let file_2 = rename_defs_file(&mut context, &file).unwrap();
-        // [file], proof, A, B, x, l, r
-        assert_eq!(context.def_count(), 7);
-
-        let mut resolver = Resolver::new();
-        let prop_def_id = context.new_id();
-        resolver.set("Prop".to_string(), prop_def_id);
-        let and_def_id = context.new_id();
-        resolver.set("And".to_string(), and_def_id);
-        let or_def_id = context.new_id();
-        resolver.set("Or".to_string(), or_def_id);
-        let conj_def_id = context.new_id();
-        resolver.set("conj".to_string(), conj_def_id);
-        let or_introl_def_id = context.new_id();
-        resolver.set("or_introl".to_string(), or_introl_def_id);
-        let path_table = construct_path_table_syn_file(&file_2).unwrap();
-        let mut context2 = RenameUseContext::new(resolver, path_table);
-        let file_3 = rename_uses_file(&mut context2, &file_2).unwrap();
-
-        let SynFileItem::FnDef(fn_def) = &file_3.items[0] else {
-            panic!()
-        };
-        let _proof_def_id = fn_def.ext.id;
-        let SynType::DependentMap(dep_map1) = &fn_def.ty else {
-            panic!()
-        };
-        let a_def_id = dep_map1.from.ext.id;
-        let SynType::Atom(atom) = &dep_map1.from.ty else {
-            panic!()
-        };
-        let prop_use_id = atom.ext.use_id;
-        assert_eq!(prop_use_id, prop_def_id);
-        let SynType::DependentMap(dep_map2) = &dep_map1.to.as_ref() else {
-            panic!()
-        };
-        let b_def_id = dep_map2.from.ext.id;
-        let SynType::Atom(atom) = &dep_map2.from.ty else {
-            panic!()
-        };
-        let prop_use_id = atom.ext.use_id;
-        assert_eq!(prop_use_id, prop_def_id);
-        let SynType::DependentMap(dep_map3) = &dep_map2.to.as_ref() else {
-            panic!()
-        };
-        let x_def_id = dep_map3.from.ext.id;
-        let SynType::App(app1) = &dep_map3.from.ty else {
-            panic!()
-        };
-        let SynType::Atom(atom) = app1.right.as_ref() else {
-            panic!()
-        };
-        let b_use_id = atom.ext.use_id;
-        assert_eq!(b_use_id, b_def_id);
-        let SynType::App(app2) = app1.left.as_ref() else {
-            panic!()
-        };
-        let SynType::Atom(atom) = app2.right.as_ref() else {
-            panic!()
-        };
-        let a_use_id = atom.ext.use_id;
-        assert_eq!(a_use_id, a_def_id);
-        let SynType::Atom(atom) = app2.left.as_ref() else {
-            panic!()
-        };
-        let and_use_id = atom.ext.use_id;
-        assert_eq!(and_use_id, and_def_id);
-        let SynType::App(app1) = dep_map3.to.as_ref() else {
-            panic!()
-        };
-        let SynType::Atom(atom) = app1.right.as_ref() else {
-            panic!()
-        };
-        let b_use_id = atom.ext.use_id;
-        assert_eq!(b_use_id, b_def_id);
-        let SynType::App(app2) = app1.left.as_ref() else {
-            panic!()
-        };
-        let SynType::Atom(atom) = app2.right.as_ref() else {
-            panic!()
-        };
-        let a_use_id = atom.ext.use_id;
-        assert_eq!(a_use_id, a_def_id);
-        let SynType::Atom(atom) = app2.left.as_ref() else {
-            panic!()
-        };
-        let or_use_id = atom.ext.use_id;
-        assert_eq!(or_use_id, or_def_id);
-        let SynStatement::Expr(expr) = &fn_def.fn_block.statements[0] else {
-            panic!()
-        };
-        let SynExpr::Match(expr_match) = &expr else {
-            panic!()
-        };
-        let SynExpr::IdentWithPath(ident_with_path) = expr_match.expr.as_ref() else {
-            panic!()
-        };
-        let x_use_id = ident_with_path.ext.use_id;
-        assert_eq!(x_use_id, x_def_id);
-        let expr_match_arm = &expr_match.arms[0];
-        let conj_use_id = expr_match_arm.pattern.type_constructor.ext.use_id;
-        assert_eq!(conj_use_id, conj_def_id);
-        let l_def_id = expr_match_arm.pattern.ext.ids[0].1;
-        let _r_def_id = expr_match_arm.pattern.ext.ids[1].1;
-        let SynExpr::App(app) = &expr_match_arm.expr else {
-            panic!()
-        };
-        let SynExpr::IdentWithPath(ident_with_path) = &app.exprs[0] else {
-            panic!()
-        };
-        let or_introl_use_id = ident_with_path.ext.use_id;
-        assert_eq!(or_introl_use_id, or_introl_def_id);
-        let SynExpr::IdentWithPath(ident_with_path) = &app.exprs[1] else {
-            panic!()
-        };
-        let l_use_id = ident_with_path.ext.use_id;
-        assert_eq!(l_use_id, l_def_id);
-    }
-
-    #[test]
     fn felis_rename_uses_test_4() {
         let s = std::fs::read_to_string("../../library/wip/and2.fe").unwrap();
         let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
@@ -1043,25 +892,5 @@ mod test {
         // (3) Prop, Prop, Prop
         // (7) Prop, Prop, A, B, And, A, B
         assert_eq!(context2.use_count, 10);
-    }
-
-    #[test]
-    fn felis_rename_uses_test_6() {
-        let s = std::fs::read_to_string("../../library/wip/entrypoint.fe").unwrap();
-        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
-        let mut context = RenameDefContext::new();
-        let file_2 = rename_defs_file(&mut context, &file).unwrap();
-        // (1) [file]
-        // (1) main
-        assert_eq!(context.def_count(), 2);
-
-        let mut resolver = Resolver::new();
-        let path_table = construct_path_table_syn_file(&file_2).unwrap();
-        path_table.setup_resolver(file_2.ext.id, &mut resolver);
-        let mut context2 = RenameUseContext::new(resolver, path_table);
-        let _file_3 = rename_uses_file(&mut context2, &file_2).unwrap();
-
-        // (1) main
-        assert_eq!(context2.use_count, 1);
     }
 }

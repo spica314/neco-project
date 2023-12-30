@@ -7,9 +7,11 @@ use felis_syn::{
         SynExprMatchPattern, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
-    syn_fn_def::{SynFnBlock, SynFnDef},
     syn_proc::{SynProcBlock, SynProcDef},
-    syn_statement::{syn_statement_expr_semi::SynStatementExprSemi, SynStatement, SynStatementLet},
+    syn_statement::{
+        syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
+        SynStatement, SynStatementLet,
+    },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
         SynTypeUnit,
@@ -144,10 +146,6 @@ pub fn typing_file_item(
         SynFileItem::TypeDef(type_def) => {
             let type_def2 = typing_type_def(context, type_def);
             SynFileItem::TypeDef(type_def2)
-        }
-        SynFileItem::FnDef(fn_def) => {
-            let fn_def2 = typing_fn_def(context, fn_def);
-            SynFileItem::FnDef(fn_def2)
         }
         SynFileItem::Entrypoint(entrypoint) => {
             let entrypoint2 = typing_entrypoint(context, entrypoint);
@@ -316,41 +314,6 @@ pub fn typing_variant(
     }
 }
 
-pub fn typing_fn_def(
-    context: &mut RetrieveContext,
-    fn_def: &SynFnDef<RenameDecoration>,
-) -> SynFnDef<TypedDecoration> {
-    let ty = typing_type(context, &fn_def.ty);
-    let fn_block = typing_fn_block(context, &fn_def.fn_block);
-    SynFnDef {
-        keyword_fn: fn_def.keyword_fn.clone(),
-        name: fn_def.name.clone(),
-        colon: fn_def.colon.clone(),
-        ty,
-        fn_block,
-        ext: TypedDecorationFnDef {
-            name: fn_def.ext.name.clone(),
-            id: fn_def.ext.id,
-        },
-    }
-}
-
-pub fn typing_fn_block(
-    context: &mut RetrieveContext,
-    fn_block: &SynFnBlock<RenameDecoration>,
-) -> SynFnBlock<TypedDecoration> {
-    let mut statements = vec![];
-    for statement in &fn_block.statements {
-        let statement2 = typing_statement(context, statement);
-        statements.push(statement2);
-    }
-    SynFnBlock {
-        lbrace: fn_block.lbrace.clone(),
-        statements,
-        rbrace: fn_block.rbrace.clone(),
-    }
-}
-
 pub fn typing_entrypoint(
     _context: &mut RetrieveContext,
     entrypoint: &SynEntrypoint<RenameDecoration>,
@@ -381,6 +344,24 @@ pub fn typing_statement(
             let statement_let2 = typing_statement_let(context, statement_let);
             SynStatement::Let(statement_let2)
         }
+        SynStatement::Assign(statement_assign) => {
+            let statement_assign2 = typing_statement_assign(context, statement_assign);
+            SynStatement::Assign(statement_assign2)
+        }
+    }
+}
+
+pub fn typing_statement_assign(
+    context: &mut RetrieveContext,
+    statement_assign: &SynStatementAssign<RenameDecoration>,
+) -> SynStatementAssign<TypedDecoration> {
+    let lhs = typing_expr(context, &statement_assign.lhs);
+    let rhs = typing_expr(context, &statement_assign.rhs);
+    SynStatementAssign {
+        lhs,
+        eq: statement_assign.eq.clone(),
+        rhs,
+        semi: statement_assign.semi.clone(),
     }
 }
 

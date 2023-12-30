@@ -17,7 +17,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cargo llvm-cov nextest --offline --fail-under-lines 60 --open
+cargo llvm-cov nextest --offline --fail-under-lines 60 --open --test-threads 1
 
 if [ $? -ne 0 ]; then
     echo -e "\033[31;1mpre-commit failed: test failed or line coverage < 60%\033[m"

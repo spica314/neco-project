@@ -7,9 +7,11 @@ use felis_syn::{
         SynExprMatchPattern, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
-    syn_fn_def::{SynFnBlock, SynFnDef},
     syn_proc::{SynProcBlock, SynProcDef},
-    syn_statement::{syn_statement_expr_semi::SynStatementExprSemi, SynStatement, SynStatementLet},
+    syn_statement::{
+        syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
+        SynStatement, SynStatementLet,
+    },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
         SynTypeUnit,
@@ -142,10 +144,6 @@ fn prepare_code_gen_file_item(
             let type_def = prepare_code_gen_type_def(type_def);
             SynFileItem::TypeDef(type_def)
         }
-        SynFileItem::FnDef(fn_def) => {
-            let fn_def = prepare_code_gen_fn_def(fn_def);
-            SynFileItem::FnDef(fn_def)
-        }
         SynFileItem::Entrypoint(entrypoint) => {
             let entrypoint = prepare_code_gen_entrypoint(entrypoint);
             SynFileItem::Entrypoint(entrypoint)
@@ -181,24 +179,6 @@ fn prepare_code_gen_type_def(
     }
 }
 
-fn prepare_code_gen_fn_def(
-    fn_def: &SynFnDef<TypedDecoration>,
-) -> SynFnDef<CodeGenPreparedDecoration> {
-    let ty = prepare_code_gen_type(&fn_def.ty);
-    let fn_block = prepare_code_gen_fn_block(&fn_def.fn_block);
-    SynFnDef {
-        keyword_fn: fn_def.keyword_fn.clone(),
-        name: fn_def.name.clone(),
-        colon: fn_def.colon.clone(),
-        ty,
-        fn_block,
-        ext: CodeGenPreparedDecorationFnDef {
-            name: fn_def.ext.name.clone(),
-            id: fn_def.ext.id,
-        },
-    }
-}
-
 fn prepare_code_gen_entrypoint(
     entrypoint: &SynEntrypoint<TypedDecoration>,
 ) -> SynEntrypoint<CodeGenPreparedDecoration> {
@@ -227,21 +207,6 @@ fn prepare_code_gen_proc_def(
             id: proc_def.ext.id,
             lets,
         },
-    }
-}
-
-fn prepare_code_gen_fn_block(
-    fn_block: &SynFnBlock<TypedDecoration>,
-) -> SynFnBlock<CodeGenPreparedDecoration> {
-    let mut statements = vec![];
-    for statement in &fn_block.statements {
-        let (statement, _lets) = prepare_code_gen_statement(statement);
-        statements.push(statement);
-    }
-    SynFnBlock {
-        lbrace: fn_block.lbrace.clone(),
-        statements,
-        rbrace: fn_block.rbrace.clone(),
     }
 }
 
@@ -287,7 +252,31 @@ fn prepare_code_gen_statement(
             let (statement_let, lets) = prepare_code_gen_statement_let(statement_let);
             (SynStatement::Let(statement_let), lets)
         }
+        SynStatement::Assign(statement_assign) => {
+            let (statement_assign, lets) = prepare_code_gen_statement_assign(statement_assign);
+            (SynStatement::Assign(statement_assign), lets)
+        }
     }
+}
+
+fn prepare_code_gen_statement_assign(
+    statement_assign: &SynStatementAssign<TypedDecoration>,
+) -> (
+    SynStatementAssign<CodeGenPreparedDecoration>,
+    Vec<(DefId, TypeTerm)>,
+) {
+    let (lhs, mut lets) = prepare_code_gen_expr(&statement_assign.lhs);
+    let (rhs, lets2) = prepare_code_gen_expr(&statement_assign.rhs);
+    lets.extend(lets2);
+    (
+        SynStatementAssign {
+            lhs,
+            eq: statement_assign.eq.clone(),
+            rhs,
+            semi: statement_assign.semi.clone(),
+        },
+        lets,
+    )
 }
 
 fn prepare_code_gen_statement_let(

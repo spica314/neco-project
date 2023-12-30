@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use felis_syn::{
     syn_file::{SynFile, SynFileItem},
-    syn_fn_def::SynFnDef,
     syn_proc::SynProcDef,
     syn_type_def::SynTypeDef,
 };
@@ -78,10 +77,6 @@ pub fn construct_path_table_syn_file(file: &SynFile<DefDecoration>) -> Result<Pa
                 let id = type_def.ext.id;
                 item.children.insert(type_def.name.as_str().to_string(), id);
             }
-            SynFileItem::FnDef(fn_def) => {
-                let id = fn_def.ext.id;
-                item.children.insert(fn_def.name.as_str().to_string(), id);
-            }
             SynFileItem::ProcDef(proc_def) => {
                 let id = proc_def.ext.id;
                 item.children.insert(proc_def.name.as_str().to_string(), id);
@@ -98,9 +93,6 @@ pub fn construct_path_table_syn_file(file: &SynFile<DefDecoration>) -> Result<Pa
         match syn_item {
             SynFileItem::TypeDef(type_def) => {
                 construct_path_table_syn_type_def(type_def, &mut path_table);
-            }
-            SynFileItem::FnDef(fn_def) => {
-                construct_path_table_syn_fn_def(fn_def, &mut path_table);
             }
             SynFileItem::ProcDef(proc_def) => {
                 construct_path_table_syn_proc_def(proc_def, &mut path_table);
@@ -124,9 +116,6 @@ fn construct_path_table_syn_type_def(
         let id = type_def.ext.id;
         path_table.insert(id, item);
     }
-}
-
-fn construct_path_table_syn_fn_def(_fn_def: &SynFnDef<DefDecoration>, _path_table: &mut PathTable) {
 }
 
 fn construct_path_table_syn_proc_def(
@@ -157,20 +146,5 @@ mod test {
         let path_table = construct_path_table_syn_file(&file_with_def).unwrap();
         // [file] -> A, A -> hoge
         assert_eq!(path_table.len(), 2);
-    }
-
-    #[test]
-    fn felis_construct_path_table_test_2() {
-        let s = std::fs::read_to_string("../../library/wip/fn_def.fe").unwrap();
-        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
-
-        let mut rename_def_context = RenameDefContext::new();
-        let file_with_def = rename_defs_file(&mut rename_def_context, &file).unwrap();
-        // [file], proof, A, B, x, l, r
-        assert_eq!(rename_def_context.def_count(), 7);
-
-        let path_table = construct_path_table_syn_file(&file_with_def).unwrap();
-        // [file] -> proof
-        assert_eq!(path_table.len(), 1);
     }
 }

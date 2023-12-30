@@ -5,7 +5,7 @@ use felis_syn::{
     syn_expr::SynExpr,
     syn_file::{SynFile, SynFileItem},
     syn_proc::SynProcDef,
-    syn_statement::{SynStatement, SynStatementLet},
+    syn_statement::{syn_statement_assign::SynStatementAssign, SynStatement, SynStatementLet},
 };
 use neco_type_checker::{
     type_checker::TypeChecker,
@@ -55,9 +55,6 @@ fn retrieve_file_item(context: &mut RetrieveContext, item: &SynFileItem<RenameDe
         SynFileItem::TypeDef(_type_def) => {
             todo!()
         }
-        SynFileItem::FnDef(_fn_def) => {
-            todo!()
-        }
         SynFileItem::Entrypoint(_entrypoint) => {}
         SynFileItem::ProcDef(proc_def) => {
             retrieve_proc_def(context, proc_def);
@@ -84,7 +81,19 @@ fn retrieve_statement(context: &mut RetrieveContext, statement: &SynStatement<Re
         SynStatement::Let(statement_let) => {
             retrieve_statement_let(context, statement_let);
         }
+        SynStatement::Assign(statement_assign) => {
+            retrieve_statement_assign(context, statement_assign);
+        }
     }
+}
+
+fn retrieve_statement_assign(
+    context: &mut RetrieveContext,
+    statement_assign: &SynStatementAssign<RenameDecoration>,
+) {
+    retrieve_expr(context, &statement_assign.lhs);
+    retrieve_expr(context, &statement_assign.rhs);
+    // todo: add relation
 }
 
 fn retrieve_statement_let(

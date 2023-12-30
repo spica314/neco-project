@@ -6,9 +6,11 @@ use felis_syn::{
         SynExprMatchPattern, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
-    syn_fn_def::{SynFnBlock, SynFnDef},
     syn_proc::{SynProcBlock, SynProcDef},
-    syn_statement::{syn_statement_expr_semi::SynStatementExprSemi, SynStatement, SynStatementLet},
+    syn_statement::{
+        syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
+        SynStatement, SynStatementLet,
+    },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
         SynTypeUnit,
@@ -171,10 +173,6 @@ fn rename_defs_file_item(
             let t = rename_defs_type_def(context, type_def)?;
             Ok(SynFileItem::TypeDef(t))
         }
-        SynFileItem::FnDef(fn_def) => {
-            let t = rename_defs_fn_def(context, fn_def)?;
-            Ok(SynFileItem::FnDef(t))
-        }
         SynFileItem::Entrypoint(entrypoint) => {
             let t = rename_defs_entrypoint(context, entrypoint)?;
             Ok(SynFileItem::Entrypoint(t))
@@ -209,42 +207,6 @@ fn rename_defs_type_def(
         variants,
         rbrace: type_def.rbrace.clone(),
         ext,
-    })
-}
-
-fn rename_defs_fn_def(
-    context: &mut RenameDefContext,
-    fn_def: &SynFnDef<UD>,
-) -> Result<SynFnDef<DefDecoration>, ()> {
-    let ty = rename_defs_type(context, &fn_def.ty)?;
-    let fn_block = rename_defs_fn_block(context, &fn_def.fn_block)?;
-    let ext = DefDecorationFnDef {
-        name: fn_def.name.as_str().to_string(),
-        id: context.new_id(),
-    };
-    Ok(SynFnDef {
-        keyword_fn: fn_def.keyword_fn.clone(),
-        name: fn_def.name.clone(),
-        colon: fn_def.colon.clone(),
-        ty,
-        fn_block,
-        ext,
-    })
-}
-
-fn rename_defs_fn_block(
-    context: &mut RenameDefContext,
-    fn_block: &SynFnBlock<UD>,
-) -> Result<SynFnBlock<DefDecoration>, ()> {
-    let mut statements = vec![];
-    for statement in &fn_block.statements {
-        let statement = rename_defs_statement(context, statement)?;
-        statements.push(statement);
-    }
-    Ok(SynFnBlock {
-        lbrace: fn_block.lbrace.clone(),
-        statements,
-        rbrace: fn_block.rbrace.clone(),
     })
 }
 
@@ -302,6 +264,16 @@ fn rename_defs_statement(
             Ok(SynStatement::ExprSemi(SynStatementExprSemi {
                 expr,
                 semi: expr_semi.semi.clone(),
+            }))
+        }
+        SynStatement::Assign(statement_assign) => {
+            let lhs = rename_defs_expr(context, &statement_assign.lhs)?;
+            let rhs = rename_defs_expr(context, &statement_assign.rhs)?;
+            Ok(SynStatement::Assign(SynStatementAssign {
+                lhs,
+                eq: statement_assign.eq.clone(),
+                rhs,
+                semi: statement_assign.semi.clone(),
             }))
         }
     }
@@ -606,25 +578,5 @@ mod test {
         let _file_2 = rename_defs_file(&mut context, &file).unwrap();
         // [file], A, hoge
         assert_eq!(context.def_count(), 3);
-    }
-
-    #[test]
-    fn felis_rename_defs_file_test_2() {
-        let s = std::fs::read_to_string("../../library/wip/fn_def.fe").unwrap();
-        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
-        let mut context = RenameDefContext::new();
-        let _file_2 = rename_defs_file(&mut context, &file).unwrap();
-        // [file], proof, A, B, x, l, r
-        assert_eq!(context.def_count(), 7);
-    }
-
-    #[test]
-    fn felis_rename_defs_file_test_3() {
-        let s = std::fs::read_to_string("../../library/wip/fn_def_simple.fe").unwrap();
-        let file = parse_from_str::<SynFile<UD>>(&s).unwrap().unwrap();
-        let mut context = RenameDefContext::new();
-        let _file_2 = rename_defs_file(&mut context, &file).unwrap();
-        // [file], proof, A, x
-        assert_eq!(context.def_count(), 4);
     }
 }

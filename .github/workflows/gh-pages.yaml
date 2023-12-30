@@ -52,7 +52,7 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Create llvm-cov report
-        run: cargo llvm-cov test --html --output-dir ../pages/llvm-cov --offline --test-threads 1
+        run: cargo llvm-cov test --html --output-dir ../pages/llvm-cov --offline -- --test-threads 1
         working-directory: neco-rs
 
       # create the-felis-programming-language

@@ -4,8 +4,11 @@ use felis_rename::{rename_defs::DefId, rename_uses::RenameDecoration};
 use felis_syn::{
     syn_expr::SynExpr,
     syn_file::{SynFile, SynFileItem},
-    syn_proc::SynProcDef,
-    syn_statement::{syn_statement_assign::SynStatementAssign, SynStatement, SynStatementLet},
+    syn_proc::{SynProcBlock, SynProcDef},
+    syn_statement::{
+        syn_statement_assign::SynStatementAssign, syn_statement_if::SynStatementIf, SynStatement,
+        SynStatementLet,
+    },
 };
 use neco_type_checker::{
     type_checker::TypeChecker,
@@ -30,7 +33,7 @@ pub fn setup_retrieve_context(prelude_map: &HashMap<String, DefId>) -> RetrieveC
 
     let mut def_to_var = HashMap::new();
 
-    assert_eq!(prelude_map.len(), 3);
+    assert_eq!(prelude_map.len(), 4);
 
     // __write_to_stdout
     let var_id = type_checker.add_var(TypeTerm::Arrow(
@@ -57,6 +60,17 @@ pub fn setup_retrieve_context(prelude_map: &HashMap<String, DefId>) -> RetrieveC
         )),
     ));
     let def_id = prelude_map["__add_i64"];
+    def_to_var.insert(def_id, var_id);
+
+    // __eq_i64
+    let var_id = type_checker.add_var(TypeTerm::Arrow(
+        Box::new(TypeTerm::Base(ty_i64)),
+        Box::new(TypeTerm::Arrow(
+            Box::new(TypeTerm::Base(ty_i64)),
+            Box::new(TypeTerm::Base(ty_i64)),
+        )),
+    ));
+    let def_id = prelude_map["__eq_i64"];
     def_to_var.insert(def_id, var_id);
 
     RetrieveContext {
@@ -86,10 +100,14 @@ fn retrieve_file_item(context: &mut RetrieveContext, item: &SynFileItem<RenameDe
     }
 }
 
-fn retrieve_proc_def(context: &mut RetrieveContext, proc_def: &SynProcDef<RenameDecoration>) {
-    for statement in &proc_def.proc_block.statements {
+fn retrieve_proc_block(context: &mut RetrieveContext, proc_block: &SynProcBlock<RenameDecoration>) {
+    for statement in &proc_block.statements {
         retrieve_statement(context, statement);
     }
+}
+
+fn retrieve_proc_def(context: &mut RetrieveContext, proc_def: &SynProcDef<RenameDecoration>) {
+    retrieve_proc_block(context, &proc_def.proc_block);
 }
 
 fn retrieve_statement(context: &mut RetrieveContext, statement: &SynStatement<RenameDecoration>) {
@@ -105,6 +123,9 @@ fn retrieve_statement(context: &mut RetrieveContext, statement: &SynStatement<Re
         SynStatement::Assign(statement_assign) => {
             retrieve_statement_assign(context, statement_assign);
         }
+        SynStatement::If(statement_if) => {
+            retrieve_statement_if(context, statement_if);
+        }
     }
 }
 
@@ -115,6 +136,15 @@ fn retrieve_statement_assign(
     retrieve_expr(context, &statement_assign.lhs);
     retrieve_expr(context, &statement_assign.rhs);
     // todo: add relation
+}
+
+fn retrieve_statement_if(
+    context: &mut RetrieveContext,
+    statement_if: &SynStatementIf<RenameDecoration>,
+) {
+    retrieve_expr(context, &statement_if.cond);
+    retrieve_proc_block(context, &statement_if.t_branch);
+    retrieve_proc_block(context, &statement_if.f_branch);
 }
 
 fn retrieve_statement_let(

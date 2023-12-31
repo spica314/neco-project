@@ -25,5 +25,9 @@ pub fn setup_resolver_for_prelude(
     resolver.set("__add_i64".to_string(), id);
     res.insert("__add_i64".to_string(), id);
 
+    let id = context.new_id();
+    resolver.set("__eq_i64".to_string(), id);
+    res.insert("__eq_i64".to_string(), id);
+
     res
 }

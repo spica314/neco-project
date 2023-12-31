@@ -3,6 +3,7 @@ use felis_rename::rename_defs::DefId;
 use felis_syn::{
     syn_expr::{SynExpr, SynExprApp, SynExprIdentWithPath, SynExprNumber, SynExprString},
     syn_file::{SynFile, SynFileItem},
+    syn_proc::SynProcBlock,
     syn_statement::SynStatement,
 };
 use felis_type_checker::retrieve::RetrieveContext;
@@ -27,6 +28,7 @@ pub struct CompileContext {
     pub strings: Vec<(String, String)>,
     pub def_id_to_offset: std::collections::HashMap<DefId, usize>,
     pub retrieve_context: RetrieveContext,
+    pub label_counter: usize,
 }
 
 pub fn byte_length_of_type_term(context: &CompileContext, ty: &TypeTerm) -> usize {
@@ -108,6 +110,21 @@ pub fn compile_expr_r_app(
         context.res.push_str("    pop rax\n");
         context.res.push_str("    add rax, rdi\n");
         context.res.push_str("    push rax\n");
+    } else if fun == "__eq_i64" {
+        // cmp
+        // rax: arg1
+        // rdi: arg2
+        // rax: result
+        let arg1 = app.exprs[1].clone();
+        let arg2 = app.exprs[2].clone();
+        compile_expr_r(context, &arg1);
+        compile_expr_r(context, &arg2);
+        context.res.push_str("    pop rdi\n");
+        context.res.push_str("    pop rax\n");
+        context.res.push_str("    cmp rax, rdi\n");
+        context.res.push_str("    sete al\n");
+        context.res.push_str("    movzb rax, al\n");
+        context.res.push_str("    push rax\n");
     } else {
         panic!();
     }
@@ -141,7 +158,6 @@ pub fn compile_expr_r_ident_with_path(
     // push: from back to front
     let byte_length = byte_length_of_type_term(&context, &expr_ident_with_path.ext.ty);
     assert!(byte_length % 8 == 0);
-    eprintln!("byte_length(1): {}", byte_length);
     for i in (0..byte_length / 8).rev() {
         context
             .res
@@ -211,6 +227,68 @@ pub fn compile_expr_l(context: &mut CompileContext, expr: &SynExpr<CodeGenPrepar
     }
 }
 
+pub fn compile_proc_block(
+    context: &mut CompileContext,
+    proc_block: &SynProcBlock<CodeGenPreparedDecoration>,
+) {
+    for statement in &proc_block.statements {
+        match statement {
+            SynStatement::ExprSemi(expr_semi) => {
+                let expr = expr_semi.expr.clone();
+                compile_expr_r(context, &expr);
+            }
+            SynStatement::Let(statement_let) => {
+                if let Some(initial) = &statement_let.initial {
+                    compile_expr_r(context, &initial.expr);
+                    let offset = context.def_id_to_offset.get(&statement_let.ext.id).unwrap();
+
+                    let ty = ty_of_expr(&initial.expr);
+                    let byte_length = byte_length_of_type_term(&context, &ty);
+                    assert!(byte_length % 8 == 0);
+                    for i in 0..byte_length / 8 {
+                        context.res.push_str("    pop rax\n");
+                        context.res.push_str(
+                            format!("    mov [rbp-{}+{}], rax\n", offset, 8 * i).as_str(),
+                        );
+                    }
+                }
+            }
+            SynStatement::Assign(statement_assign) => {
+                compile_expr_r(context, &statement_assign.rhs);
+                compile_expr_l(context, &statement_assign.lhs);
+                let ty = ty_of_expr(&statement_assign.rhs);
+                let byte_length = byte_length_of_type_term(&context, &ty);
+                assert!(byte_length % 8 == 0);
+                context.res.push_str("    pop rax\n");
+                for i in 0..byte_length / 8 {
+                    context.res.push_str("    pop rdi\n");
+                    context
+                        .res
+                        .push_str(format!("    mov [rax+{}], rdi\n", 8 * i).as_str());
+                }
+            }
+            SynStatement::If(statement_if) => {
+                compile_expr_r(context, &statement_if.cond);
+                context.res.push_str("    pop rax\n");
+                context.res.push_str("    cmp rax, 0\n");
+                let label_else = format!("__else_{}", context.label_counter);
+                let label_end = format!("__end_{}", context.label_counter);
+                context.label_counter += 1;
+                context
+                    .res
+                    .push_str(format!("    je {}\n", label_else).as_str());
+                compile_proc_block(context, &statement_if.t_branch);
+                context
+                    .res
+                    .push_str(format!("    jmp {}\n", label_end).as_str());
+                context.res.push_str(format!("{}:\n", label_else).as_str());
+                compile_proc_block(context, &statement_if.f_branch);
+                context.res.push_str(format!("{}:\n", label_end).as_str());
+            }
+        }
+    }
+}
+
 pub fn compile(
     retrieve_context: RetrieveContext,
     file: SynFile<CodeGenPreparedDecoration>,
@@ -220,6 +298,7 @@ pub fn compile(
         strings: vec![],
         def_id_to_offset: std::collections::HashMap::new(),
         retrieve_context,
+        label_counter: 0,
     };
 
     // get entrypoint
@@ -283,47 +362,7 @@ _start:
 
         context.res.push_str(&format!("    sub rsp, {}\n", offset));
 
-        for statement in &proc.proc_block.statements {
-            match statement {
-                SynStatement::ExprSemi(expr_semi) => {
-                    let expr = expr_semi.expr.clone();
-                    compile_expr_r(&mut context, &expr);
-                }
-                SynStatement::Let(statement_let) => {
-                    if let Some(initial) = &statement_let.initial {
-                        compile_expr_r(&mut context, &initial.expr);
-                        let offset = context.def_id_to_offset.get(&statement_let.ext.id).unwrap();
-
-                        eprintln!("statement_let = {:?}", statement_let);
-                        let ty = ty_of_expr(&initial.expr);
-                        let byte_length = byte_length_of_type_term(&context, &ty);
-                        assert!(byte_length % 8 == 0);
-                        eprintln!("byte_length(2): {}", byte_length);
-                        for i in 0..byte_length / 8 {
-                            context.res.push_str("    pop rax\n");
-                            context.res.push_str(
-                                format!("    mov [rbp-{}+{}], rax\n", offset, 8 * i).as_str(),
-                            );
-                        }
-                    }
-                }
-                SynStatement::Assign(statement_assign) => {
-                    compile_expr_r(&mut context, &statement_assign.rhs);
-                    compile_expr_l(&mut context, &statement_assign.lhs);
-                    let ty = ty_of_expr(&statement_assign.rhs);
-                    let byte_length = byte_length_of_type_term(&context, &ty);
-                    assert!(byte_length % 8 == 0);
-                    eprintln!("byte_length(3): {}", byte_length);
-                    context.res.push_str("    pop rax\n");
-                    for i in 0..byte_length / 8 {
-                        context.res.push_str("    pop rdi\n");
-                        context
-                            .res
-                            .push_str(format!("    mov [rax+{}], rdi\n", 8 * i).as_str());
-                    }
-                }
-            }
-        }
+        compile_proc_block(&mut context, &proc.proc_block);
 
         context.res.push_str("    mov rsp, rbp\n");
         context.res.push_str("    pop rbp\n");

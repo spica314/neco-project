@@ -10,7 +10,7 @@ use felis_syn::{
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
         syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        SynStatement, SynStatementLet, SynStatementLetInitial,
+        syn_statement_if::SynStatementIf, SynStatement, SynStatementLet, SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -356,6 +356,10 @@ pub fn typing_statement(
             let statement_assign2 = typing_statement_assign(context, statement_assign);
             SynStatement::Assign(statement_assign2)
         }
+        SynStatement::If(statement_if) => {
+            let statement_if2 = typing_statement_if(context, statement_if);
+            SynStatement::If(statement_if2)
+        }
     }
 }
 
@@ -370,6 +374,23 @@ pub fn typing_statement_assign(
         eq: statement_assign.eq.clone(),
         rhs,
         semi: statement_assign.semi.clone(),
+    }
+}
+
+pub fn typing_statement_if(
+    context: &mut RetrieveContext,
+    statement_if: &SynStatementIf<RenameDecoration>,
+) -> SynStatementIf<TypedDecoration> {
+    let cond = typing_expr(context, &statement_if.cond);
+    let t_branch = typing_proc_block(context, &statement_if.t_branch);
+    let f_branch = typing_proc_block(context, &statement_if.f_branch);
+
+    SynStatementIf {
+        keyword_if: statement_if.keyword_if.clone(),
+        cond,
+        t_branch,
+        keyword_else: statement_if.keyword_else.clone(),
+        f_branch,
     }
 }
 

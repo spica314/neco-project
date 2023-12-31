@@ -9,7 +9,7 @@ use felis_syn::{
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
         syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        SynStatement, SynStatementLet, SynStatementLetInitial,
+        syn_statement_if::SynStatementIf, SynStatement, SynStatementLet, SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -319,7 +319,28 @@ pub fn rename_uses_statement(
             let assign2 = rename_uses_statement_assign(context, assign)?;
             Ok(SynStatement::Assign(assign2))
         }
+        SynStatement::If(statement_if) => {
+            let statement_if2 = rename_uses_statement_if(context, statement_if)?;
+            Ok(SynStatement::If(statement_if2))
+        }
     }
+}
+
+pub fn rename_uses_statement_if(
+    context: &mut RenameUseContext,
+    assign: &SynStatementIf<DefDecoration>,
+) -> Result<SynStatementIf<RenameDecoration>, RenameError> {
+    let cond = rename_uses_expr(context, &assign.cond)?;
+    let t_branch = rename_uses_proc_block(context, &assign.t_branch)?;
+    let f_branch = rename_uses_proc_block(context, &assign.f_branch)?;
+
+    Ok(SynStatementIf {
+        keyword_if: assign.keyword_if.clone(),
+        cond,
+        t_branch,
+        keyword_else: assign.keyword_else.clone(),
+        f_branch,
+    })
 }
 
 pub fn rename_uses_statement_assign(

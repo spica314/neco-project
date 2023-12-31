@@ -10,7 +10,7 @@ use felis_syn::{
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
         syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        SynStatement, SynStatementLet, SynStatementLetInitial,
+        syn_statement_if::SynStatementIf, SynStatement, SynStatementLet, SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -264,6 +264,10 @@ fn prepare_code_gen_statement(
             let (statement_assign, lets) = prepare_code_gen_statement_assign(statement_assign);
             (SynStatement::Assign(statement_assign), lets)
         }
+        SynStatement::If(statement_if) => {
+            let (statement_if, lets) = prepare_code_gen_statement_if(statement_if);
+            (SynStatement::If(statement_if), lets)
+        }
     }
 }
 
@@ -282,6 +286,31 @@ fn prepare_code_gen_statement_assign(
             eq: statement_assign.eq.clone(),
             rhs,
             semi: statement_assign.semi.clone(),
+        },
+        lets,
+    )
+}
+
+fn prepare_code_gen_statement_if(
+    statement_if: &SynStatementIf<TypedDecoration>,
+) -> (
+    SynStatementIf<CodeGenPreparedDecoration>,
+    Vec<(DefId, TypeTerm)>,
+) {
+    let mut lets = vec![];
+    let (cond, lets2) = prepare_code_gen_expr(&statement_if.cond);
+    lets.extend(lets2);
+    let (t_branch, lets2) = prepare_code_gen_proc_block(&statement_if.t_branch);
+    lets.extend(lets2);
+    let (f_branch, lets2) = prepare_code_gen_proc_block(&statement_if.f_branch);
+    lets.extend(lets2);
+    (
+        SynStatementIf {
+            keyword_if: statement_if.keyword_if.clone(),
+            cond,
+            t_branch,
+            keyword_else: statement_if.keyword_else.clone(),
+            f_branch,
         },
         lets,
     )

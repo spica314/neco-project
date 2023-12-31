@@ -1,7 +1,7 @@
 use felis_code_gen_prepared::CodeGenPreparedDecoration;
 use felis_rename::rename_defs::DefId;
 use felis_syn::{
-    syn_expr::{SynExpr, SynExprApp, SynExprIdentWithPath, SynExprString},
+    syn_expr::{SynExpr, SynExprApp, SynExprIdentWithPath, SynExprNumber, SynExprString},
     syn_file::{SynFile, SynFileItem},
     syn_statement::SynStatement,
 };
@@ -49,6 +49,15 @@ pub fn compile_expr_r_app(
         context.res.push_str("    mov rdi, 1\n");
         context.res.push_str("    pop rdx\n");
         context.res.push_str("    pop rsi\n");
+        context.res.push_str("    syscall\n");
+    } else if fun == "__exit" {
+        // sys_exit
+        // rax: syscall number = 60
+        // rdi: exit status = status
+        let arg = app.exprs[1].clone();
+        compile_expr_r(context, &arg);
+        context.res.push_str("    mov rax, 60\n");
+        context.res.push_str("    pop rdi\n");
         context.res.push_str("    syscall\n");
     } else {
         panic!();
@@ -117,8 +126,27 @@ pub fn compile_expr_r(context: &mut CompileContext, expr: &SynExpr<CodeGenPrepar
         SynExpr::String(expr_string) => {
             compile_expr_r_string(context, expr_string);
         }
+        SynExpr::Number(expr_number) => {
+            compile_expr_r_number(context, expr_number);
+        }
         SynExpr::Block(_) => todo!(),
     }
+}
+
+pub fn number_string_to_number(s: &str) -> String {
+    s.to_string()
+}
+
+pub fn compile_expr_r_number(
+    context: &mut CompileContext,
+    expr_number: &SynExprNumber<CodeGenPreparedDecoration>,
+) {
+    let s = expr_number.number.as_str();
+    let s = number_string_to_number(s);
+    context
+        .res
+        .push_str(format!("    mov rax, {}\n", number_string_to_number(&s)).as_str());
+    context.res.push_str("    push rax\n");
 }
 
 pub fn compile_expr_l(context: &mut CompileContext, expr: &SynExpr<CodeGenPreparedDecoration>) {
@@ -131,6 +159,7 @@ pub fn compile_expr_l(context: &mut CompileContext, expr: &SynExpr<CodeGenPrepar
         SynExpr::Paren(_) => todo!(),
         SynExpr::String(_) => todo!(),
         SynExpr::Block(_) => todo!(),
+        SynExpr::Number(_) => todo!(),
     }
 }
 

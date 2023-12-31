@@ -3,6 +3,7 @@ use crate::{parse::Parse, to_felis_string::ToFelisString};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Token {
     Ident(TokenIdent),
+    Number(TokenNumber),
     Keyword(TokenKeyword),
     String(TokenString),
     LParen(TokenLParen),
@@ -86,6 +87,38 @@ impl Parse for TokenIdent {
         if let Token::Ident(token_ident) = tokens[*i].clone() {
             *i += 1;
             Ok(Some(token_ident))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TokenNumber {
+    pub info: TokenInfo,
+    pub number: String,
+}
+
+impl TokenNumber {
+    pub fn as_str(&self) -> &str {
+        &self.number
+    }
+}
+
+impl ToFelisString for TokenNumber {
+    fn to_felis_string(&self) -> String {
+        self.number.clone()
+    }
+}
+
+impl Parse for TokenNumber {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<TokenNumber>, ()> {
+        if *i >= tokens.len() {
+            return Ok(None);
+        }
+        if let Token::Number(token_number) = tokens[*i].clone() {
+            *i += 1;
+            Ok(Some(token_number))
         } else {
             Ok(None)
         }
@@ -339,10 +372,18 @@ impl Parse for TokenArrow2 {
 }
 
 fn is_ident_head_char(c: char) -> bool {
-    c.is_ascii_alphanumeric() || "_".contains(c)
+    c.is_ascii_alphabetic() || "_".contains(c)
 }
 
 fn is_ident_tail_char(c: char) -> bool {
+    c.is_ascii_alphanumeric() || "-_".contains(c)
+}
+
+fn is_number_head_char(c: char) -> bool {
+    c.is_ascii_digit() || "_".contains(c)
+}
+
+fn is_number_tail_char(c: char) -> bool {
     c.is_ascii_alphanumeric() || "-_".contains(c)
 }
 
@@ -439,6 +480,24 @@ pub fn lex(file_id: FileId, chars: &[char]) -> Result<Vec<Token>, ()> {
                 span: Span::new(file_id, begin, end),
             };
             let token = Token::Ident(TokenIdent { info, ident });
+            res.push(token);
+            continue;
+        }
+
+        // Handle number tokens
+        if is_number_head_char(chars[i]) {
+            let begin = FilePos::new_with_pos(r, c);
+            let mut number = String::new();
+            while i < chars.len() && is_number_tail_char(chars[i]) {
+                number.push(chars[i]);
+                i += 1;
+                c += 1;
+            }
+            let end = FilePos::new_with_pos(r, c);
+            let info = TokenInfo {
+                span: Span::new(file_id, begin, end),
+            };
+            let token = Token::Number(TokenNumber { info, number });
             res.push(token);
             continue;
         }

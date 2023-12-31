@@ -4,7 +4,7 @@ use felis_syn::{
     syn_entrypoint::SynEntrypoint,
     syn_expr::{
         SynExpr, SynExprApp, SynExprBlock, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
-        SynExprMatchPattern, SynExprParen, SynExprString,
+        SynExprMatchPattern, SynExprNumber, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
     syn_proc::{SynProcBlock, SynProcDef},
@@ -31,6 +31,7 @@ impl Decoration for TypedDecoration {
     type ExprApp = ();
     type ExprBlock = ();
     type ExprIdentWithPath = TypedDecorationExprIdentWithPath;
+    type ExprNumber = TypedDecorationExprNumber;
     type ExprMatch = ();
     type ExprParen = ();
     type ExprString = TypedDecorationExprString;
@@ -114,6 +115,12 @@ pub struct TypedDecorationTypedArg {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypedDecorationExprMatchPattern {
     pub ids: Vec<(String, DefId)>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TypedDecorationExprNumber {
+    pub id: DefId,
+    pub ty: TypeTerm,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -394,6 +401,10 @@ pub fn typing_expr(
             let expr_string2 = typing_expr_string(context, expr_string);
             SynExpr::String(expr_string2)
         }
+        SynExpr::Number(expr_number) => {
+            let expr_number2 = typing_expr_number(context, expr_number);
+            SynExpr::Number(expr_number2)
+        }
     }
 }
 
@@ -616,6 +627,21 @@ pub fn typing_expr_string(
     }
 }
 
+pub fn typing_expr_number(
+    context: &mut RetrieveContext,
+    expr_string: &SynExprNumber<RenameDecoration>,
+) -> SynExprNumber<TypedDecoration> {
+    let var_id = *context.def_to_var.get(&expr_string.ext.id).unwrap();
+    let ty_term = context.type_checker.get(var_id).unwrap().clone();
+    SynExprNumber {
+        number: expr_string.number.clone(),
+        ext: TypedDecorationExprNumber {
+            id: expr_string.ext.id,
+            ty: ty_term,
+        },
+    }
+}
+
 #[cfg(test)]
 mod test {
     use felis_rename::{
@@ -651,7 +677,7 @@ mod test {
         for (var_id, ty) in &var_types {
             eprintln!("{:?}: {:?}", var_id, ty);
         }
-        assert_eq!(var_types.len(), 4);
+        assert_eq!(var_types.len(), 5);
         let _file_4 = typing_file(&mut context, &file_3);
     }
 }

@@ -19,14 +19,18 @@ pub struct RetrieveContext {
     pub def_to_var: HashMap<DefId, VarId>,
     pub ty_str: TypeId,
     pub ty_unit: TypeId,
+    pub ty_i64: TypeId,
 }
 
 pub fn setup_retrieve_context(prelude_map: &HashMap<String, DefId>) -> RetrieveContext {
     let mut type_checker = TypeChecker::new();
     let ty_str = type_checker.add_type(TypeTerm::Star(TypeLevel::new(2)));
     let ty_unit = type_checker.add_type(TypeTerm::Star(TypeLevel::new(2)));
+    let ty_i64 = type_checker.add_type(TypeTerm::Star(TypeLevel::new(2)));
 
     let mut def_to_var = HashMap::new();
+
+    assert_eq!(prelude_map.len(), 2);
 
     // __write_to_stdout
     let var_id = type_checker.add_var(TypeTerm::Arrow(
@@ -36,11 +40,20 @@ pub fn setup_retrieve_context(prelude_map: &HashMap<String, DefId>) -> RetrieveC
     let def_id = prelude_map["__write_to_stdout"];
     def_to_var.insert(def_id, var_id);
 
+    // __exit
+    let var_id = type_checker.add_var(TypeTerm::Arrow(
+        Box::new(TypeTerm::Base(ty_i64)),
+        Box::new(TypeTerm::Base(ty_unit)),
+    ));
+    let def_id = prelude_map["__exit"];
+    def_to_var.insert(def_id, var_id);
+
     RetrieveContext {
         type_checker,
         def_to_var,
         ty_str,
         ty_unit,
+        ty_i64,
     }
 }
 
@@ -139,6 +152,17 @@ fn retrieve_expr(context: &mut RetrieveContext, expr: &SynExpr<RenameDecoration>
                 .add_relation(TypeTerm::Var(*var_id), ty.clone());
             ty
         }
+        SynExpr::Number(expr_number) => {
+            let var_id = context
+                .def_to_var
+                .entry(expr_number.ext.id)
+                .or_insert_with(|| context.type_checker.add_var(TypeTerm::Unknown));
+            let ty = TypeTerm::Base(context.ty_i64);
+            context
+                .type_checker
+                .add_relation(TypeTerm::Var(*var_id), ty.clone());
+            ty
+        }
         SynExpr::Block(_) => todo!(),
     }
 }
@@ -176,6 +200,6 @@ mod test {
         for (var_id, ty) in &var_types {
             eprintln!("{:?}: {:?}", var_id, ty);
         }
-        assert_eq!(var_types.len(), 4);
+        assert_eq!(var_types.len(), 5);
     }
 }

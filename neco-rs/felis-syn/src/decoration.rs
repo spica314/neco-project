@@ -6,6 +6,7 @@ pub trait Decoration: Debug {
     type ExprApp: Debug + Clone + PartialEq + Eq + Hash;
     type ExprBlock: Debug + Clone + PartialEq + Eq + Hash;
     type ExprIdentWithPath: Debug + Clone + PartialEq + Eq + Hash;
+    type ExprNumber: Debug + Clone + PartialEq + Eq + Hash;
     type ExprMatch: Debug + Clone + PartialEq + Eq + Hash;
     type ExprParen: Debug + Clone + PartialEq + Eq + Hash;
     type ExprString: Debug + Clone + PartialEq + Eq + Hash;
@@ -32,6 +33,7 @@ impl Decoration for UD {
     type ExprApp = ();
     type ExprBlock = ();
     type ExprIdentWithPath = ();
+    type ExprNumber = ();
     type ExprMatch = ();
     type ExprParen = ();
     type ExprString = ();

@@ -3,7 +3,7 @@ use felis_syn::{
     syn_entrypoint::SynEntrypoint,
     syn_expr::{
         SynExpr, SynExprApp, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
-        SynExprMatchPattern, SynExprParen, SynExprString,
+        SynExprMatchPattern, SynExprNumber, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
     syn_proc::{SynProcBlock, SynProcDef},
@@ -26,6 +26,7 @@ impl Decoration for DefDecoration {
     type ExprApp = ();
     type ExprBlock = ();
     type ExprIdentWithPath = ();
+    type ExprNumber = DefDecorationExprNumber;
     type ExprMatch = ();
     type ExprParen = ();
     type ExprString = DefDecorationExprString;
@@ -115,6 +116,11 @@ pub struct DefStatementLet {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DefTypedArg {
     pub name: String,
+    pub id: DefId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DefDecorationExprNumber {
     pub id: DefId,
 }
 
@@ -324,6 +330,10 @@ fn rename_defs_expr(
             let t = rename_defs_expr_string(context, expr_string)?;
             Ok(SynExpr::String(t))
         }
+        SynExpr::Number(expr_number) => {
+            let t = rename_defs_expr_number(context, expr_number)?;
+            Ok(SynExpr::Number(t))
+        }
         SynExpr::Block(_) => todo!(),
     }
 }
@@ -336,6 +346,18 @@ fn rename_defs_expr_string(
     let ext = DefDecorationExprString { id };
     Ok(SynExprString {
         token_string: expr_string.token_string.clone(),
+        ext,
+    })
+}
+
+fn rename_defs_expr_number(
+    context: &mut RenameDefContext,
+    expr_number: &SynExprNumber<UD>,
+) -> Result<SynExprNumber<DefDecoration>, ()> {
+    let id = context.new_id();
+    let ext = DefDecorationExprNumber { id };
+    Ok(SynExprNumber {
+        number: expr_number.number.clone(),
         ext,
     })
 }

@@ -2,6 +2,7 @@ mod syn_expr_app;
 mod syn_expr_block;
 mod syn_expr_ident_with_path;
 mod syn_expr_match;
+mod syn_expr_number;
 mod syn_expr_paren;
 mod syn_expr_string;
 
@@ -9,6 +10,7 @@ pub use syn_expr_app::*;
 pub use syn_expr_block::*;
 pub use syn_expr_ident_with_path::*;
 pub use syn_expr_match::*;
+pub use syn_expr_number::*;
 pub use syn_expr_paren::*;
 pub use syn_expr_string::*;
 
@@ -26,6 +28,7 @@ pub enum SynExpr<D: Decoration> {
     Match(SynExprMatch<D>),
     Paren(SynExprParen<D>),
     String(SynExprString<D>),
+    Number(SynExprNumber<D>),
     Block(SynExprBlock<D>),
 }
 
@@ -62,6 +65,7 @@ impl<D: Decoration> ToFelisString for SynExpr<D> {
             SynExpr::IdentWithPath(expr_ident_with_path) => expr_ident_with_path.to_felis_string(),
             SynExpr::String(string) => string.to_felis_string(),
             SynExpr::Block(expr_block) => expr_block.to_felis_string(),
+            SynExpr::Number(number) => number.to_felis_string(),
         }
     }
 }
@@ -72,6 +76,7 @@ enum SynExprNoApp<D: Decoration> {
     Match(SynExprMatch<D>),
     Paren(SynExprParen<D>),
     String(SynExprString<D>),
+    Number(SynExprNumber<D>),
 }
 
 impl Parse for SynExprNoApp<UD> {
@@ -98,6 +103,11 @@ impl Parse for SynExprNoApp<UD> {
             return Ok(Some(SynExprNoApp::IdentWithPath(expr_ident_with_path)));
         }
 
+        if let Some(expr_number) = SynExprNumber::parse(tokens, &mut k)? {
+            *i = k;
+            return Ok(Some(SynExprNoApp::Number(expr_number)));
+        }
+
         Ok(None)
     }
 }
@@ -111,6 +121,7 @@ impl<D: Decoration> From<SynExprNoApp<D>> for SynExpr<D> {
             SynExprNoApp::Match(expr_match) => SynExpr::Match(expr_match),
             SynExprNoApp::Paren(expr_paren) => SynExpr::Paren(expr_paren),
             SynExprNoApp::String(expr_string) => SynExpr::String(expr_string),
+            SynExprNoApp::Number(expr_number) => SynExpr::Number(expr_number),
         }
     }
 }

@@ -3,7 +3,7 @@ use felis_syn::{
     syn_entrypoint::SynEntrypoint,
     syn_expr::{
         SynExpr, SynExprApp, SynExprBlock, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
-        SynExprMatchPattern, SynExprParen, SynExprString,
+        SynExprMatchPattern, SynExprNumber, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
     syn_proc::{SynProcBlock, SynProcDef},
@@ -33,6 +33,7 @@ impl Decoration for RenameDecoration {
     type ExprApp = ();
     type ExprBlock = ();
     type ExprIdentWithPath = RenameDecorationExprIdentWithPath;
+    type ExprNumber = RenameDecorationExprNumber;
     type ExprMatch = ();
     type ExprParen = ();
     type ExprString = RenameDecorationExprString;
@@ -93,11 +94,6 @@ pub struct RenameDecorationStatementLet {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct RenameDecorationExprIdent {
-    pub use_id: DefId,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RenameDecorationExprIdentWithPath {
     pub path_ids: Vec<DefId>,
     pub use_id: DefId,
@@ -134,6 +130,11 @@ pub struct RenameDecorationFormulaForall {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RenameDecorationFormulaAtom {
     pub use_id: DefId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RenameDecorationExprNumber {
+    pub id: DefId,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -406,6 +407,10 @@ pub fn rename_uses_expr(
             let expr_match2 = rename_uses_match(context, expr_match)?;
             Ok(SynExpr::Match(expr_match2))
         }
+        SynExpr::Number(number) => {
+            let number2 = rename_uses_number(context, number)?;
+            Ok(SynExpr::Number(number2))
+        }
     }
 }
 
@@ -521,6 +526,18 @@ pub fn rename_uses_string(
         ext,
     };
     Ok(string2)
+}
+
+pub fn rename_uses_number(
+    _context: &mut RenameUseContext,
+    number: &SynExprNumber<DefDecoration>,
+) -> Result<SynExprNumber<RenameDecoration>, RenameError> {
+    let ext = RenameDecorationExprNumber { id: number.ext.id };
+    let number2 = SynExprNumber {
+        number: number.number.clone(),
+        ext,
+    };
+    Ok(number2)
 }
 
 pub fn rename_uses_type(

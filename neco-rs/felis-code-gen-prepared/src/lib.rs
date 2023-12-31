@@ -4,7 +4,7 @@ use felis_syn::{
     syn_entrypoint::SynEntrypoint,
     syn_expr::{
         SynExpr, SynExprApp, SynExprBlock, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
-        SynExprMatchPattern, SynExprParen, SynExprString,
+        SynExprMatchPattern, SynExprNumber, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
     syn_proc::{SynProcBlock, SynProcDef},
@@ -30,6 +30,7 @@ impl Decoration for CodeGenPreparedDecoration {
     type ExprApp = ();
     type ExprBlock = ();
     type ExprIdentWithPath = CodeGenPreparedDecorationExprIdentWithPath;
+    type ExprNumber = CodeGenPreparedDecorationExprNumber;
     type ExprMatch = ();
     type ExprParen = ();
     type ExprString = CodeGenPreparedDecorationExprString;
@@ -114,6 +115,12 @@ pub struct CodeGenPreparedDecorationTypedArg {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CodeGenPreparedDecorationExprMatchPattern {
     pub ids: Vec<(String, DefId)>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CodeGenPreparedDecorationExprNumber {
+    pub id: DefId,
+    pub ty: TypeTerm,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -334,6 +341,10 @@ fn prepare_code_gen_expr(
             let (expr_match, lets) = prepare_code_gen_expr_match(expr_match);
             (SynExpr::Match(expr_match), lets)
         }
+        SynExpr::Number(expr_number) => {
+            let (expr_number, lets) = prepare_code_gen_expr_number(expr_number);
+            (SynExpr::Number(expr_number), lets)
+        }
     }
 }
 
@@ -371,6 +382,25 @@ fn prepare_code_gen_expr_string(
             ext: CodeGenPreparedDecorationExprString {
                 id: expr_string.ext.id,
                 ty: expr_string.ext.ty.clone(),
+            },
+        },
+        lets,
+    )
+}
+
+fn prepare_code_gen_expr_number(
+    expr_number: &SynExprNumber<TypedDecoration>,
+) -> (
+    SynExprNumber<CodeGenPreparedDecoration>,
+    Vec<(DefId, TypeTerm)>,
+) {
+    let lets = vec![];
+    (
+        SynExprNumber {
+            number: expr_number.number.clone(),
+            ext: CodeGenPreparedDecorationExprNumber {
+                id: expr_number.ext.id,
+                ty: expr_number.ext.ty.clone(),
             },
         },
         lets,
@@ -698,7 +728,7 @@ mod test {
         for (var_id, ty) in &var_types {
             eprintln!("{:?}: {:?}", var_id, ty);
         }
-        assert_eq!(var_types.len(), 4);
+        assert_eq!(var_types.len(), 5);
         let file_4 = typing_file(&mut context, &file_3);
 
         let file_5 = prepare_code_gen_file(&file_4);

@@ -55,7 +55,7 @@ fn run_compile(file_path: &str) {
 
     let file_5 = felis_code_gen_prepared::prepare_code_gen_file(&file_4);
 
-    let res = compile(file_5);
+    let res = compile(context, file_5);
     let base_path = "/tmp/neco".to_string();
     {
         let base_path = Path::new(&base_path);

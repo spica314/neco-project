@@ -54,6 +54,35 @@ impl TypeChecker {
         }
     }
 
+    pub fn reduction(&self, ty: &TypeTerm) -> TypeTerm {
+        match ty {
+            TypeTerm::Base(_) => ty.clone(),
+            TypeTerm::Var(_) => ty.clone(),
+            TypeTerm::App(s, t) => {
+                let s = self.reduction(s);
+                let t = self.reduction(t);
+                match &s {
+                    TypeTerm::Arrow(s1, s2) => {
+                        if s1.as_ref() == &t {
+                            *s2.clone()
+                        } else {
+                            TypeTerm::App(Box::new(s), Box::new(t))
+                        }
+                    }
+                    _ => TypeTerm::App(Box::new(s), Box::new(t)),
+                }
+            }
+            TypeTerm::Arrow(s, t) => {
+                let s = self.reduction(s);
+                let t = self.reduction(t);
+                TypeTerm::Arrow(Box::new(s), Box::new(t))
+            }
+            TypeTerm::Star(_) => ty.clone(),
+            TypeTerm::Candidates(_) => todo!(),
+            TypeTerm::Unknown => ty.clone(),
+        }
+    }
+
     pub fn get_all(&self) -> HashMap<VarId, TypeTerm> {
         let mut map = HashMap::new();
         for (id, ty) in &self.vars {
@@ -99,6 +128,12 @@ impl TypeChecker {
                         if let TypeTerm::Arrow(t11, t12) = t1 {
                             add_rel.push((*t11.clone(), *t2.clone()));
                             add_rel.push((TypeTerm::Var(*s), *t12.clone()));
+                        }
+
+                        {
+                            let t = self.expand(&relation.t);
+                            let t = self.reduction(&t);
+                            add_rel.push((TypeTerm::Var(*s), t));
                         }
                     }
                     (TypeTerm::App(s1, s2), TypeTerm::Var(t)) => {

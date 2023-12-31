@@ -59,6 +59,7 @@ dependencies = [
  "felis-syn",
  "felis-type-checker",
  "neco-resolver",
+ "neco-type-checker",
 ]
 
 [[package]]

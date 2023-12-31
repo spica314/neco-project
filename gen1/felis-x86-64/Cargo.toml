@@ -11,3 +11,5 @@ felis-rename = { workspace = true }
 neco-resolver = { workspace = true }
 felis-type-checker = { workspace = true }
 felis-code-gen-prepared = { workspace = true }
+neco-type-checker = { workspace = true }
+

@@ -30,7 +30,7 @@ pub struct RenameDecoration;
 
 impl Decoration for RenameDecoration {
     type Entrypoint = RenameDecorationEntrypoint;
-    type ExprApp = ();
+    type ExprApp = RenameDecorationExprApp;
     type ExprIdentWithPath = RenameDecorationExprIdentWithPath;
     type ExprNumber = RenameDecorationExprNumber;
     type ExprMatch = ();
@@ -138,6 +138,11 @@ pub struct RenameDecorationExprNumber {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RenameDecorationExprString {
+    pub id: DefId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RenameDecorationExprApp {
     pub id: DefId,
 }
 
@@ -469,7 +474,9 @@ pub fn rename_uses_app(
         exprs.push(expr2);
     }
 
-    let app2 = SynExprApp { exprs, ext: () };
+    let ext = RenameDecorationExprApp { id: app.ext.id };
+
+    let app2 = SynExprApp { exprs, ext };
     Ok(app2)
 }
 

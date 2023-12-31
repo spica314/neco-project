@@ -27,7 +27,7 @@ pub struct CodeGenPreparedDecoration;
 
 impl Decoration for CodeGenPreparedDecoration {
     type Entrypoint = CodeGenPreparedDecorationEntrypoint;
-    type ExprApp = ();
+    type ExprApp = CodeGenPreparedDecorationExprApp;
     type ExprIdentWithPath = CodeGenPreparedDecorationExprIdentWithPath;
     type ExprNumber = CodeGenPreparedDecorationExprNumber;
     type ExprMatch = ();
@@ -124,6 +124,12 @@ pub struct CodeGenPreparedDecorationExprNumber {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CodeGenPreparedDecorationExprString {
+    pub id: DefId,
+    pub ty: TypeTerm,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CodeGenPreparedDecorationExprApp {
     pub id: DefId,
     pub ty: TypeTerm,
 }
@@ -411,7 +417,13 @@ fn prepare_code_gen_expr_app(
         exprs.push(expr);
         lets.extend(lets2);
     }
-    (SynExprApp { exprs, ext: () }, lets)
+
+    let ext = CodeGenPreparedDecorationExprApp {
+        id: expr_app.ext.id,
+        ty: expr_app.ext.ty.clone(),
+    };
+
+    (SynExprApp { exprs, ext }, lets)
 }
 
 fn prepare_code_gen_expr_paren(

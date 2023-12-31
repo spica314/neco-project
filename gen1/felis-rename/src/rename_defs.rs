@@ -23,7 +23,7 @@ use felis_syn::{
 pub struct DefDecoration;
 impl Decoration for DefDecoration {
     type Entrypoint = ();
-    type ExprApp = ();
+    type ExprApp = DefDecorationExprApp;
     type ExprIdentWithPath = ();
     type ExprNumber = DefDecorationExprNumber;
     type ExprMatch = ();
@@ -125,6 +125,11 @@ pub struct DefDecorationExprNumber {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DefDecorationExprString {
+    pub id: DefId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DefDecorationExprApp {
     pub id: DefId,
 }
 
@@ -365,8 +370,9 @@ fn rename_defs_expr_app(
         let expr = rename_defs_expr(context, expr)?;
         exprs.push(expr);
     }
-    #[allow(clippy::let_unit_value)]
-    let ext = ();
+
+    let id = context.new_id();
+    let ext = DefDecorationExprApp { id };
     Ok(SynExprApp { exprs, ext })
 }
 

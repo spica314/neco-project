@@ -41,7 +41,16 @@ fn run_compile(file_path: &str) {
 
     let mut context = setup_retrieve_context(&prelude_map);
     retrieve_file(&mut context, &file_3);
+    // for v in context.type_checker.get_relations() {
+    //     eprintln!("{:?}", v);
+    // }
     context.type_checker.resolve();
+    // for (k, v) in context.type_checker.get_all() {
+    //     eprintln!("{:?}: {:?}", k, v);
+    // }
+    // for v in context.type_checker.get_relations() {
+    //     eprintln!("{:?}", v);
+    // }
     let file_4 = typing_file(&mut context, &file_3);
 
     let file_5 = felis_code_gen_prepared::prepare_code_gen_file(&file_4);

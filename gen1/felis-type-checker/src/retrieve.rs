@@ -140,12 +140,21 @@ fn retrieve_expr(context: &mut RetrieveContext, expr: &SynExpr<RenameDecoration>
             TypeTerm::Var(*var_id)
         }
         SynExpr::App(app) => {
-            let mut t = retrieve_expr(context, &app.exprs[0]);
+            let var_id = *context
+                .def_to_var
+                .entry(app.ext.id)
+                .or_insert_with(|| context.type_checker.add_var(TypeTerm::Unknown));
+
+            let mut ty = retrieve_expr(context, &app.exprs[0]);
             for expr in &app.exprs[1..] {
                 let s = retrieve_expr(context, expr);
-                t = TypeTerm::App(Box::new(t), Box::new(s));
+                ty = TypeTerm::App(Box::new(ty), Box::new(s));
             }
-            t
+
+            context
+                .type_checker
+                .add_relation(TypeTerm::Var(var_id), ty.clone());
+            ty
         }
         SynExpr::Match(_) => todo!(),
         SynExpr::Paren(_) => todo!(),

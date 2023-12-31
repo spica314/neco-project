@@ -28,7 +28,7 @@ pub struct TypedDecoration;
 
 impl Decoration for TypedDecoration {
     type Entrypoint = TypedDecorationEntrypoint;
-    type ExprApp = ();
+    type ExprApp = TypedDecorationExprApp;
     type ExprIdentWithPath = TypedDecorationExprIdentWithPath;
     type ExprNumber = TypedDecorationExprNumber;
     type ExprMatch = ();
@@ -124,6 +124,12 @@ pub struct TypedDecorationExprNumber {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypedDecorationExprString {
+    pub id: DefId,
+    pub ty: TypeTerm,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TypedDecorationExprApp {
     pub id: DefId,
     pub ty: TypeTerm,
 }
@@ -408,7 +414,15 @@ pub fn typing_expr_app(
         let expr2 = typing_expr(context, expr);
         exprs.push(expr2);
     }
-    SynExprApp { exprs, ext: () }
+
+    let var_id = *context.def_to_var.get(&expr_app.ext.id).unwrap();
+    let ty_term = context.type_checker.get(var_id).unwrap().clone();
+    let ext = TypedDecorationExprApp {
+        id: expr_app.ext.id,
+        ty: ty_term,
+    };
+
+    SynExprApp { exprs, ext }
 }
 
 pub fn typing_expr_ident_with_path(

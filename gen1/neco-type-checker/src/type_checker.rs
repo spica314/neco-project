@@ -130,6 +130,10 @@ impl TypeChecker {
     pub fn get(&self, id: VarId) -> Option<&TypeTerm> {
         self.vars.get(&id)
     }
+
+    pub fn get_relations(&self) -> &HashSet<TypeRelation> {
+        &self.relations
+    }
 }
 
 impl Default for TypeChecker {

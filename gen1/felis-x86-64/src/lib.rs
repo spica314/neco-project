@@ -156,7 +156,7 @@ pub fn compile_expr_r_ident_with_path(
     let def_id = expr_ident_with_path.ext.use_id;
     let offset = context.def_id_to_offset.get(&def_id).unwrap();
     // push: from back to front
-    let byte_length = byte_length_of_type_term(&context, &expr_ident_with_path.ext.ty);
+    let byte_length = byte_length_of_type_term(context, &expr_ident_with_path.ext.ty);
     assert!(byte_length % 8 == 0);
     for i in (0..byte_length / 8).rev() {
         context
@@ -243,7 +243,7 @@ pub fn compile_proc_block(
                     let offset = context.def_id_to_offset.get(&statement_let.ext.id).unwrap();
 
                     let ty = ty_of_expr(&initial.expr);
-                    let byte_length = byte_length_of_type_term(&context, &ty);
+                    let byte_length = byte_length_of_type_term(context, &ty);
                     assert!(byte_length % 8 == 0);
                     for i in 0..byte_length / 8 {
                         context.res.push_str("    pop rax\n");
@@ -257,7 +257,7 @@ pub fn compile_proc_block(
                 compile_expr_r(context, &statement_assign.rhs);
                 compile_expr_l(context, &statement_assign.lhs);
                 let ty = ty_of_expr(&statement_assign.rhs);
-                let byte_length = byte_length_of_type_term(&context, &ty);
+                let byte_length = byte_length_of_type_term(context, &ty);
                 assert!(byte_length % 8 == 0);
                 context.res.push_str("    pop rax\n");
                 for i in 0..byte_length / 8 {

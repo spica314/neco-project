@@ -365,8 +365,7 @@ fn prepare_code_gen_statement_let(
             lets,
         )
     } else {
-        let mut lets = vec![];
-        lets.push((statement_let.ext.id, statement_let.ext.ty.clone()));
+        let lets = vec![(statement_let.ext.id, statement_let.ext.ty.clone())];
         (
             SynStatementLet {
                 keyword_let: statement_let.keyword_let.clone(),

@@ -1,7 +1,6 @@
 use crate::{
     decoration::{Decoration, UD},
     parse::Parse,
-    syn_expr::SynExpr,
     syn_proc::SynProcBlock,
     token::{Token, TokenKeyword},
 };

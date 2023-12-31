@@ -9,7 +9,8 @@ use felis_syn::{
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
         syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        syn_statement_if::SynStatementIf, SynStatement, SynStatementLet, SynStatementLetInitial,
+        syn_statement_if::SynStatementIf, syn_statement_loop::SynStatementLoop, SynStatement,
+        SynStatementLet, SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -292,6 +293,13 @@ fn rename_defs_statement(
                 t_branch,
                 keyword_else: statement_if.keyword_else.clone(),
                 f_branch,
+            }))
+        }
+        SynStatement::Loop(statement_loop) => {
+            let block = rename_defs_proc_block(context, &statement_loop.block)?;
+            Ok(SynStatement::Loop(SynStatementLoop {
+                keyword_loop: statement_loop.keyword_loop.clone(),
+                block,
             }))
         }
     }

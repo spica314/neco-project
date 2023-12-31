@@ -285,6 +285,17 @@ pub fn compile_proc_block(
                 compile_proc_block(context, &statement_if.f_branch);
                 context.res.push_str(format!("{}:\n", label_end).as_str());
             }
+            SynStatement::Loop(statement_loop) => {
+                let label_begin = format!("__begin_{}", context.label_counter);
+                let label_end = format!("__end_{}", context.label_counter);
+                context.label_counter += 1;
+                context.res.push_str(format!("{}:\n", label_begin).as_str());
+                compile_proc_block(context, &statement_loop.block);
+                context
+                    .res
+                    .push_str(format!("    jmp {}\n", label_begin).as_str());
+                context.res.push_str(format!("{}:\n", label_end).as_str());
+            }
         }
     }
 }

@@ -9,7 +9,8 @@ use felis_syn::{
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
         syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        syn_statement_if::SynStatementIf, SynStatement, SynStatementLet, SynStatementLetInitial,
+        syn_statement_if::SynStatementIf, syn_statement_loop::SynStatementLoop, SynStatement,
+        SynStatementLet, SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -323,6 +324,10 @@ pub fn rename_uses_statement(
             let statement_if2 = rename_uses_statement_if(context, statement_if)?;
             Ok(SynStatement::If(statement_if2))
         }
+        SynStatement::Loop(statement_loop) => {
+            let statement_loop2 = rename_uses_statement_loop(context, statement_loop)?;
+            Ok(SynStatement::Loop(statement_loop2))
+        }
     }
 }
 
@@ -340,6 +345,18 @@ pub fn rename_uses_statement_if(
         t_branch,
         keyword_else: assign.keyword_else.clone(),
         f_branch,
+    })
+}
+
+pub fn rename_uses_statement_loop(
+    context: &mut RenameUseContext,
+    statement_loop: &SynStatementLoop<DefDecoration>,
+) -> Result<SynStatementLoop<RenameDecoration>, RenameError> {
+    let block = rename_uses_proc_block(context, &statement_loop.block)?;
+
+    Ok(SynStatementLoop {
+        keyword_loop: statement_loop.keyword_loop.clone(),
+        block,
     })
 }
 

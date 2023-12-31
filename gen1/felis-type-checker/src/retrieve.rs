@@ -6,8 +6,8 @@ use felis_syn::{
     syn_file::{SynFile, SynFileItem},
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
-        syn_statement_assign::SynStatementAssign, syn_statement_if::SynStatementIf, SynStatement,
-        SynStatementLet,
+        syn_statement_assign::SynStatementAssign, syn_statement_if::SynStatementIf,
+        syn_statement_loop::SynStatementLoop, SynStatement, SynStatementLet,
     },
 };
 use neco_type_checker::{
@@ -126,6 +126,9 @@ fn retrieve_statement(context: &mut RetrieveContext, statement: &SynStatement<Re
         SynStatement::If(statement_if) => {
             retrieve_statement_if(context, statement_if);
         }
+        SynStatement::Loop(statement_loop) => {
+            retrieve_statement_loop(context, statement_loop);
+        }
     }
 }
 
@@ -145,6 +148,13 @@ fn retrieve_statement_if(
     retrieve_expr(context, &statement_if.cond);
     retrieve_proc_block(context, &statement_if.t_branch);
     retrieve_proc_block(context, &statement_if.f_branch);
+}
+
+fn retrieve_statement_loop(
+    context: &mut RetrieveContext,
+    statement_loop: &SynStatementLoop<RenameDecoration>,
+) {
+    retrieve_proc_block(context, &statement_loop.block);
 }
 
 fn retrieve_statement_let(

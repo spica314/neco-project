@@ -105,3 +105,16 @@ fn test_statement_if_2() {
         .expect("failed to execute process");
     assert_eq!(out.status.code(), Some(42));
 }
+
+#[test]
+fn test_statement_loop() {
+    let file_path = "../../examples/statement-loop/main.fe";
+
+    let cli_context = CliContext::Compile(file_path.to_string());
+    run_cli(cli_context);
+
+    let out = Command::new("./a.out")
+        .output()
+        .expect("failed to execute process");
+    assert_eq!(out.status.code(), Some(55));
+}

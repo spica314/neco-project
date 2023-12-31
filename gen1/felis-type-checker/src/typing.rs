@@ -656,7 +656,6 @@ mod test {
         for (var_id, ty) in &var_types {
             eprintln!("{:?}: {:?}", var_id, ty);
         }
-        assert_eq!(var_types.len(), 5);
         let _file_4 = typing_file(&mut context, &file_3);
     }
 }

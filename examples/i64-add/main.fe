@@ -1,0 +1,6 @@
+#entrypoint main
+
+#proc main : () {
+    #let x = __add_i64 40 2;
+    __exit x;
+}

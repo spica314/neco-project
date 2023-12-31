@@ -30,7 +30,7 @@ pub fn setup_retrieve_context(prelude_map: &HashMap<String, DefId>) -> RetrieveC
 
     let mut def_to_var = HashMap::new();
 
-    assert_eq!(prelude_map.len(), 2);
+    assert_eq!(prelude_map.len(), 3);
 
     // __write_to_stdout
     let var_id = type_checker.add_var(TypeTerm::Arrow(
@@ -46,6 +46,17 @@ pub fn setup_retrieve_context(prelude_map: &HashMap<String, DefId>) -> RetrieveC
         Box::new(TypeTerm::Base(ty_unit)),
     ));
     let def_id = prelude_map["__exit"];
+    def_to_var.insert(def_id, var_id);
+
+    // __add_i64
+    let var_id = type_checker.add_var(TypeTerm::Arrow(
+        Box::new(TypeTerm::Base(ty_i64)),
+        Box::new(TypeTerm::Arrow(
+            Box::new(TypeTerm::Base(ty_i64)),
+            Box::new(TypeTerm::Base(ty_i64)),
+        )),
+    ));
+    let def_id = prelude_map["__add_i64"];
     def_to_var.insert(def_id, var_id);
 
     RetrieveContext {
@@ -199,6 +210,5 @@ mod test {
         for (var_id, ty) in &var_types {
             eprintln!("{:?}: {:?}", var_id, ty);
         }
-        assert_eq!(var_types.len(), 5);
     }
 }

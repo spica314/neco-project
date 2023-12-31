@@ -59,6 +59,19 @@ pub fn compile_expr_r_app(
         context.res.push_str("    mov rax, 60\n");
         context.res.push_str("    pop rdi\n");
         context.res.push_str("    syscall\n");
+    } else if fun == "__add_i64" {
+        // add
+        // rax: arg1
+        // rdi: arg2
+        // rax: result
+        let arg1 = app.exprs[1].clone();
+        let arg2 = app.exprs[2].clone();
+        compile_expr_r(context, &arg1);
+        compile_expr_r(context, &arg2);
+        context.res.push_str("    pop rdi\n");
+        context.res.push_str("    pop rax\n");
+        context.res.push_str("    add rax, rdi\n");
+        context.res.push_str("    push rax\n");
     } else {
         panic!();
     }

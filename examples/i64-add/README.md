@@ -1,4 +1,4 @@
-# exit-42
+# i64-add
 
 expected output:
 

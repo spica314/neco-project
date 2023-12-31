@@ -37,12 +37,18 @@ pub fn compile_expr_r_app(
     };
     let fun = fun.ident.as_str();
     if fun == "__write_to_stdout" {
+        // sys_write
+        // rax: syscall number = 1
+        // rdi: file descriptor = 1 (stdout)
+        // rsi: buffer = ptr
+        // rdx: buffer size = length
         let arg = app.exprs[1].clone();
         compile_expr_r(context, &arg);
+        // pop: from front to back
         context.res.push_str("    mov rax, 1\n");
         context.res.push_str("    mov rdi, 1\n");
-        context.res.push_str("    pop rsi\n");
         context.res.push_str("    pop rdx\n");
+        context.res.push_str("    pop rsi\n");
         context.res.push_str("    syscall\n");
     } else {
         panic!();
@@ -57,15 +63,15 @@ pub fn compile_expr_r_string(
     let s = s.token_string.string.clone();
     let label = format!("__string_{}", context.strings.len());
     context.strings.push((label.clone(), s.clone()));
-    context
-        .res
-        .push_str(&format!("    mov rax, {}\n", string_length(&s)));
-    context.res.push_str("    push rax\n");
+    // push: from back to front
     context
         .res
         .push_str(format!("    lea rax, {}\n", label).as_str());
     context.res.push_str("    push rax\n");
-    context.res.push_str("    syscall\n");
+    context
+        .res
+        .push_str(&format!("    mov rax, {}\n", string_length(&s)));
+    context.res.push_str("    push rax\n");
 }
 
 pub fn compile_expr_r_ident_with_path(
@@ -74,16 +80,18 @@ pub fn compile_expr_r_ident_with_path(
 ) {
     let def_id = expr_ident_with_path.ext.use_id;
     let offset = context.def_id_to_offset.get(&def_id).unwrap();
+    // push: from back to front
     context
         .res
-        .push_str(format!("    mov rax, [rbp-{}-8]\n", offset).as_str());
+        .push_str(format!("    mov rax, [rbp-{}+8]\n", offset).as_str());
     context.res.push_str("    push rax\n");
     context
         .res
-        .push_str(format!("    mov rax, [rbp-{}-16]\n", offset).as_str());
+        .push_str(format!("    mov rax, [rbp-{}]\n", offset).as_str());
     context.res.push_str("    push rax\n");
 }
 
+// Return the address of the variable ('s first element).
 pub fn compile_expr_l_ident_with_path(
     context: &mut CompileContext,
     expr_ident_with_path: &SynExprIdentWithPath<CodeGenPreparedDecoration>,
@@ -92,7 +100,7 @@ pub fn compile_expr_l_ident_with_path(
     let offset = context.def_id_to_offset.get(&def_id).unwrap();
     context
         .res
-        .push_str(format!("    lea rax, [rbp-{}-16]\n", offset).as_str());
+        .push_str(format!("    lea rax, [rbp-{}]\n", offset).as_str());
     context.res.push_str("    push rax\n");
 }
 
@@ -187,8 +195,8 @@ _start:
         context.def_id_to_offset.clear();
         let mut offset = 0;
         for a in &proc.ext.lets {
-            context.def_id_to_offset.insert(a.0, offset);
             offset += 16;
+            context.def_id_to_offset.insert(a.0, offset);
         }
 
         context.res.push_str(&format!("    sub rsp, {}\n", offset));
@@ -208,11 +216,11 @@ _start:
                     context.res.push_str("    pop rax\n");
                     context
                         .res
-                        .push_str(format!("    mov [rbp-{}-16], rax\n", offset).as_str());
+                        .push_str(format!("    mov [rbp-{}], rax\n", offset).as_str());
                     context.res.push_str("    pop rax\n");
                     context
                         .res
-                        .push_str(format!("    mov [rbp-{}-8], rax\n", offset).as_str());
+                        .push_str(format!("    mov [rbp-{}+8], rax\n", offset).as_str());
                 }
                 SynStatement::Assign(statement_assign) => {
                     compile_expr_r(&mut context, &statement_assign.rhs);

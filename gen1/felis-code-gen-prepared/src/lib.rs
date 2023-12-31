@@ -247,10 +247,6 @@ fn prepare_code_gen_statement(
     Vec<(DefId, TypeTerm)>,
 ) {
     match statement {
-        SynStatement::Expr(expr) => {
-            let (expr, lets) = prepare_code_gen_expr(expr);
-            (SynStatement::Expr(expr), lets)
-        }
         SynStatement::ExprSemi(expr_semi) => {
             let (expr, lets) = prepare_code_gen_statement_expr_semi(expr_semi);
             (SynStatement::ExprSemi(expr), lets)

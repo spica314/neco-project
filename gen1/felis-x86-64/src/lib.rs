@@ -243,9 +243,6 @@ _start:
 
         for statement in &proc.proc_block.statements {
             match statement {
-                SynStatement::Expr(expr) => {
-                    compile_expr_r(&mut context, expr);
-                }
                 SynStatement::ExprSemi(expr_semi) => {
                     let expr = expr_semi.expr.clone();
                     compile_expr_r(&mut context, &expr);

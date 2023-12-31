@@ -94,9 +94,6 @@ fn retrieve_proc_def(context: &mut RetrieveContext, proc_def: &SynProcDef<Rename
 
 fn retrieve_statement(context: &mut RetrieveContext, statement: &SynStatement<RenameDecoration>) {
     match statement {
-        SynStatement::Expr(expr) => {
-            retrieve_expr(context, expr);
-        }
         SynStatement::ExprSemi(expr_semi) => {
             let var_id = context.type_checker.add_var(TypeTerm::Unknown);
             let ty = retrieve_expr(context, &expr_semi.expr);

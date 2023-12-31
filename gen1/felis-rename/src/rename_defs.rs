@@ -257,10 +257,6 @@ fn rename_defs_statement(
     statement: &SynStatement<UD>,
 ) -> Result<SynStatement<DefDecoration>, ()> {
     match statement {
-        SynStatement::Expr(expr) => {
-            let expr = rename_defs_expr(context, expr)?;
-            Ok(SynStatement::Expr(expr))
-        }
         SynStatement::Let(statement_let) => {
             let statement_let = rename_defs_statement_let(context, statement_let)?;
             Ok(SynStatement::Let(statement_let))

@@ -1,7 +1,6 @@
 use crate::{
     decoration::{Decoration, UD},
     parse::Parse,
-    syn_expr::SynExpr,
     to_felis_string::ToFelisString,
     token::Token,
 };
@@ -18,7 +17,6 @@ pub mod syn_statement_let;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SynStatement<D: Decoration> {
-    Expr(SynExpr<D>),
     ExprSemi(SynStatementExprSemi<D>),
     Let(SynStatementLet<D>),
     Assign(SynStatementAssign<D>),
@@ -43,11 +41,6 @@ impl Parse for SynStatement<UD> {
             return Ok(Some(SynStatement::ExprSemi(statement_expr_semi)));
         }
 
-        if let Some(expr) = SynExpr::parse(tokens, &mut k)? {
-            *i = k;
-            return Ok(Some(SynStatement::Expr(expr)));
-        }
-
         Ok(None)
     }
 }
@@ -55,7 +48,6 @@ impl Parse for SynStatement<UD> {
 impl<D: Decoration> ToFelisString for SynStatement<D> {
     fn to_felis_string(&self) -> String {
         match self {
-            SynStatement::Expr(expr) => expr.to_felis_string(),
             SynStatement::ExprSemi(statement_expr_semi) => statement_expr_semi.to_felis_string(),
             SynStatement::Let(statement_let) => statement_let.to_felis_string(),
             SynStatement::Assign(_statement_assign) => todo!(),

@@ -339,10 +339,6 @@ pub fn typing_statement(
     statement: &SynStatement<RenameDecoration>,
 ) -> SynStatement<TypedDecoration> {
     match statement {
-        SynStatement::Expr(expr) => {
-            let expr2 = typing_expr(context, expr);
-            SynStatement::Expr(expr2)
-        }
         SynStatement::ExprSemi(expr_semi) => {
             let expr_semi2 = typing_statement_expr_semi(context, expr_semi);
             SynStatement::ExprSemi(expr_semi2)

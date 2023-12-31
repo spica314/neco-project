@@ -303,10 +303,6 @@ pub fn rename_uses_statement(
     statement: &SynStatement<DefDecoration>,
 ) -> Result<SynStatement<RenameDecoration>, RenameError> {
     match statement {
-        SynStatement::Expr(expr) => {
-            let expr2 = rename_uses_expr(context, expr)?;
-            Ok(SynStatement::Expr(expr2))
-        }
         SynStatement::Let(let_) => {
             let let_2 = rename_uses_let(context, let_)?;
             Ok(SynStatement::Let(let_2))

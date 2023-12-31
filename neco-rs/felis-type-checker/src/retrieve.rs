@@ -163,7 +163,6 @@ fn retrieve_expr(context: &mut RetrieveContext, expr: &SynExpr<RenameDecoration>
                 .add_relation(TypeTerm::Var(*var_id), ty.clone());
             ty
         }
-        SynExpr::Block(_) => todo!(),
     }
 }
 

@@ -1,5 +1,4 @@
 mod syn_expr_app;
-mod syn_expr_block;
 mod syn_expr_ident_with_path;
 mod syn_expr_match;
 mod syn_expr_number;
@@ -7,7 +6,6 @@ mod syn_expr_paren;
 mod syn_expr_string;
 
 pub use syn_expr_app::*;
-pub use syn_expr_block::*;
 pub use syn_expr_ident_with_path::*;
 pub use syn_expr_match::*;
 pub use syn_expr_number::*;
@@ -29,18 +27,11 @@ pub enum SynExpr<D: Decoration> {
     Paren(SynExprParen<D>),
     String(SynExprString<D>),
     Number(SynExprNumber<D>),
-    Block(SynExprBlock<D>),
 }
 
 impl Parse for SynExpr<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
-
-        // In order to correctly parse `#match x { ... }`, Block is not included in SynExprNoApp.
-        if let Some(expr_block) = SynExprBlock::parse(tokens, &mut k)? {
-            *i = k;
-            return Ok(Some(SynExpr::Block(expr_block)));
-        }
 
         if let Some(expr_app) = SynExprApp::parse(tokens, &mut k)? {
             *i = k;
@@ -64,7 +55,6 @@ impl<D: Decoration> ToFelisString for SynExpr<D> {
             SynExpr::Paren(_) => todo!(),
             SynExpr::IdentWithPath(expr_ident_with_path) => expr_ident_with_path.to_felis_string(),
             SynExpr::String(string) => string.to_felis_string(),
-            SynExpr::Block(expr_block) => expr_block.to_felis_string(),
             SynExpr::Number(number) => number.to_felis_string(),
         }
     }
@@ -267,18 +257,5 @@ mod test {
         assert_eq!(expr_match.arms.len(), 1);
         assert_eq!(expr_match.arms[0].pattern.to_felis_string(), "y::z w");
         assert_eq!(expr_match.arms[0].expr.to_felis_string(), "t::u a");
-    }
-
-    #[test]
-    fn felis_syn_expr_parse_test_9() {
-        let s = "{ 42 }";
-        let mut parser = Parser::new();
-        let res = parser.parse::<SynExpr<UD>>(s);
-        assert!(res.is_ok());
-        let res = res.unwrap();
-        assert!(res.is_some());
-        let res = res.unwrap();
-        assert!(matches!(res, SynExpr::Block(_)));
-        assert_eq!(res.to_felis_string(), s);
     }
 }

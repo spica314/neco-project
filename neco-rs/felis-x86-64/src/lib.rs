@@ -129,7 +129,6 @@ pub fn compile_expr_r(context: &mut CompileContext, expr: &SynExpr<CodeGenPrepar
         SynExpr::Number(expr_number) => {
             compile_expr_r_number(context, expr_number);
         }
-        SynExpr::Block(_) => todo!(),
     }
 }
 
@@ -158,7 +157,6 @@ pub fn compile_expr_l(context: &mut CompileContext, expr: &SynExpr<CodeGenPrepar
         SynExpr::Match(_) => todo!(),
         SynExpr::Paren(_) => todo!(),
         SynExpr::String(_) => todo!(),
-        SynExpr::Block(_) => todo!(),
         SynExpr::Number(_) => todo!(),
     }
 }

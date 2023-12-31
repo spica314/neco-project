@@ -2,7 +2,7 @@ use felis_syn::{
     decoration::Decoration,
     syn_entrypoint::SynEntrypoint,
     syn_expr::{
-        SynExpr, SynExprApp, SynExprBlock, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
+        SynExpr, SynExprApp, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
         SynExprMatchPattern, SynExprNumber, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
@@ -391,10 +391,6 @@ pub fn rename_uses_expr(
             let paren2 = rename_uses_paren(context, paren)?;
             Ok(SynExpr::Paren(paren2))
         }
-        SynExpr::Block(block) => {
-            let block2 = rename_uses_block(context, block)?;
-            Ok(SynExpr::Block(block2))
-        }
         SynExpr::String(string) => {
             let string2 = rename_uses_string(context, string)?;
             Ok(SynExpr::String(string2))
@@ -495,25 +491,6 @@ pub fn rename_uses_paren(
         ext: (),
     };
     Ok(paren2)
-}
-
-pub fn rename_uses_block(
-    context: &mut RenameUseContext,
-    block: &SynExprBlock<DefDecoration>,
-) -> Result<SynExprBlock<RenameDecoration>, RenameError> {
-    let mut statements = vec![];
-    for statement in &block.statements {
-        let statement2 = rename_uses_statement(context, statement)?;
-        statements.push(statement2);
-    }
-
-    let block2 = SynExprBlock {
-        lbrace: block.lbrace.clone(),
-        statements,
-        rbrace: block.rbrace.clone(),
-        ext: (),
-    };
-    Ok(block2)
 }
 
 pub fn rename_uses_string(

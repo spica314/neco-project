@@ -3,7 +3,7 @@ use felis_syn::{
     decoration::Decoration,
     syn_entrypoint::SynEntrypoint,
     syn_expr::{
-        SynExpr, SynExprApp, SynExprBlock, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
+        SynExpr, SynExprApp, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
         SynExprMatchPattern, SynExprNumber, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
@@ -333,10 +333,6 @@ fn prepare_code_gen_expr(
             let (expr_paren, lets) = prepare_code_gen_expr_paren(expr_paren);
             (SynExpr::Paren(expr_paren), lets)
         }
-        SynExpr::Block(expr_block) => {
-            let (expr_block, lets) = prepare_code_gen_expr_block(expr_block);
-            (SynExpr::Block(expr_block), lets)
-        }
         SynExpr::Match(expr_match) => {
             let (expr_match, lets) = prepare_code_gen_expr_match(expr_match);
             (SynExpr::Match(expr_match), lets)
@@ -437,30 +433,6 @@ fn prepare_code_gen_expr_paren(
             lparen: expr_paren.lparen.clone(),
             expr: Box::new(expr.0),
             rparen: expr_paren.rparen.clone(),
-            ext: (),
-        },
-        lets,
-    )
-}
-
-fn prepare_code_gen_expr_block(
-    expr_block: &SynExprBlock<TypedDecoration>,
-) -> (
-    SynExprBlock<CodeGenPreparedDecoration>,
-    Vec<(DefId, TypeTerm)>,
-) {
-    let mut lets = vec![];
-    let mut statements = vec![];
-    for statement in &expr_block.statements {
-        let (statement, lets2) = prepare_code_gen_statement(statement);
-        statements.push(statement);
-        lets.extend(lets2);
-    }
-    (
-        SynExprBlock {
-            lbrace: expr_block.lbrace.clone(),
-            statements,
-            rbrace: expr_block.rbrace.clone(),
             ext: (),
         },
         lets,

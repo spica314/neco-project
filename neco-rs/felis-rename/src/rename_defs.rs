@@ -334,7 +334,6 @@ fn rename_defs_expr(
             let t = rename_defs_expr_number(context, expr_number)?;
             Ok(SynExpr::Number(t))
         }
-        SynExpr::Block(_) => todo!(),
     }
 }
 

@@ -3,7 +3,7 @@ use felis_syn::{
     decoration::Decoration,
     syn_entrypoint::SynEntrypoint,
     syn_expr::{
-        SynExpr, SynExprApp, SynExprBlock, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
+        SynExpr, SynExprApp, SynExprIdentWithPath, SynExprMatch, SynExprMatchArm,
         SynExprMatchPattern, SynExprNumber, SynExprParen, SynExprString,
     },
     syn_file::{SynFile, SynFileItem},
@@ -381,10 +381,6 @@ pub fn typing_expr(
             let expr_app2 = typing_expr_app(context, expr_app);
             SynExpr::App(expr_app2)
         }
-        SynExpr::Block(expr_block) => {
-            let expr_block2 = typing_expr_block(context, expr_block);
-            SynExpr::Block(expr_block2)
-        }
         SynExpr::IdentWithPath(expr_ident_with_path) => {
             let expr_ident_with_path2 = typing_expr_ident_with_path(context, expr_ident_with_path);
             SynExpr::IdentWithPath(expr_ident_with_path2)
@@ -418,23 +414,6 @@ pub fn typing_expr_app(
         exprs.push(expr2);
     }
     SynExprApp { exprs, ext: () }
-}
-
-pub fn typing_expr_block(
-    context: &mut RetrieveContext,
-    expr_block: &SynExprBlock<RenameDecoration>,
-) -> SynExprBlock<TypedDecoration> {
-    let mut statements = vec![];
-    for statement in &expr_block.statements {
-        let statement2 = typing_statement(context, statement);
-        statements.push(statement2);
-    }
-    SynExprBlock {
-        lbrace: expr_block.lbrace.clone(),
-        statements,
-        rbrace: expr_block.rbrace.clone(),
-        ext: (),
-    }
 }
 
 pub fn typing_expr_ident_with_path(

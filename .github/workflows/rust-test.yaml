@@ -23,7 +23,7 @@ jobs:
           override: true
       - name: cargo fmt
         run: cargo fmt --all -- --check
-        working-directory: neco-rs
+        working-directory: gen1
 
   rust_test:
     runs-on: ubuntu-latest
@@ -41,4 +41,4 @@ jobs:
           override: true
       - name: Test
         run: cargo test --workspace --offline -- --test-threads 1
-        working-directory: neco-rs
+        working-directory: gen1

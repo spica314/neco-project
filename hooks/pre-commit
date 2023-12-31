@@ -8,7 +8,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cd $REPOSITORY_PATH/neco-rs
+cd $REPOSITORY_PATH/gen1
 
 cargo fmt --all -- --check
 

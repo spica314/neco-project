@@ -1,0 +1,7 @@
+#entrypoint main
+
+#proc main : () {
+    #let x;
+    x = 42;
+    __exit x;
+}

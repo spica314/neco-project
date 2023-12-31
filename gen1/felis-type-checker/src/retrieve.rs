@@ -125,8 +125,10 @@ fn retrieve_statement_let(
         .def_to_var
         .entry(statement_let.ext.id)
         .or_insert_with(|| context.type_checker.add_var(TypeTerm::Unknown));
-    let ty = retrieve_expr(context, &statement_let.expr);
-    context.type_checker.add_relation(TypeTerm::Var(var_id), ty);
+    if let Some(initial) = &statement_let.initial {
+        let ty = retrieve_expr(context, &initial.expr);
+        context.type_checker.add_relation(TypeTerm::Var(var_id), ty);
+    }
 }
 
 fn retrieve_expr(context: &mut RetrieveContext, expr: &SynExpr<RenameDecoration>) -> TypeTerm {

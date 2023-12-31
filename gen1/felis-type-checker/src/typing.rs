@@ -10,7 +10,7 @@ use felis_syn::{
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
         syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        SynStatement, SynStatementLet,
+        SynStatement, SynStatementLet, SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -584,19 +584,36 @@ pub fn typing_statement_let(
 ) -> SynStatementLet<TypedDecoration> {
     let var_id = *context.def_to_var.get(&statement_let.ext.id).unwrap();
     let ty_term = context.type_checker.get(var_id).unwrap().clone();
-    let expr = typing_expr(context, &statement_let.expr);
+
+    let initial = if let Some(initial) = &statement_let.initial {
+        let initial2 = typing_statement_let_initial(context, initial);
+        Some(initial2)
+    } else {
+        None
+    };
+
     SynStatementLet {
         keyword_let: statement_let.keyword_let.clone(),
         keyword_mut: statement_let.keyword_mut.clone(),
         name: statement_let.name.clone(),
-        eq: statement_let.eq.clone(),
-        expr,
+        initial,
         semi: statement_let.semi.clone(),
         ext: TypedDecorationStatementLet {
             name: statement_let.ext.name.clone(),
             id: statement_let.ext.id,
             ty: ty_term,
         },
+    }
+}
+
+pub fn typing_statement_let_initial(
+    context: &mut RetrieveContext,
+    statement_let: &SynStatementLetInitial<RenameDecoration>,
+) -> SynStatementLetInitial<TypedDecoration> {
+    let expr = typing_expr(context, &statement_let.expr);
+    SynStatementLetInitial {
+        eq: statement_let.eq.clone(),
+        expr,
     }
 }
 

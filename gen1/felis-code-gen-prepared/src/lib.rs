@@ -10,7 +10,7 @@ use felis_syn::{
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
         syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        SynStatement, SynStatementLet,
+        SynStatement, SynStatementLet, SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -293,24 +293,46 @@ fn prepare_code_gen_statement_let(
     SynStatementLet<CodeGenPreparedDecoration>,
     Vec<(DefId, TypeTerm)>,
 ) {
-    let (expr, mut lets) = prepare_code_gen_expr(&statement_let.expr);
-    lets.push((statement_let.ext.id, statement_let.ext.ty.clone()));
-    (
-        SynStatementLet {
-            keyword_let: statement_let.keyword_let.clone(),
-            keyword_mut: statement_let.keyword_mut.clone(),
-            name: statement_let.name.clone(),
-            eq: statement_let.eq.clone(),
-            expr,
-            semi: statement_let.semi.clone(),
-            ext: CodeGenPreparedDecorationStatementLet {
-                name: statement_let.ext.name.clone(),
-                id: statement_let.ext.id,
-                ty: statement_let.ext.ty.clone(),
+    if let Some(initial) = &statement_let.initial {
+        let (expr, mut lets) = prepare_code_gen_expr(&initial.expr);
+        lets.push((statement_let.ext.id, statement_let.ext.ty.clone()));
+        (
+            SynStatementLet {
+                keyword_let: statement_let.keyword_let.clone(),
+                keyword_mut: statement_let.keyword_mut.clone(),
+                name: statement_let.name.clone(),
+                initial: Some(SynStatementLetInitial {
+                    eq: initial.eq.clone(),
+                    expr,
+                }),
+                semi: statement_let.semi.clone(),
+                ext: CodeGenPreparedDecorationStatementLet {
+                    name: statement_let.ext.name.clone(),
+                    id: statement_let.ext.id,
+                    ty: statement_let.ext.ty.clone(),
+                },
             },
-        },
-        lets,
-    )
+            lets,
+        )
+    } else {
+        let mut lets = vec![];
+        lets.push((statement_let.ext.id, statement_let.ext.ty.clone()));
+        (
+            SynStatementLet {
+                keyword_let: statement_let.keyword_let.clone(),
+                keyword_mut: statement_let.keyword_mut.clone(),
+                name: statement_let.name.clone(),
+                initial: None,
+                semi: statement_let.semi.clone(),
+                ext: CodeGenPreparedDecorationStatementLet {
+                    name: statement_let.ext.name.clone(),
+                    id: statement_let.ext.id,
+                    ty: statement_let.ext.ty.clone(),
+                },
+            },
+            lets,
+        )
+    }
 }
 
 fn prepare_code_gen_expr(

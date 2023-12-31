@@ -11,10 +11,32 @@ pub struct SynStatementLet<D: Decoration> {
     pub keyword_let: TokenKeyword,
     pub keyword_mut: Option<TokenKeyword>,
     pub name: TokenIdent,
-    pub eq: TokenEq,
-    pub expr: SynExpr<D>,
+    pub initial: Option<SynStatementLetInitial<D>>,
     pub semi: TokenSemicolon,
     pub ext: D::StatementLet,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SynStatementLetInitial<D: Decoration> {
+    pub eq: TokenEq,
+    pub expr: SynExpr<D>,
+}
+
+impl Parse for SynStatementLetInitial<UD> {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        let mut k = *i;
+
+        let Some(eq) = TokenEq::parse(tokens, &mut k)? else {
+            return Ok(None);
+        };
+
+        let Some(expr) = SynExpr::parse(tokens, &mut k)? else {
+            return Err(());
+        };
+
+        *i = k;
+        Ok(Some(SynStatementLetInitial { eq, expr }))
+    }
 }
 
 impl Parse for SynStatementLet<UD> {
@@ -40,13 +62,7 @@ impl Parse for SynStatementLet<UD> {
             return Err(());
         };
 
-        let Some(eq) = TokenEq::parse(tokens, &mut k)? else {
-            return Err(());
-        };
-
-        let Some(expr) = SynExpr::parse(tokens, &mut k)? else {
-            return Err(());
-        };
+        let initial = SynStatementLetInitial::parse(tokens, &mut k)?;
 
         let Some(semi) = TokenSemicolon::parse(tokens, &mut k)? else {
             return Err(());
@@ -57,8 +73,7 @@ impl Parse for SynStatementLet<UD> {
             keyword_let,
             keyword_mut,
             name,
-            eq,
-            expr,
+            initial,
             semi,
             ext: (),
         }))
@@ -67,10 +82,27 @@ impl Parse for SynStatementLet<UD> {
 
 impl<D: Decoration> ToFelisString for SynStatementLet<D> {
     fn to_felis_string(&self) -> String {
-        format!(
-            "#let {} = {};",
-            self.name.to_felis_string(),
-            self.expr.to_felis_string()
-        )
+        if let Some(initial) = &self.initial {
+            format!(
+                "#let {}{} = {};",
+                if self.keyword_mut.is_some() {
+                    "#mut "
+                } else {
+                    ""
+                },
+                self.name.to_felis_string(),
+                initial.expr.to_felis_string()
+            )
+        } else {
+            format!(
+                "#let {}{};",
+                if self.keyword_mut.is_some() {
+                    "#mut "
+                } else {
+                    ""
+                },
+                self.name.to_felis_string()
+            )
+        }
     }
 }

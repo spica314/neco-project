@@ -248,16 +248,18 @@ _start:
                     compile_expr_r(&mut context, &expr);
                 }
                 SynStatement::Let(statement_let) => {
-                    compile_expr_r(&mut context, &statement_let.expr);
-                    let offset = context.def_id_to_offset.get(&statement_let.ext.id).unwrap();
-                    context.res.push_str("    pop rax\n");
-                    context
-                        .res
-                        .push_str(format!("    mov [rbp-{}], rax\n", offset).as_str());
-                    context.res.push_str("    pop rax\n");
-                    context
-                        .res
-                        .push_str(format!("    mov [rbp-{}+8], rax\n", offset).as_str());
+                    if let Some(initial) = &statement_let.initial {
+                        compile_expr_r(&mut context, &initial.expr);
+                        let offset = context.def_id_to_offset.get(&statement_let.ext.id).unwrap();
+                        context.res.push_str("    pop rax\n");
+                        context
+                            .res
+                            .push_str(format!("    mov [rbp-{}], rax\n", offset).as_str());
+                        context.res.push_str("    pop rax\n");
+                        context
+                            .res
+                            .push_str(format!("    mov [rbp-{}+8], rax\n", offset).as_str());
+                    }
                 }
                 SynStatement::Assign(statement_assign) => {
                     compile_expr_r(&mut context, &statement_assign.rhs);

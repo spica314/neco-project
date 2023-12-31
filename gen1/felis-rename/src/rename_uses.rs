@@ -9,7 +9,7 @@ use felis_syn::{
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
         syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        SynStatement, SynStatementLet,
+        SynStatement, SynStatementLet, SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -346,7 +346,12 @@ pub fn rename_uses_let(
         .resolver
         .set(let_.name.as_str().to_string(), let_.ext.id);
 
-    let expr = rename_uses_expr(context, &let_.expr)?;
+    let initial = if let Some(initial) = &let_.initial {
+        let initial2 = rename_uses_let_initial(context, initial)?;
+        Some(initial2)
+    } else {
+        None
+    };
 
     let ext = RenameDecorationStatementLet {
         name: let_.ext.name.clone(),
@@ -357,12 +362,23 @@ pub fn rename_uses_let(
         keyword_let: let_.keyword_let.clone(),
         keyword_mut: let_.keyword_mut.clone(),
         name: let_.name.clone(),
-        eq: let_.eq.clone(),
-        expr,
+        initial,
         semi: let_.semi.clone(),
         ext,
     };
     Ok(let_2)
+}
+
+pub fn rename_uses_let_initial(
+    context: &mut RenameUseContext,
+    let_: &SynStatementLetInitial<DefDecoration>,
+) -> Result<SynStatementLetInitial<RenameDecoration>, RenameError> {
+    let expr = rename_uses_expr(context, &let_.expr)?;
+
+    Ok(SynStatementLetInitial {
+        eq: let_.eq.clone(),
+        expr,
+    })
 }
 
 pub fn rename_uses_statement_expr_semi(

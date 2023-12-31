@@ -9,7 +9,7 @@ use felis_syn::{
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
         syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        SynStatement, SynStatementLet,
+        SynStatement, SynStatementLet, SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -289,7 +289,11 @@ fn rename_defs_statement_let(
     context: &mut RenameDefContext,
     statement_let: &SynStatementLet<UD>,
 ) -> Result<SynStatementLet<DefDecoration>, ()> {
-    let expr = rename_defs_expr(context, &statement_let.expr)?;
+    let initial = if let Some(initial) = &statement_let.initial {
+        Some(rename_defs_statement_let_initial(context, initial)?)
+    } else {
+        None
+    };
     let ext = DefStatementLet {
         name: statement_let.name.as_str().to_string(),
         id: context.new_id(),
@@ -298,10 +302,20 @@ fn rename_defs_statement_let(
         keyword_let: statement_let.keyword_let.clone(),
         keyword_mut: statement_let.keyword_mut.clone(),
         name: statement_let.name.clone(),
-        eq: statement_let.eq.clone(),
-        expr,
+        initial,
         semi: statement_let.semi.clone(),
         ext,
+    })
+}
+
+fn rename_defs_statement_let_initial(
+    context: &mut RenameDefContext,
+    statement_let_initial: &SynStatementLetInitial<UD>,
+) -> Result<SynStatementLetInitial<DefDecoration>, ()> {
+    let expr = rename_defs_expr(context, &statement_let_initial.expr)?;
+    Ok(SynStatementLetInitial {
+        eq: statement_let_initial.eq.clone(),
+        expr,
     })
 }
 

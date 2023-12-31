@@ -28,7 +28,6 @@ pub struct CodeGenPreparedDecoration;
 impl Decoration for CodeGenPreparedDecoration {
     type Entrypoint = CodeGenPreparedDecorationEntrypoint;
     type ExprApp = ();
-    type ExprBlock = ();
     type ExprIdentWithPath = CodeGenPreparedDecorationExprIdentWithPath;
     type ExprNumber = CodeGenPreparedDecorationExprNumber;
     type ExprMatch = ();

@@ -31,7 +31,6 @@ pub struct RenameDecoration;
 impl Decoration for RenameDecoration {
     type Entrypoint = RenameDecorationEntrypoint;
     type ExprApp = ();
-    type ExprBlock = ();
     type ExprIdentWithPath = RenameDecorationExprIdentWithPath;
     type ExprNumber = RenameDecorationExprNumber;
     type ExprMatch = ();

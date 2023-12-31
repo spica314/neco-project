@@ -4,7 +4,6 @@ use std::hash::Hash;
 pub trait Decoration: Debug {
     type Entrypoint: Debug + Clone + PartialEq + Eq + Hash;
     type ExprApp: Debug + Clone + PartialEq + Eq + Hash;
-    type ExprBlock: Debug + Clone + PartialEq + Eq + Hash;
     type ExprIdentWithPath: Debug + Clone + PartialEq + Eq + Hash;
     type ExprNumber: Debug + Clone + PartialEq + Eq + Hash;
     type ExprMatch: Debug + Clone + PartialEq + Eq + Hash;
@@ -31,7 +30,6 @@ pub struct UD;
 impl Decoration for UD {
     type Entrypoint = ();
     type ExprApp = ();
-    type ExprBlock = ();
     type ExprIdentWithPath = ();
     type ExprNumber = ();
     type ExprMatch = ();

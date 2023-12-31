@@ -29,7 +29,6 @@ pub struct TypedDecoration;
 impl Decoration for TypedDecoration {
     type Entrypoint = TypedDecorationEntrypoint;
     type ExprApp = ();
-    type ExprBlock = ();
     type ExprIdentWithPath = TypedDecorationExprIdentWithPath;
     type ExprNumber = TypedDecorationExprNumber;
     type ExprMatch = ();

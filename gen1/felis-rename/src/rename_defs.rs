@@ -24,7 +24,6 @@ pub struct DefDecoration;
 impl Decoration for DefDecoration {
     type Entrypoint = ();
     type ExprApp = ();
-    type ExprBlock = ();
     type ExprIdentWithPath = ();
     type ExprNumber = DefDecorationExprNumber;
     type ExprMatch = ();

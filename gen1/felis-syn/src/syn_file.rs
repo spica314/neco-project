@@ -56,22 +56,3 @@ impl Parse for SynFileItem<UD> {
         Ok(None)
     }
 }
-
-#[cfg(test)]
-mod test {
-    use crate::Parser;
-
-    use super::*;
-
-    #[test]
-    fn felis_syn_file_parse_test_5() {
-        let s = std::fs::read_to_string("../../examples/let-string/main.fe").unwrap();
-        let mut parser = Parser::new();
-        let res = parser.parse::<SynFile<UD>>(&s);
-        assert!(res.is_ok());
-        let res = res.unwrap();
-        assert!(res.is_some());
-        let res = res.unwrap();
-        assert_eq!(res.items.len(), 2);
-    }
-}

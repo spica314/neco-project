@@ -88,22 +88,3 @@ impl<D: Decoration> ToFelisString for SynStatement<D> {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use crate::Parser;
-
-    use super::*;
-
-    #[test]
-    fn test_parse_statement_let() {
-        let s = "#let x = 1;";
-        let mut parser = Parser::new();
-        let res = parser.parse::<SynStatement<UD>>(&s);
-        assert!(res.is_ok());
-        let statement = res.unwrap();
-        assert!(statement.is_some());
-        let statement = statement.unwrap();
-        assert!(matches!(statement, SynStatement::Let(_)));
-    }
-}

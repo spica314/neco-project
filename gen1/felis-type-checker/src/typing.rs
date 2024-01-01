@@ -15,7 +15,7 @@ use felis_syn::{
         syn_statement_continue::SynStatementContinue,
         syn_statement_expr_semi::SynStatementExprSemi, syn_statement_if::SynStatementIf,
         syn_statement_loop::SynStatementLoop, SynStatement, SynStatementLet,
-        SynStatementLetInitial,
+        SynStatementLetInitial, SynStatementLetTypeAnnotation,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -636,12 +636,30 @@ pub fn typing_statement_expr_semi(
     }
 }
 
+fn typing_statement_let_type_annotation(
+    context: &mut RetrieveContext,
+    type_annotation: &SynStatementLetTypeAnnotation<RenameDecoration>,
+) -> SynStatementLetTypeAnnotation<TypedDecoration> {
+    let ty = typing_type(context, &type_annotation.ty);
+    SynStatementLetTypeAnnotation {
+        colon: type_annotation.colon.clone(),
+        ty,
+    }
+}
+
 pub fn typing_statement_let(
     context: &mut RetrieveContext,
     statement_let: &SynStatementLet<RenameDecoration>,
 ) -> SynStatementLet<TypedDecoration> {
     let var_id = *context.def_to_var.get(&statement_let.ext.id).unwrap();
     let ty_term = context.type_checker.get(var_id).unwrap().clone();
+
+    let type_annotation = if let Some(type_annotation) = &statement_let.type_annotation {
+        let type_annotation2 = typing_statement_let_type_annotation(context, &type_annotation);
+        Some(type_annotation2)
+    } else {
+        None
+    };
 
     let initial = if let Some(initial) = &statement_let.initial {
         let initial2 = typing_statement_let_initial(context, initial);
@@ -654,6 +672,7 @@ pub fn typing_statement_let(
         keyword_let: statement_let.keyword_let.clone(),
         keyword_mut: statement_let.keyword_mut.clone(),
         name: statement_let.name.clone(),
+        type_annotation,
         initial,
         semi: statement_let.semi.clone(),
         ext: TypedDecorationStatementLet {

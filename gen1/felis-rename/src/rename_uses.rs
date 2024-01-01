@@ -14,7 +14,7 @@ use felis_syn::{
         syn_statement_continue::SynStatementContinue,
         syn_statement_expr_semi::SynStatementExprSemi, syn_statement_if::SynStatementIf,
         syn_statement_loop::SynStatementLoop, SynStatement, SynStatementLet,
-        SynStatementLetInitial,
+        SynStatementLetInitial, SynStatementLetTypeAnnotation,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -396,6 +396,19 @@ pub fn rename_uses_statement_assign(
     Ok(assign2)
 }
 
+fn rename_uses_let_type_annotation(
+    context: &mut RenameUseContext,
+    type_annotation: &SynStatementLetTypeAnnotation<DefDecoration>,
+) -> Result<SynStatementLetTypeAnnotation<RenameDecoration>, RenameError> {
+    let ty = rename_uses_type(context, &type_annotation.ty)?;
+
+    let type_annotation2 = SynStatementLetTypeAnnotation {
+        colon: type_annotation.colon.clone(),
+        ty,
+    };
+    Ok(type_annotation2)
+}
+
 pub fn rename_uses_let(
     context: &mut RenameUseContext,
     let_: &SynStatementLet<DefDecoration>,
@@ -403,6 +416,13 @@ pub fn rename_uses_let(
     context
         .resolver
         .set(let_.name.as_str().to_string(), let_.ext.id);
+
+    let type_annotation = if let Some(type_annotation) = &let_.type_annotation {
+        let type_annotation2 = rename_uses_let_type_annotation(context, type_annotation)?;
+        Some(type_annotation2)
+    } else {
+        None
+    };
 
     let initial = if let Some(initial) = &let_.initial {
         let initial2 = rename_uses_let_initial(context, initial)?;
@@ -420,6 +440,7 @@ pub fn rename_uses_let(
         keyword_let: let_.keyword_let.clone(),
         keyword_mut: let_.keyword_mut.clone(),
         name: let_.name.clone(),
+        type_annotation,
         initial,
         semi: let_.semi.clone(),
         ext,

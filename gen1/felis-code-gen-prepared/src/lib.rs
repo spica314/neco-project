@@ -15,7 +15,7 @@ use felis_syn::{
         syn_statement_continue::SynStatementContinue,
         syn_statement_expr_semi::SynStatementExprSemi, syn_statement_if::SynStatementIf,
         syn_statement_loop::SynStatementLoop, SynStatement, SynStatementLet,
-        SynStatementLetInitial,
+        SynStatementLetInitial, SynStatementLetTypeAnnotation,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -369,45 +369,46 @@ fn prepare_code_gen_statement_let(
     SynStatementLet<CodeGenPreparedDecoration>,
     Vec<(DefId, TypeTerm)>,
 ) {
-    if let Some(initial) = &statement_let.initial {
-        let (expr, mut lets) = prepare_code_gen_expr(&initial.expr);
-        lets.push((statement_let.ext.id, statement_let.ext.ty.clone()));
-        (
-            SynStatementLet {
-                keyword_let: statement_let.keyword_let.clone(),
-                keyword_mut: statement_let.keyword_mut.clone(),
-                name: statement_let.name.clone(),
-                initial: Some(SynStatementLetInitial {
-                    eq: initial.eq.clone(),
-                    expr,
-                }),
-                semi: statement_let.semi.clone(),
-                ext: CodeGenPreparedDecorationStatementLet {
-                    name: statement_let.ext.name.clone(),
-                    id: statement_let.ext.id,
-                    ty: statement_let.ext.ty.clone(),
-                },
-            },
-            lets,
-        )
+    let mut lets = vec![];
+    lets.push((statement_let.ext.id, statement_let.ext.ty.clone()));
+
+    let type_annotation = if let Some(type_annotation) = &statement_let.type_annotation {
+        let ty = prepare_code_gen_type(&type_annotation.ty);
+        Some(SynStatementLetTypeAnnotation {
+            colon: type_annotation.colon.clone(),
+            ty,
+        })
     } else {
-        let lets = vec![(statement_let.ext.id, statement_let.ext.ty.clone())];
-        (
-            SynStatementLet {
-                keyword_let: statement_let.keyword_let.clone(),
-                keyword_mut: statement_let.keyword_mut.clone(),
-                name: statement_let.name.clone(),
-                initial: None,
-                semi: statement_let.semi.clone(),
-                ext: CodeGenPreparedDecorationStatementLet {
-                    name: statement_let.ext.name.clone(),
-                    id: statement_let.ext.id,
-                    ty: statement_let.ext.ty.clone(),
-                },
+        None
+    };
+
+    let initial = if let Some(initial) = &statement_let.initial {
+        let (expr, lets2) = prepare_code_gen_expr(&initial.expr);
+        lets.extend(lets2);
+        Some(SynStatementLetInitial {
+            eq: initial.eq.clone(),
+            expr,
+        })
+    } else {
+        None
+    };
+
+    (
+        SynStatementLet {
+            keyword_let: statement_let.keyword_let.clone(),
+            keyword_mut: statement_let.keyword_mut.clone(),
+            name: statement_let.name.clone(),
+            type_annotation,
+            initial,
+            semi: statement_let.semi.clone(),
+            ext: CodeGenPreparedDecorationStatementLet {
+                name: statement_let.ext.name.clone(),
+                id: statement_let.ext.id,
+                ty: statement_let.ext.ty.clone(),
             },
-            lets,
-        )
-    }
+        },
+        lets,
+    )
 }
 
 fn prepare_code_gen_expr(

@@ -2,8 +2,9 @@ use crate::{
     decoration::{Decoration, UD},
     parse::Parse,
     syn_expr::SynExpr,
+    syn_type::SynType,
     to_felis_string::ToFelisString,
-    token::{Token, TokenEq, TokenIdent, TokenKeyword, TokenSemicolon},
+    token::{Token, TokenColon, TokenEq, TokenIdent, TokenKeyword, TokenSemicolon},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -11,6 +12,7 @@ pub struct SynStatementLet<D: Decoration> {
     pub keyword_let: TokenKeyword,
     pub keyword_mut: Option<TokenKeyword>,
     pub name: TokenIdent,
+    pub type_annotation: Option<SynStatementLetTypeAnnotation<D>>,
     pub initial: Option<SynStatementLetInitial<D>>,
     pub semi: TokenSemicolon,
     pub ext: D::StatementLet,
@@ -39,6 +41,29 @@ impl Parse for SynStatementLetInitial<UD> {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SynStatementLetTypeAnnotation<D: Decoration> {
+    pub colon: TokenColon,
+    pub ty: SynType<D>,
+}
+
+impl Parse for SynStatementLetTypeAnnotation<UD> {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
+        let mut k = *i;
+
+        let Some(colon) = TokenColon::parse(tokens, &mut k)? else {
+            return Ok(None);
+        };
+
+        let Some(ty) = SynType::parse(tokens, &mut k)? else {
+            return Err(());
+        };
+
+        *i = k;
+        Ok(Some(SynStatementLetTypeAnnotation { colon, ty }))
+    }
+}
+
 impl Parse for SynStatementLet<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
@@ -62,6 +87,8 @@ impl Parse for SynStatementLet<UD> {
             return Err(());
         };
 
+        let type_annotation = SynStatementLetTypeAnnotation::parse(tokens, &mut k)?;
+
         let initial = SynStatementLetInitial::parse(tokens, &mut k)?;
 
         let Some(semi) = TokenSemicolon::parse(tokens, &mut k)? else {
@@ -73,6 +100,7 @@ impl Parse for SynStatementLet<UD> {
             keyword_let,
             keyword_mut,
             name,
+            type_annotation,
             initial,
             semi,
             ext: (),

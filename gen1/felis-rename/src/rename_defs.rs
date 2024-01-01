@@ -14,7 +14,7 @@ use felis_syn::{
         syn_statement_continue::SynStatementContinue,
         syn_statement_expr_semi::SynStatementExprSemi, syn_statement_if::SynStatementIf,
         syn_statement_loop::SynStatementLoop, SynStatement, SynStatementLet,
-        SynStatementLetInitial,
+        SynStatementLetInitial, SynStatementLetTypeAnnotation,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -321,10 +321,30 @@ fn rename_defs_statement(
     }
 }
 
+fn rename_defs_statement_let_type_annotation(
+    context: &mut RenameDefContext,
+    statement_let_type_annotation: &SynStatementLetTypeAnnotation<UD>,
+) -> Result<SynStatementLetTypeAnnotation<DefDecoration>, ()> {
+    let ty = rename_defs_type(context, &statement_let_type_annotation.ty)?;
+    Ok(SynStatementLetTypeAnnotation {
+        colon: statement_let_type_annotation.colon.clone(),
+        ty,
+    })
+}
+
 fn rename_defs_statement_let(
     context: &mut RenameDefContext,
     statement_let: &SynStatementLet<UD>,
 ) -> Result<SynStatementLet<DefDecoration>, ()> {
+    let type_annotation = if let Some(type_annotation) = &statement_let.type_annotation {
+        Some(rename_defs_statement_let_type_annotation(
+            context,
+            type_annotation,
+        )?)
+    } else {
+        None
+    };
+
     let initial = if let Some(initial) = &statement_let.initial {
         Some(rename_defs_statement_let_initial(context, initial)?)
     } else {
@@ -338,6 +358,7 @@ fn rename_defs_statement_let(
         keyword_let: statement_let.keyword_let.clone(),
         keyword_mut: statement_let.keyword_mut.clone(),
         name: statement_let.name.clone(),
+        type_annotation,
         initial,
         semi: statement_let.semi.clone(),
         ext,

@@ -8,11 +8,14 @@ use crate::{
 pub use syn_statement_let::*;
 
 use self::{
-    syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
+    syn_statement_assign::SynStatementAssign, syn_statement_break::SynStatementBreak,
+    syn_statement_continue::SynStatementContinue, syn_statement_expr_semi::SynStatementExprSemi,
     syn_statement_if::SynStatementIf, syn_statement_loop::SynStatementLoop,
 };
 
 pub mod syn_statement_assign;
+pub mod syn_statement_break;
+pub mod syn_statement_continue;
 pub mod syn_statement_expr_semi;
 pub mod syn_statement_if;
 pub mod syn_statement_let;
@@ -25,11 +28,23 @@ pub enum SynStatement<D: Decoration> {
     Assign(SynStatementAssign<D>),
     If(SynStatementIf<D>),
     Loop(SynStatementLoop<D>),
+    Break(SynStatementBreak<D>),
+    Continue(SynStatementContinue<D>),
 }
 
 impl Parse for SynStatement<UD> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ()> {
         let mut k = *i;
+
+        if let Some(statement_break) = SynStatementBreak::parse(tokens, &mut k)? {
+            *i = k;
+            return Ok(Some(SynStatement::Break(statement_break)));
+        }
+
+        if let Some(statement_continue) = SynStatementContinue::parse(tokens, &mut k)? {
+            *i = k;
+            return Ok(Some(SynStatement::Continue(statement_continue)));
+        }
 
         if let Some(statement_loop) = SynStatementLoop::parse(tokens, &mut k)? {
             *i = k;
@@ -68,6 +83,8 @@ impl<D: Decoration> ToFelisString for SynStatement<D> {
             SynStatement::Assign(_statement_assign) => todo!(),
             SynStatement::If(_statement_if) => todo!(),
             SynStatement::Loop(_statement_loop) => todo!(),
+            SynStatement::Break(_statement_break) => todo!(),
+            SynStatement::Continue(_statement_continue) => todo!(),
         }
     }
 }

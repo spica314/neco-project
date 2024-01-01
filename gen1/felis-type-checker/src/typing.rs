@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use felis_rename::{rename_defs::DefId, rename_uses::RenameDecoration};
 use felis_syn::{
     decoration::Decoration,
@@ -9,9 +11,11 @@ use felis_syn::{
     syn_file::{SynFile, SynFileItem},
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
-        syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        syn_statement_if::SynStatementIf, syn_statement_loop::SynStatementLoop, SynStatement,
-        SynStatementLet, SynStatementLetInitial,
+        syn_statement_assign::SynStatementAssign, syn_statement_break::SynStatementBreak,
+        syn_statement_continue::SynStatementContinue,
+        syn_statement_expr_semi::SynStatementExprSemi, syn_statement_if::SynStatementIf,
+        syn_statement_loop::SynStatementLoop, SynStatement, SynStatementLet,
+        SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -364,6 +368,22 @@ pub fn typing_statement(
         SynStatement::Loop(statement_loop) => {
             let statement_loop2 = typing_statement_loop(context, statement_loop);
             SynStatement::Loop(statement_loop2)
+        }
+        SynStatement::Break(statement_break) => {
+            let statement_break = SynStatementBreak {
+                keyword_break: statement_break.keyword_break.clone(),
+                semi: statement_break.semi.clone(),
+                ext: PhantomData,
+            };
+            SynStatement::Break(statement_break)
+        }
+        SynStatement::Continue(statement_continue) => {
+            let statement_continue = SynStatementContinue {
+                keyword_continue: statement_continue.keyword_continue.clone(),
+                semi: statement_continue.semi.clone(),
+                ext: PhantomData,
+            };
+            SynStatement::Continue(statement_continue)
         }
     }
 }

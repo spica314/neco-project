@@ -129,6 +129,8 @@ fn retrieve_statement(context: &mut RetrieveContext, statement: &SynStatement<Re
         SynStatement::Loop(statement_loop) => {
             retrieve_statement_loop(context, statement_loop);
         }
+        SynStatement::Break(_statement_break) => {}
+        SynStatement::Continue(_statement_continue) => {}
     }
 }
 

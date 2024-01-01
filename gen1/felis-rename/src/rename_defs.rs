@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use felis_syn::{
     decoration::{Decoration, UD},
     syn_entrypoint::SynEntrypoint,
@@ -8,9 +10,11 @@ use felis_syn::{
     syn_file::{SynFile, SynFileItem},
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
-        syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        syn_statement_if::SynStatementIf, syn_statement_loop::SynStatementLoop, SynStatement,
-        SynStatementLet, SynStatementLetInitial,
+        syn_statement_assign::SynStatementAssign, syn_statement_break::SynStatementBreak,
+        syn_statement_continue::SynStatementContinue,
+        syn_statement_expr_semi::SynStatementExprSemi, syn_statement_if::SynStatementIf,
+        syn_statement_loop::SynStatementLoop, SynStatement, SynStatementLet,
+        SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -300,6 +304,18 @@ fn rename_defs_statement(
             Ok(SynStatement::Loop(SynStatementLoop {
                 keyword_loop: statement_loop.keyword_loop.clone(),
                 block,
+            }))
+        }
+        SynStatement::Break(statement_break) => Ok(SynStatement::Break(SynStatementBreak {
+            keyword_break: statement_break.keyword_break.clone(),
+            semi: statement_break.semi.clone(),
+            ext: PhantomData,
+        })),
+        SynStatement::Continue(statement_continue) => {
+            Ok(SynStatement::Continue(SynStatementContinue {
+                keyword_continue: statement_continue.keyword_continue.clone(),
+                semi: statement_continue.semi.clone(),
+                ext: PhantomData,
             }))
         }
     }

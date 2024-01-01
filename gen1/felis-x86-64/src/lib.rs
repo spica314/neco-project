@@ -29,6 +29,7 @@ pub struct CompileContext {
     pub def_id_to_offset: std::collections::HashMap<DefId, usize>,
     pub retrieve_context: RetrieveContext,
     pub label_counter: usize,
+    pub loop_label_stack: Vec<(String, String)>,
 }
 
 pub fn byte_length_of_type_term(context: &CompileContext, ty: &TypeTerm) -> usize {
@@ -289,12 +290,29 @@ pub fn compile_proc_block(
                 let label_begin = format!("__begin_{}", context.label_counter);
                 let label_end = format!("__end_{}", context.label_counter);
                 context.label_counter += 1;
+
+                context
+                    .loop_label_stack
+                    .push((label_begin.clone(), label_end.clone()));
                 context.res.push_str(format!("{}:\n", label_begin).as_str());
                 compile_proc_block(context, &statement_loop.block);
                 context
                     .res
                     .push_str(format!("    jmp {}\n", label_begin).as_str());
                 context.res.push_str(format!("{}:\n", label_end).as_str());
+                context.loop_label_stack.pop();
+            }
+            SynStatement::Break(_statement_break) => {
+                let (_label_begin, label_end) = context.loop_label_stack.last().unwrap();
+                context
+                    .res
+                    .push_str(format!("    jmp {}\n", label_end).as_str());
+            }
+            SynStatement::Continue(_statement_continue) => {
+                let (label_begin, _label_end) = context.loop_label_stack.last().unwrap();
+                context
+                    .res
+                    .push_str(format!("    jmp {}\n", label_begin).as_str());
             }
         }
     }
@@ -310,6 +328,7 @@ pub fn compile(
         def_id_to_offset: std::collections::HashMap::new(),
         retrieve_context,
         label_counter: 0,
+        loop_label_stack: vec![],
     };
 
     // get entrypoint

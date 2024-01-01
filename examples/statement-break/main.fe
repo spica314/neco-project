@@ -1,0 +1,15 @@
+#entrypoint main
+
+#proc main : () {
+    #let #mut sum = 0;
+    #let #mut i = 0;
+    #loop {
+        i = __add_i64 i 1;
+        sum = __add_i64 sum i;
+        #if __eq_i64 i 10 {
+            #break;
+        } #else {
+        }
+    }
+    __exit sum;
+}

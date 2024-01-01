@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use felis_rename::rename_defs::DefId;
 use felis_syn::{
     decoration::Decoration,
@@ -9,9 +11,11 @@ use felis_syn::{
     syn_file::{SynFile, SynFileItem},
     syn_proc::{SynProcBlock, SynProcDef},
     syn_statement::{
-        syn_statement_assign::SynStatementAssign, syn_statement_expr_semi::SynStatementExprSemi,
-        syn_statement_if::SynStatementIf, syn_statement_loop::SynStatementLoop, SynStatement,
-        SynStatementLet, SynStatementLetInitial,
+        syn_statement_assign::SynStatementAssign, syn_statement_break::SynStatementBreak,
+        syn_statement_continue::SynStatementContinue,
+        syn_statement_expr_semi::SynStatementExprSemi, syn_statement_if::SynStatementIf,
+        syn_statement_loop::SynStatementLoop, SynStatement, SynStatementLet,
+        SynStatementLetInitial,
     },
     syn_type::{
         SynType, SynTypeApp, SynTypeAtom, SynTypeDependentMap, SynTypeMap, SynTypeParen,
@@ -272,6 +276,28 @@ fn prepare_code_gen_statement(
         SynStatement::Loop(statement_loop) => {
             let (statement_loop, lets) = prepare_code_gen_statement_loop(statement_loop);
             (SynStatement::Loop(statement_loop), lets)
+        }
+        SynStatement::Break(statement_break) => {
+            let lets = vec![];
+            (
+                SynStatement::Break(SynStatementBreak {
+                    keyword_break: statement_break.keyword_break.clone(),
+                    semi: statement_break.semi.clone(),
+                    ext: PhantomData,
+                }),
+                lets,
+            )
+        }
+        SynStatement::Continue(statement_continue) => {
+            let lets = vec![];
+            (
+                SynStatement::Continue(SynStatementContinue {
+                    keyword_continue: statement_continue.keyword_continue.clone(),
+                    semi: statement_continue.semi.clone(),
+                    ext: PhantomData,
+                }),
+                lets,
+            )
         }
     }
 }

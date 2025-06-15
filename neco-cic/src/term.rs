@@ -1,0 +1,64 @@
+use std::rc::Rc;
+
+use crate::id::*;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Sort {
+    Set,
+    Prop,
+    Type(usize),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TermSort {
+    pub sort: Sort,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TermVariable {
+    pub id: Id,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TermConstant {
+    pub id: Id,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TermProduct {
+    pub var: Id,
+    pub source: Rc<Term>,
+    pub target: Rc<Term>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TermLambda {
+    pub var: Id,
+    pub source_ty: Rc<Term>,
+    pub target: Rc<Term>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TermApplication {
+    pub f: Rc<Term>,
+    pub args: Vec<Term>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TermLetIn {
+    pub var: Id,
+    pub term: Rc<Term>,
+    pub ty: Rc<Term>,
+    pub body: Rc<Term>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Term {
+    Sort(TermSort),
+    Variable(TermVariable),
+    Constant(TermConstant),
+    Product(TermProduct),
+    Lambda(TermLambda),
+    Application(TermApplication),
+    LetIn(TermLetIn),
+}

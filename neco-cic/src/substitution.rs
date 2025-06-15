@@ -1,0 +1,108 @@
+use std::{collections::HashMap, rc::Rc};
+
+use crate::{
+    id::Id,
+    term::{
+        Term, TermApplication, TermConstant, TermLambda, TermLetIn, TermProduct, TermSort,
+        TermVariable,
+    },
+};
+
+pub struct Substitution {
+    subst: HashMap<Id, Rc<Term>>,
+}
+
+impl Substitution {
+    pub fn new() -> Self {
+        Substitution {
+            subst: HashMap::new(),
+        }
+    }
+
+    pub fn add(&mut self, id: Id, term: Rc<Term>) {
+        self.subst.insert(id, term);
+    }
+
+    pub fn get(&self, id: Id) -> Option<Rc<Term>> {
+        self.subst.get(&id).cloned()
+    }
+
+    fn remove(&self, id: Id) -> Self {
+        let mut new_subst = self.subst.clone();
+        new_subst.remove(&id);
+        Substitution { subst: new_subst }
+    }
+}
+
+pub fn substitute(term: &Term, subst: &Substitution) -> Term {
+    match term {
+        Term::Sort(term_sort) => substitute_sort(term_sort, subst),
+        Term::Variable(term_variable) => substitute_variable(term_variable, subst),
+        Term::Constant(term_constant) => substitute_constant(term_constant, subst),
+        Term::Product(term_product) => substitute_product(term_product, subst),
+        Term::Lambda(term_lambda) => substitute_lambda(term_lambda, subst),
+        Term::Application(term_application) => substitute_application(term_application, subst),
+        Term::LetIn(term_let_in) => substitute_let_in(term_let_in, subst),
+    }
+}
+
+fn substitute_sort(term_sort: &TermSort, _subst: &Substitution) -> Term {
+    Term::Sort(term_sort.clone())
+}
+
+fn substitute_variable(term_variable: &TermVariable, subst: &Substitution) -> Term {
+    if let Some(u) = subst.get(term_variable.id) {
+        u.as_ref().clone()
+    } else {
+        Term::Variable(term_variable.clone())
+    }
+}
+
+fn substitute_constant(term_constant: &TermConstant, _subst: &Substitution) -> Term {
+    Term::Constant(term_constant.clone())
+}
+
+fn substitute_product(term_product: &TermProduct, subst: &Substitution) -> Term {
+    let source = substitute(&term_product.source, subst);
+    let target = substitute(&term_product.target, subst);
+    Term::Product(TermProduct {
+        var: term_product.var,
+        source: Rc::new(source),
+        target: Rc::new(target),
+    })
+}
+
+fn substitute_lambda(term_lambda: &TermLambda, subst: &Substitution) -> Term {
+    let source_ty = substitute(&term_lambda.source_ty, subst);
+    let target = substitute(&term_lambda.target, subst);
+    Term::Lambda(TermLambda {
+        var: term_lambda.var,
+        source_ty: Rc::new(source_ty),
+        target: Rc::new(target),
+    })
+}
+
+fn substitute_application(term_application: &TermApplication, subst: &Substitution) -> Term {
+    let f = substitute(&term_application.f, subst);
+    let args: Vec<_> = term_application
+        .args
+        .iter()
+        .map(|t| substitute(t, subst))
+        .collect();
+    Term::Application(TermApplication {
+        f: Rc::new(f),
+        args,
+    })
+}
+
+fn substitute_let_in(term_let_in: &TermLetIn, subst: &Substitution) -> Term {
+    let term = substitute(&term_let_in.term, subst);
+    let ty = substitute(&term_let_in.ty, subst);
+    let body = substitute(&term_let_in.body, subst);
+    Term::LetIn(TermLetIn {
+        var: term_let_in.var,
+        term: Rc::new(term),
+        ty: Rc::new(ty),
+        body: Rc::new(body),
+    })
+}

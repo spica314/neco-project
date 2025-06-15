@@ -1,3 +1,0 @@
-#type And : Prop -> Prop -> Prop {
-    conj : (A : Prop) -> (B : Prop) -> A -> B -> And A B,
-}

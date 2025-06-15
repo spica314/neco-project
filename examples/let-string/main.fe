@@ -1,6 +1,0 @@
-#entrypoint main
-
-#proc main : () {
-    #let s = "Hello, world!\n";
-    __write_to_stdout s;
-}

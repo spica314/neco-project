@@ -1,5 +1,0 @@
-#entrypoint main
-
-#fn main : () {
-    __print_stdout "Hello, world!\n"
-}

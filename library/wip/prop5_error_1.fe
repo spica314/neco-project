@@ -1,5 +1,0 @@
-#theorem theorem1 = #forall (A : Prop), #forall (B : Prop), #forall (C : Prop), (B -> C) -> (A -> B) -> A -> C {
-    #fn proof : (A : Prop) -> (B : Prop) -> (C : Prop) -> (f : B -> C) -> (g : A -> B) -> (x : A) -> C {
-        f (f x)
-    }
-}

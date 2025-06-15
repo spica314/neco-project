@@ -1,4 +1,0 @@
-#fn proof : (A : Prop) -> (x : A) -> A {
-    #let y = x;
-    y
-}

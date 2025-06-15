@@ -1,3 +1,0 @@
-#fn proof : (A : Prop) -> (x : A) -> A {
-    x
-}

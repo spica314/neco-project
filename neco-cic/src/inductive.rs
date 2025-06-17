@@ -1,6 +1,9 @@
 use std::{collections::HashMap, rc::Rc};
 
-use crate::{id::{Id, IdGenerator}, term::Term};
+use crate::{
+    id::{Id, IdGenerator},
+    term::Term,
+};
 
 /// Definition of an inductive type
 /// Example: Inductive nat : Set := O : nat | S : nat -> nat
@@ -115,7 +118,10 @@ impl InductiveEnvironment {
 
         // Register all constructors
         for constructor in &def.constructors {
-            if self.constructor_to_inductive.contains_key(&constructor.name) {
+            if self
+                .constructor_to_inductive
+                .contains_key(&constructor.name)
+            {
                 return Err(format!(
                     "Constructor {:?} already defined",
                     constructor.name

@@ -7,11 +7,9 @@ mod tests {
         id::Id,
         inductive::{ConstructorDefinition, InductiveDefinition, InductiveEnvironment, Parameter},
         local_context::LocalContext,
-        term::{
-            Sort, Term, TermMatch, TermConstant, TermConstructor, TermSort, TermVariable, MatchBranch,
-        },
-        typechecker::infer_type,
         reduction::reduce_step,
+        term::{MatchBranch, Sort, Term, TermConstant, TermMatch, TermSort, TermVariable},
+        typechecker::infer_type,
     };
 
     #[test]
@@ -21,9 +19,7 @@ mod tests {
         let true_id = Id::new();
         let false_id = Id::new();
 
-        env.inductives
-            .add_bool(bool_id, true_id, false_id)
-            .unwrap();
+        env.inductives.add_bool(bool_id, true_id, false_id).unwrap();
 
         let bool_def = env.inductives.get_inductive(bool_id).unwrap();
         assert_eq!(bool_def.name, bool_id);
@@ -37,9 +33,7 @@ mod tests {
         let true_id = Id::new();
         let false_id = Id::new();
 
-        env.inductives
-            .add_bool(bool_id, true_id, false_id)
-            .unwrap();
+        env.inductives.add_bool(bool_id, true_id, false_id).unwrap();
 
         let true_constr = env.inductives.get_constructor(true_id).unwrap();
         assert_eq!(true_constr.name, true_id);
@@ -96,21 +90,12 @@ mod tests {
         let true_id = Id::new();
         let false_id = Id::new();
 
-        env.inductives
-            .add_bool(bool_id, true_id, false_id)
-            .unwrap();
+        env.inductives.add_bool(bool_id, true_id, false_id).unwrap();
 
-        let true_constr = Term::Constructor(TermConstructor {
-            constructor_id: true_id,
-            inductive_id: bool_id,
-            args: vec![],
-        });
+        let true_constr = Term::Constant(TermConstant { id: true_id });
 
         let ty = infer_type(&ctx, &env, &true_constr).unwrap();
-        assert_eq!(
-            *ty,
-            Term::Constant(TermConstant { id: bool_id })
-        );
+        assert_eq!(*ty, Term::Constant(TermConstant { id: bool_id }));
     }
 
     #[test]
@@ -121,21 +106,12 @@ mod tests {
         let true_id = Id::new();
         let false_id = Id::new();
 
-        env.inductives
-            .add_bool(bool_id, true_id, false_id)
-            .unwrap();
+        env.inductives.add_bool(bool_id, true_id, false_id).unwrap();
 
-        let false_constr = Term::Constructor(TermConstructor {
-            constructor_id: false_id,
-            inductive_id: bool_id,
-            args: vec![],
-        });
+        let false_constr = Term::Constant(TermConstant { id: false_id });
 
         let ty = infer_type(&ctx, &env, &false_constr).unwrap();
-        assert_eq!(
-            *ty,
-            Term::Constant(TermConstant { id: bool_id })
-        );
+        assert_eq!(*ty, Term::Constant(TermConstant { id: bool_id }));
     }
 
     #[test]
@@ -145,21 +121,11 @@ mod tests {
         let true_id = Id::new();
         let false_id = Id::new();
 
-        env.inductives
-            .add_bool(bool_id, true_id, false_id)
-            .unwrap();
+        env.inductives.add_bool(bool_id, true_id, false_id).unwrap();
 
-        let true_constr = Term::Constructor(TermConstructor {
-            constructor_id: true_id,
-            inductive_id: bool_id,
-            args: vec![],
-        });
+        let true_constr = Term::Constant(TermConstant { id: true_id });
 
-        let false_constr = Term::Constructor(TermConstructor {
-            constructor_id: false_id,
-            inductive_id: bool_id,
-            args: vec![],
-        });
+        let false_constr = Term::Constant(TermConstant { id: false_id });
 
         let case_expr = Term::Match(TermMatch {
             scrutinee: Rc::new(true_constr.clone()),
@@ -189,21 +155,11 @@ mod tests {
         let true_id = Id::new();
         let false_id = Id::new();
 
-        env.inductives
-            .add_bool(bool_id, true_id, false_id)
-            .unwrap();
+        env.inductives.add_bool(bool_id, true_id, false_id).unwrap();
 
-        let true_constr = Term::Constructor(TermConstructor {
-            constructor_id: true_id,
-            inductive_id: bool_id,
-            args: vec![],
-        });
+        let true_constr = Term::Constant(TermConstant { id: true_id });
 
-        let false_constr = Term::Constructor(TermConstructor {
-            constructor_id: false_id,
-            inductive_id: bool_id,
-            args: vec![],
-        });
+        let false_constr = Term::Constant(TermConstant { id: false_id });
 
         let case_expr = Term::Match(TermMatch {
             scrutinee: Rc::new(false_constr.clone()),
@@ -235,11 +191,7 @@ mod tests {
 
         env.inductives.add_nat(nat_id, zero_id, succ_id).unwrap();
 
-        let zero = Term::Constructor(TermConstructor {
-            constructor_id: zero_id,
-            inductive_id: nat_id,
-            args: vec![],
-        });
+        let zero = Term::Constant(TermConstant { id: zero_id });
 
         let case_expr = Term::Match(TermMatch {
             scrutinee: Rc::new(zero.clone()),
@@ -273,21 +225,15 @@ mod tests {
 
         let n = Id::new();
 
-        let zero = Term::Constructor(TermConstructor {
-            constructor_id: zero_id,
-            inductive_id: nat_id,
-            args: vec![],
-        });
+        let zero = Term::Constant(TermConstant { id: zero_id });
 
-        let one = Term::Constructor(TermConstructor {
-            constructor_id: succ_id,
-            inductive_id: nat_id,
+        let one = Term::Application(crate::term::TermApplication {
+            f: Rc::new(Term::Constant(TermConstant { id: succ_id })),
             args: vec![zero.clone()],
         });
 
-        let two = Term::Constructor(TermConstructor {
-            constructor_id: succ_id,
-            inductive_id: nat_id,
+        let two = Term::Application(crate::term::TermApplication {
+            f: Rc::new(Term::Constant(TermConstant { id: succ_id })),
             args: vec![one.clone()],
         });
 
@@ -315,13 +261,15 @@ mod tests {
     #[test]
     fn test_list_inductive_definition() {
         let mut inductive_env = InductiveEnvironment::new();
-        
+
         let list_id = Id::new();
         let nil_id = Id::new();
         let cons_id = Id::new();
         let a_param_id = Id::new();
 
-        let type0 = Rc::new(Term::Sort(TermSort { sort: Sort::Type(0) }));
+        let type0 = Rc::new(Term::Sort(TermSort {
+            sort: Sort::Type(0),
+        }));
         let var_a = Rc::new(Term::Variable(TermVariable { id: a_param_id }));
         let list_type = Rc::new(Term::Constant(TermConstant { id: list_id }));
 
@@ -345,7 +293,9 @@ mod tests {
                 name: a_param_id,
                 ty: type0,
             }],
-            Rc::new(Term::Sort(TermSort { sort: Sort::Type(0) })),
+            Rc::new(Term::Sort(TermSort {
+                sort: Sort::Type(0),
+            })),
             vec![nil_constr, cons_constr],
         );
 
@@ -359,13 +309,15 @@ mod tests {
     #[test]
     fn test_list_constructor_count() {
         let mut inductive_env = InductiveEnvironment::new();
-        
+
         let list_id = Id::new();
         let nil_id = Id::new();
         let cons_id = Id::new();
         let a_param_id = Id::new();
 
-        let type0 = Rc::new(Term::Sort(TermSort { sort: Sort::Type(0) }));
+        let type0 = Rc::new(Term::Sort(TermSort {
+            sort: Sort::Type(0),
+        }));
         let var_a = Rc::new(Term::Variable(TermVariable { id: a_param_id }));
         let list_type = Rc::new(Term::Constant(TermConstant { id: list_id }));
 
@@ -389,7 +341,9 @@ mod tests {
                 name: a_param_id,
                 ty: type0,
             }],
-            Rc::new(Term::Sort(TermSort { sort: Sort::Type(0) })),
+            Rc::new(Term::Sort(TermSort {
+                sort: Sort::Type(0),
+            })),
             vec![nil_constr, cons_constr],
         );
 

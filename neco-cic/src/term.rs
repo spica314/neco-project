@@ -52,15 +52,6 @@ pub struct TermLetIn {
     pub body: Rc<Term>,
 }
 
-/// Constructor of an inductive type
-/// Example: For nat, we have constructors O : nat and S : nat -> nat
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TermConstructor {
-    pub constructor_id: Id,
-    pub inductive_id: Id,
-    pub args: Vec<Term>,
-}
-
 /// Match analysis (pattern matching) on inductive types
 /// Example: match n with | O => ... | S p => ...
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -95,7 +86,6 @@ pub enum Term {
     Lambda(TermLambda),
     Application(TermApplication),
     LetIn(TermLetIn),
-    Constructor(TermConstructor),
     Match(TermMatch),
     Fix(TermFix),
 }

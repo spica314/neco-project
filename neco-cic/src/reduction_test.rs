@@ -125,7 +125,7 @@ mod tests {
     fn test_variable_is_normal_form() {
         let x = Id::new();
         let var = Term::Variable(TermVariable { id: x });
-        
+
         assert!(reduce_step(&var).is_none());
     }
 
@@ -142,7 +142,7 @@ mod tests {
     fn test_constant_is_normal_form() {
         let c = Id::new();
         let constant = Term::Constant(crate::term::TermConstant { id: c });
-        
+
         assert!(reduce_step(&constant).is_none());
     }
 

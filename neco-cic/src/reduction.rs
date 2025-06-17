@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 use crate::{
-    substitution::{substitute, Substitution},
-    term::{Term, TermApplication, TermMatch, TermConstructor, TermFix, TermLambda, TermLetIn, TermProduct},
+    substitution::{Substitution, substitute},
+    term::{Term, TermApplication, TermFix, TermLambda, TermLetIn, TermMatch, TermProduct},
 };
 
 /// Performs one step of reduction on a term.
@@ -16,7 +16,6 @@ pub fn reduce_step(term: &Term) -> Option<Term> {
         Term::Lambda(lambda) => reduce_lambda(lambda),
         Term::Application(app) => reduce_application(app),
         Term::LetIn(let_in) => reduce_let_in(let_in),
-        Term::Constructor(constructor) => reduce_constructor(constructor),
         Term::Match(case) => reduce_case(case),
         Term::Fix(fix) => reduce_fix(fix),
     }
@@ -194,51 +193,52 @@ pub fn whnf(term: &Term) -> Term {
     }
 }
 
-/// Reduces a constructor application
-fn reduce_constructor(constructor: &TermConstructor) -> Option<Term> {
-    // Try to reduce the arguments
-    for (i, arg) in constructor.args.iter().enumerate() {
-        if let Some(reduced_arg) = reduce_step(arg) {
-            let mut new_args = constructor.args.clone();
-            new_args[i] = reduced_arg;
-            return Some(Term::Constructor(TermConstructor {
-                constructor_id: constructor.constructor_id,
-                inductive_id: constructor.inductive_id,
-                args: new_args,
-            }));
-        }
-    }
-    None
-}
-
 /// Reduces a case expression (ι-reduction)
 /// match (C a₁ ... aₙ) with | C x₁ ... xₙ => t | ... => t[x₁ := a₁, ..., xₙ := aₙ]
 fn reduce_case(case: &TermMatch) -> Option<Term> {
     // First reduce the scrutinee to WHNF
     let scrutinee_whnf = whnf(&case.scrutinee);
-    
+
     // Check if the scrutinee is a constructor application
-    if let Term::Constructor(constructor) = &scrutinee_whnf {
-        // Find the matching branch
-        for branch in &case.branches {
-            if branch.constructor_id == constructor.constructor_id {
-                // Check that the number of bound variables matches the constructor arguments
-                if branch.bound_vars.len() != constructor.args.len() {
-                    // This should not happen if type checking is correct
-                    return None;
+    // Constructor applications are represented as Application(Constant(constructor_id), args)
+    match &scrutinee_whnf {
+        Term::Constant(const_) => {
+            // Zero-argument constructor
+            for branch in &case.branches {
+                if branch.constructor_id == const_.id {
+                    if !branch.bound_vars.is_empty() {
+                        // This should not happen if type checking is correct
+                        return None;
+                    }
+                    return Some(branch.body.as_ref().clone());
                 }
-                
-                // Apply substitutions: substitute constructor arguments for bound variables
-                let mut subst = Substitution::new();
-                for (bound_var, arg) in branch.bound_vars.iter().zip(&constructor.args) {
-                    subst.add(*bound_var, Rc::new(arg.clone()));
-                }
-                
-                return Some(substitute(&branch.body, &subst));
             }
         }
+        Term::Application(app) => {
+            if let Term::Constant(const_) = app.f.as_ref() {
+                // Constructor with arguments
+                for branch in &case.branches {
+                    if branch.constructor_id == const_.id {
+                        // Check that the number of bound variables matches the constructor arguments
+                        if branch.bound_vars.len() != app.args.len() {
+                            // This should not happen if type checking is correct
+                            return None;
+                        }
+
+                        // Apply substitutions: substitute constructor arguments for bound variables
+                        let mut subst = Substitution::new();
+                        for (bound_var, arg) in branch.bound_vars.iter().zip(&app.args) {
+                            subst.add(*bound_var, Rc::new(arg.clone()));
+                        }
+
+                        return Some(substitute(&branch.body, &subst));
+                    }
+                }
+            }
+        }
+        _ => {}
     }
-    
+
     // If the scrutinee is not a constructor, try to reduce it
     if let Some(reduced_scrutinee) = reduce_step(&case.scrutinee) {
         return Some(Term::Match(TermMatch {
@@ -247,7 +247,7 @@ fn reduce_case(case: &TermMatch) -> Option<Term> {
             branches: case.branches.clone(),
         }));
     }
-    
+
     // Try to reduce the return type
     if let Some(reduced_return_type) = reduce_step(&case.return_type) {
         return Some(Term::Match(TermMatch {
@@ -256,7 +256,7 @@ fn reduce_case(case: &TermMatch) -> Option<Term> {
             branches: case.branches.clone(),
         }));
     }
-    
+
     // Try to reduce branches
     for (i, branch) in case.branches.iter().enumerate() {
         if let Some(reduced_body) = reduce_step(&branch.body) {
@@ -273,7 +273,7 @@ fn reduce_case(case: &TermMatch) -> Option<Term> {
             }));
         }
     }
-    
+
     None
 }
 

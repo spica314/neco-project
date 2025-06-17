@@ -3,8 +3,8 @@ use std::{collections::HashMap, rc::Rc};
 use crate::{
     id::Id,
     term::{
-        MatchBranch, Term, TermApplication, TermMatch, TermConstant, TermConstructor, TermFix,
-        TermLambda, TermLetIn, TermProduct, TermSort, TermVariable,
+        MatchBranch, Term, TermApplication, TermConstant, TermFix, TermLambda, TermLetIn,
+        TermMatch, TermProduct, TermSort, TermVariable,
     },
 };
 
@@ -42,7 +42,6 @@ pub fn substitute(term: &Term, subst: &Substitution) -> Term {
         Term::Lambda(term_lambda) => substitute_lambda(term_lambda, subst),
         Term::Application(term_application) => substitute_application(term_application, subst),
         Term::LetIn(term_let_in) => substitute_let_in(term_let_in, subst),
-        Term::Constructor(term_constructor) => substitute_constructor(term_constructor, subst),
         Term::Match(term_case) => substitute_case(term_case, subst),
         Term::Fix(term_fix) => substitute_fix(term_fix, subst),
     }
@@ -106,19 +105,6 @@ fn substitute_let_in(term_let_in: &TermLetIn, subst: &Substitution) -> Term {
         term: Rc::new(term),
         ty: Rc::new(ty),
         body: Rc::new(body),
-    })
-}
-
-fn substitute_constructor(term_constructor: &TermConstructor, subst: &Substitution) -> Term {
-    let args: Vec<_> = term_constructor
-        .args
-        .iter()
-        .map(|arg| substitute(arg, subst))
-        .collect();
-    Term::Constructor(TermConstructor {
-        constructor_id: term_constructor.constructor_id,
-        inductive_id: term_constructor.inductive_id,
-        args,
     })
 }
 

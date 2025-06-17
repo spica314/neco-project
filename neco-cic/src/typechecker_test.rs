@@ -78,7 +78,7 @@ mod tests {
 
         let set = Rc::new(Term::Sort(TermSort { sort: Sort::Set }));
         ctx.extend(x, set.clone()).unwrap();
-        
+
         let var = Term::Variable(TermVariable { id: x });
         let ty = infer_type(&ctx, &env, &var).unwrap();
         assert_eq!(ty, set);

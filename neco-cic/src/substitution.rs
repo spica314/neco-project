@@ -31,12 +31,6 @@ impl Substitution {
     pub fn get(&self, id: Id) -> Option<Rc<Term>> {
         self.subst.get(&id).cloned()
     }
-
-    fn remove(&self, id: Id) -> Self {
-        let mut new_subst = self.subst.clone();
-        new_subst.remove(&id);
-        Substitution { subst: new_subst }
-    }
 }
 
 pub fn substitute(term: &Term, subst: &Substitution) -> Term {
@@ -156,11 +150,11 @@ fn substitute_case_branch(branch: &MatchBranch, subst: &Substitution) -> MatchBr
 
 fn substitute_fix(term_fix: &TermFix, subst: &Substitution) -> Term {
     let body_type = substitute(&term_fix.body_type, subst);
-    
+
     // For simplicity, don't handle bound variable capture for now
     // TODO: Properly handle bound variable capture
     let body = substitute(&term_fix.body, subst);
-    
+
     Term::Fix(TermFix {
         fix_var: term_fix.fix_var,
         body_type: Rc::new(body_type),

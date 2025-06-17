@@ -52,6 +52,40 @@ pub struct TermLetIn {
     pub body: Rc<Term>,
 }
 
+/// Constructor of an inductive type
+/// Example: For nat, we have constructors O : nat and S : nat -> nat
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TermConstructor {
+    pub constructor_id: Id,
+    pub inductive_id: Id,
+    pub args: Vec<Term>,
+}
+
+/// Case analysis (pattern matching) on inductive types
+/// Example: match n with | O => ... | S p => ...
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TermCase {
+    pub scrutinee: Rc<Term>,
+    pub return_type: Rc<Term>,
+    pub branches: Vec<CaseBranch>,
+}
+
+/// A branch in a case expression
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CaseBranch {
+    pub constructor_id: Id,
+    pub bound_vars: Vec<Id>,
+    pub body: Rc<Term>,
+}
+
+/// Fix point for recursive definitions
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TermFix {
+    pub fix_var: Id,
+    pub body_type: Rc<Term>,
+    pub body: Rc<Term>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Term {
     Sort(TermSort),
@@ -61,4 +95,7 @@ pub enum Term {
     Lambda(TermLambda),
     Application(TermApplication),
     LetIn(TermLetIn),
+    Constructor(TermConstructor),
+    Case(TermCase),
+    Fix(TermFix),
 }

@@ -13,7 +13,7 @@ mod tests {
     #[test]
     fn test_sort_typing() {
         let ctx = LocalContext::new();
-        let env = GlobalEnvironment {};
+        let env = GlobalEnvironment::new();
 
         // Test: Set : Type(0)
         let set = Term::Sort(TermSort { sort: Sort::Set });
@@ -41,7 +41,7 @@ mod tests {
     #[test]
     fn test_variable_typing() {
         let mut ctx = LocalContext::new();
-        let env = GlobalEnvironment {};
+        let env = GlobalEnvironment::new();
         let x = Id::new();
 
         // Test: unbound variable should fail
@@ -61,7 +61,7 @@ mod tests {
     #[test]
     fn test_lambda_typing() {
         let ctx = LocalContext::new();
-        let env = GlobalEnvironment {};
+        let env = GlobalEnvironment::new();
         let x = Id::new();
 
         // Test: λx:Set. x : Set → Set
@@ -84,7 +84,7 @@ mod tests {
     #[test]
     fn test_application_typing() {
         let ctx = LocalContext::new();
-        let env = GlobalEnvironment {};
+        let env = GlobalEnvironment::new();
         let x = Id::new();
         let y = Id::new();
 
@@ -113,7 +113,7 @@ mod tests {
     #[test]
     fn test_product_typing() {
         let ctx = LocalContext::new();
-        let env = GlobalEnvironment {};
+        let env = GlobalEnvironment::new();
         let x = Id::new();
 
         // Test: Πx:Set. Set : Type(0)
@@ -136,7 +136,7 @@ mod tests {
     #[test]
     fn test_type_checking() {
         let ctx = LocalContext::new();
-        let env = GlobalEnvironment {};
+        let env = GlobalEnvironment::new();
         let x = Id::new();
 
         // Create identity function: λx:Set. x
@@ -164,7 +164,7 @@ mod tests {
     #[test]
     fn test_dependent_product() {
         let ctx = LocalContext::new();
-        let env = GlobalEnvironment {};
+        let env = GlobalEnvironment::new();
         let a = Id::new();
         let x = Id::new();
 

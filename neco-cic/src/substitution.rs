@@ -3,8 +3,8 @@ use std::{collections::HashMap, rc::Rc};
 use crate::{
     id::Id,
     term::{
-        Term, TermApplication, TermConstant, TermLambda, TermLetIn, TermProduct, TermSort,
-        TermVariable,
+        CaseBranch, Term, TermApplication, TermCase, TermConstant, TermConstructor, TermFix,
+        TermLambda, TermLetIn, TermProduct, TermSort, TermVariable,
     },
 };
 
@@ -48,6 +48,9 @@ pub fn substitute(term: &Term, subst: &Substitution) -> Term {
         Term::Lambda(term_lambda) => substitute_lambda(term_lambda, subst),
         Term::Application(term_application) => substitute_application(term_application, subst),
         Term::LetIn(term_let_in) => substitute_let_in(term_let_in, subst),
+        Term::Constructor(term_constructor) => substitute_constructor(term_constructor, subst),
+        Term::Case(term_case) => substitute_case(term_case, subst),
+        Term::Fix(term_fix) => substitute_fix(term_fix, subst),
     }
 }
 
@@ -108,6 +111,59 @@ fn substitute_let_in(term_let_in: &TermLetIn, subst: &Substitution) -> Term {
         var: term_let_in.var,
         term: Rc::new(term),
         ty: Rc::new(ty),
+        body: Rc::new(body),
+    })
+}
+
+fn substitute_constructor(term_constructor: &TermConstructor, subst: &Substitution) -> Term {
+    let args: Vec<_> = term_constructor
+        .args
+        .iter()
+        .map(|arg| substitute(arg, subst))
+        .collect();
+    Term::Constructor(TermConstructor {
+        constructor_id: term_constructor.constructor_id,
+        inductive_id: term_constructor.inductive_id,
+        args,
+    })
+}
+
+fn substitute_case(term_case: &TermCase, subst: &Substitution) -> Term {
+    let scrutinee = substitute(&term_case.scrutinee, subst);
+    let return_type = substitute(&term_case.return_type, subst);
+    let branches: Vec<_> = term_case
+        .branches
+        .iter()
+        .map(|branch| substitute_case_branch(branch, subst))
+        .collect();
+    Term::Case(TermCase {
+        scrutinee: Rc::new(scrutinee),
+        return_type: Rc::new(return_type),
+        branches,
+    })
+}
+
+fn substitute_case_branch(branch: &CaseBranch, subst: &Substitution) -> CaseBranch {
+    // For simplicity, don't handle bound variable capture for now
+    // TODO: Properly handle bound variable capture
+    let body = substitute(&branch.body, subst);
+    CaseBranch {
+        constructor_id: branch.constructor_id,
+        bound_vars: branch.bound_vars.clone(),
+        body: Rc::new(body),
+    }
+}
+
+fn substitute_fix(term_fix: &TermFix, subst: &Substitution) -> Term {
+    let body_type = substitute(&term_fix.body_type, subst);
+    
+    // For simplicity, don't handle bound variable capture for now
+    // TODO: Properly handle bound variable capture
+    let body = substitute(&term_fix.body, subst);
+    
+    Term::Fix(TermFix {
+        fix_var: term_fix.fix_var,
+        body_type: Rc::new(body_type),
         body: Rc::new(body),
     })
 }

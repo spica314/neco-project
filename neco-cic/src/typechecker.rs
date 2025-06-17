@@ -5,8 +5,8 @@ use crate::{
     local_context::LocalContext,
     reduction::{normalize, whnf},
     term::{
-        Sort, Term, TermApplication, TermConstant, TermLambda, TermLetIn, TermProduct, TermSort,
-        TermVariable,
+        Sort, Term, TermApplication, TermCase, TermConstant, TermConstructor, TermFix,
+        TermLambda, TermLetIn, TermProduct, TermSort, TermVariable,
     },
 };
 
@@ -21,6 +21,11 @@ pub enum TypeError {
     InvalidApplication(String),
     InvalidProductSort(String),
     UniverseInconsistency(String),
+    UnknownInductive(String),
+    UnknownConstructor(String),
+    InvalidConstructor(String),
+    InvalidCase(String),
+    InvalidFix(String),
 }
 
 impl std::fmt::Display for TypeError {
@@ -36,6 +41,11 @@ impl std::fmt::Display for TypeError {
             TypeError::InvalidApplication(msg) => write!(f, "Invalid application: {}", msg),
             TypeError::InvalidProductSort(msg) => write!(f, "Invalid product sort: {}", msg),
             TypeError::UniverseInconsistency(msg) => write!(f, "Universe inconsistency: {}", msg),
+            TypeError::UnknownInductive(msg) => write!(f, "Unknown inductive type: {}", msg),
+            TypeError::UnknownConstructor(msg) => write!(f, "Unknown constructor: {}", msg),
+            TypeError::InvalidConstructor(msg) => write!(f, "Invalid constructor: {}", msg),
+            TypeError::InvalidCase(msg) => write!(f, "Invalid case expression: {}", msg),
+            TypeError::InvalidFix(msg) => write!(f, "Invalid fix expression: {}", msg),
         }
     }
 }
@@ -55,6 +65,9 @@ pub fn infer_type(ctx: &LocalContext, env: &GlobalEnvironment, term: &Term) -> T
         Term::Lambda(lambda) => infer_lambda_type(ctx, env, lambda),
         Term::Application(app) => infer_application_type(ctx, env, app),
         Term::LetIn(let_in) => infer_let_in_type(ctx, env, let_in),
+        Term::Constructor(constructor) => infer_constructor_type(ctx, env, constructor),
+        Term::Case(case) => infer_case_type(ctx, env, case),
+        Term::Fix(fix) => infer_fix_type(ctx, env, fix),
     }
 }
 
@@ -112,11 +125,18 @@ fn infer_variable_type(ctx: &LocalContext, var: &TermVariable) -> TypeResult {
 }
 
 /// Infers the type of a constant by looking it up in the global environment
-fn infer_constant_type(_env: &GlobalEnvironment, _const: &TermConstant) -> TypeResult {
-    // TODO: Implement when GlobalEnvironment is properly defined
-    Err(TypeError::UnboundConstant(format!(
-        "Global environment not yet implemented"
-    )))
+fn infer_constant_type(env: &GlobalEnvironment, const_: &TermConstant) -> TypeResult {
+    // First check if it's a regular constant
+    if let Some(const_def) = env.get_constant(const_.id) {
+        return Ok(const_def.ty.clone());
+    }
+    
+    // Then check if it's an inductive type
+    if let Some(inductive_def) = env.inductives.get_inductive(const_.id) {
+        return Ok(inductive_def.get_type());
+    }
+    
+    Err(TypeError::UnboundConstant(format!("{:?}", const_.id)))
 }
 
 /// Infers the type of a product (Π-type)
@@ -267,4 +287,150 @@ fn sort_rule(s1: &Sort, s2: &Sort) -> Result<Sort, TypeError> {
         (Sort::Set, Sort::Type(j)) => Ok(Sort::Type(*j)),
         (Sort::Prop, Sort::Type(j)) => Ok(Sort::Type(*j)),
     }
+}
+
+/// Infers the type of a constructor application
+/// Γ ⊢ C : A₁ → ... → Aₙ → I p₁...pₘ  Γ ⊢ t₁ : A₁  ...  Γ ⊢ tₙ : Aₙ
+/// ---------------------------------------------------------------------
+/// Γ ⊢ C t₁ ... tₙ : I p₁...pₘ
+fn infer_constructor_type(
+    _ctx: &LocalContext,
+    env: &GlobalEnvironment,
+    constructor: &TermConstructor,
+) -> TypeResult {
+    // Get the constructor definition
+    let constructor_def = env
+        .inductives
+        .get_constructor(constructor.constructor_id)
+        .ok_or_else(|| {
+            TypeError::UnknownConstructor(format!("{:?}", constructor.constructor_id))
+        })?;
+
+    // Get the inductive definition
+    let _inductive_def = env
+        .inductives
+        .get_inductive(constructor.inductive_id)
+        .ok_or_else(|| {
+            TypeError::UnknownInductive(format!("{:?}", constructor.inductive_id))
+        })?;
+
+    // Check that the number of arguments matches
+    if constructor.args.len() != constructor_def.arity {
+        return Err(TypeError::InvalidConstructor(format!(
+            "Constructor {:?} expects {} arguments, got {}",
+            constructor.constructor_id,
+            constructor_def.arity,
+            constructor.args.len()
+        )));
+    }
+
+    // For now, we'll return the type of the inductive type itself
+    // TODO: Properly handle constructor types with parameters
+    let inductive_type = Rc::new(Term::Constant(TermConstant {
+        id: constructor.inductive_id,
+    }));
+
+    // Type check each argument against the constructor's parameter types
+    // This is simplified - in a full implementation, we'd need to extract
+    // the argument types from the constructor's type and instantiate parameters
+    Ok(inductive_type)
+}
+
+/// Infers the type of a case expression
+/// This implements the dependent case analysis rule
+fn infer_case_type(
+    ctx: &LocalContext,
+    env: &GlobalEnvironment,
+    case: &TermCase,
+) -> TypeResult {
+    // Infer the type of the scrutinee
+    let scrutinee_type = infer_type(ctx, env, &case.scrutinee)?;
+    
+    // The scrutinee should have an inductive type
+    let inductive_id = match scrutinee_type.as_ref() {
+        Term::Constant(const_) => {
+            // Check that this is indeed an inductive type
+            if env.inductives.get_inductive(const_.id).is_some() {
+                const_.id
+            } else {
+                return Err(TypeError::InvalidCase(format!(
+                    "Case scrutinee type {:?} is not an inductive type",
+                    const_.id
+                )));
+            }
+        }
+        _ => {
+            return Err(TypeError::InvalidCase(format!(
+                "Case scrutinee must have inductive type, got {:?}",
+                scrutinee_type
+            )));
+        }
+    };
+
+    let inductive_def = env.inductives.get_inductive(inductive_id).unwrap();
+
+    // Check that we have the right number of branches
+    if case.branches.len() != inductive_def.constructor_count() {
+        return Err(TypeError::InvalidCase(format!(
+            "Case has {} branches but inductive type has {} constructors",
+            case.branches.len(),
+            inductive_def.constructor_count()
+        )));
+    }
+
+    // Type check each branch
+    for branch in &case.branches {
+        let constructor_def = inductive_def
+            .find_constructor(branch.constructor_id)
+            .ok_or_else(|| {
+                TypeError::UnknownConstructor(format!("{:?}", branch.constructor_id))
+            })?;
+
+        // Check that the number of bound variables matches the constructor arity
+        if branch.bound_vars.len() != constructor_def.arity {
+            return Err(TypeError::InvalidCase(format!(
+                "Branch for constructor {:?} binds {} variables but constructor has arity {}",
+                branch.constructor_id,
+                branch.bound_vars.len(),
+                constructor_def.arity
+            )));
+        }
+
+        // TODO: Add the bound variables to the context with their proper types
+        // and type check the branch body
+        let _branch_type = infer_type(ctx, env, &branch.body)?;
+        
+        // TODO: Check that all branches have compatible types with the return type
+    }
+
+    // For now, return the declared return type
+    // TODO: Apply proper substitutions
+    Ok(case.return_type.clone())
+}
+
+/// Infers the type of a fixpoint expression
+fn infer_fix_type(
+    ctx: &LocalContext,
+    env: &GlobalEnvironment,
+    fix: &TermFix,
+) -> TypeResult {
+    // Check that the body type is valid
+    let _body_type_type = infer_type(ctx, env, &fix.body_type)?;
+    
+    // Add the fixpoint variable to the context with its type
+    let extended_ctx = ctx.with(fix.fix_var, fix.body_type.clone());
+    
+    // Type check the body
+    let actual_body_type = infer_type(&extended_ctx, env, &fix.body)?;
+    
+    // Check that the body has the declared type
+    if !is_convertible(ctx, env, &actual_body_type, &fix.body_type) {
+        return Err(TypeError::TypeMismatch {
+            expected: format!("{:?}", fix.body_type),
+            found: format!("{:?}", actual_body_type),
+        });
+    }
+    
+    // The type of the fixpoint is the body type
+    Ok(fix.body_type.clone())
 }

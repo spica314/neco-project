@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 use crate::{
-    substitution::{Substitution, substitute},
-    term::{Term, TermApplication, TermLambda, TermLetIn, TermProduct},
+    substitution::{substitute, Substitution},
+    term::{Term, TermApplication, TermCase, TermConstructor, TermFix, TermLambda, TermLetIn, TermProduct},
 };
 
 /// Performs one step of reduction on a term.
@@ -16,6 +16,9 @@ pub fn reduce_step(term: &Term) -> Option<Term> {
         Term::Lambda(lambda) => reduce_lambda(lambda),
         Term::Application(app) => reduce_application(app),
         Term::LetIn(let_in) => reduce_let_in(let_in),
+        Term::Constructor(constructor) => reduce_constructor(constructor),
+        Term::Case(case) => reduce_case(case),
+        Term::Fix(fix) => reduce_fix(fix),
     }
 }
 
@@ -170,7 +173,115 @@ pub fn whnf(term: &Term) -> Term {
             subst.add(let_in.var, let_in.term.clone());
             substitute(&let_in.body, &subst)
         }
+        Term::Case(case) => {
+            // Try to reduce the case expression
+            if let Some(reduced_case) = reduce_case(case) {
+                whnf(&reduced_case)
+            } else {
+                term.clone()
+            }
+        }
+        Term::Fix(fix) => {
+            // Try to reduce the fix expression
+            if let Some(reduced_fix) = reduce_fix(fix) {
+                whnf(&reduced_fix)
+            } else {
+                term.clone()
+            }
+        }
         // Other terms are already in WHNF
         _ => term.clone(),
     }
+}
+
+/// Reduces a constructor application
+fn reduce_constructor(constructor: &TermConstructor) -> Option<Term> {
+    // Try to reduce the arguments
+    for (i, arg) in constructor.args.iter().enumerate() {
+        if let Some(reduced_arg) = reduce_step(arg) {
+            let mut new_args = constructor.args.clone();
+            new_args[i] = reduced_arg;
+            return Some(Term::Constructor(TermConstructor {
+                constructor_id: constructor.constructor_id,
+                inductive_id: constructor.inductive_id,
+                args: new_args,
+            }));
+        }
+    }
+    None
+}
+
+/// Reduces a case expression (ι-reduction)
+/// match (C a₁ ... aₙ) with | C x₁ ... xₙ => t | ... => t[x₁ := a₁, ..., xₙ := aₙ]
+fn reduce_case(case: &TermCase) -> Option<Term> {
+    // First reduce the scrutinee to WHNF
+    let scrutinee_whnf = whnf(&case.scrutinee);
+    
+    // Check if the scrutinee is a constructor application
+    if let Term::Constructor(constructor) = &scrutinee_whnf {
+        // Find the matching branch
+        for branch in &case.branches {
+            if branch.constructor_id == constructor.constructor_id {
+                // Check that the number of bound variables matches the constructor arguments
+                if branch.bound_vars.len() != constructor.args.len() {
+                    // This should not happen if type checking is correct
+                    return None;
+                }
+                
+                // Apply substitutions: substitute constructor arguments for bound variables
+                let mut subst = Substitution::new();
+                for (bound_var, arg) in branch.bound_vars.iter().zip(&constructor.args) {
+                    subst.add(*bound_var, Rc::new(arg.clone()));
+                }
+                
+                return Some(substitute(&branch.body, &subst));
+            }
+        }
+    }
+    
+    // If the scrutinee is not a constructor, try to reduce it
+    if let Some(reduced_scrutinee) = reduce_step(&case.scrutinee) {
+        return Some(Term::Case(TermCase {
+            scrutinee: Rc::new(reduced_scrutinee),
+            return_type: case.return_type.clone(),
+            branches: case.branches.clone(),
+        }));
+    }
+    
+    // Try to reduce the return type
+    if let Some(reduced_return_type) = reduce_step(&case.return_type) {
+        return Some(Term::Case(TermCase {
+            scrutinee: case.scrutinee.clone(),
+            return_type: Rc::new(reduced_return_type),
+            branches: case.branches.clone(),
+        }));
+    }
+    
+    // Try to reduce branches
+    for (i, branch) in case.branches.iter().enumerate() {
+        if let Some(reduced_body) = reduce_step(&branch.body) {
+            let mut new_branches = case.branches.clone();
+            new_branches[i] = crate::term::CaseBranch {
+                constructor_id: branch.constructor_id,
+                bound_vars: branch.bound_vars.clone(),
+                body: Rc::new(reduced_body),
+            };
+            return Some(Term::Case(TermCase {
+                scrutinee: case.scrutinee.clone(),
+                return_type: case.return_type.clone(),
+                branches: new_branches,
+            }));
+        }
+    }
+    
+    None
+}
+
+/// Reduces a fixpoint expression (unfolding)
+/// fix f : T := body → body[f := fix f : T := body]
+fn reduce_fix(fix: &TermFix) -> Option<Term> {
+    // Unfold the fixpoint: substitute the entire fix expression for the fix variable
+    let mut subst = Substitution::new();
+    subst.add(fix.fix_var, Rc::new(Term::Fix(fix.clone())));
+    Some(substitute(&fix.body, &subst))
 }

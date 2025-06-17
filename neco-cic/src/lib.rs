@@ -1,5 +1,6 @@
 pub mod global_environment;
 pub mod id;
+pub mod inductive;
 pub mod local_context;
 pub mod reduction;
 pub mod substitution;
@@ -10,3 +11,5 @@ pub mod typechecker;
 mod reduction_test;
 #[cfg(test)]
 mod typechecker_test;
+#[cfg(test)]
+mod inductive_test;

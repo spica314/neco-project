@@ -26,7 +26,7 @@ impl LocalContext {
     /// Returns an error if the variable is already bound
     pub fn extend(&mut self, var: Id, ty: Rc<Term>) -> Result<(), String> {
         if self.bindings.contains_key(&var) {
-            return Err(format!("Variable {:?} is already bound in context", var));
+            return Err(format!("Variable {var:?} is already bound in context"));
         }
         self.bindings.insert(var, ty);
         self.order.push(var);

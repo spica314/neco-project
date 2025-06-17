@@ -69,14 +69,6 @@ pub struct MatchBranch {
     pub body: Rc<Term>,
 }
 
-/// Fix point for recursive definitions
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TermFix {
-    pub fix_var: Id,
-    pub body_type: Rc<Term>,
-    pub body: Rc<Term>,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Term {
     Sort(TermSort),
@@ -87,5 +79,4 @@ pub enum Term {
     Application(TermApplication),
     LetIn(TermLetIn),
     Match(TermMatch),
-    Fix(TermFix),
 }

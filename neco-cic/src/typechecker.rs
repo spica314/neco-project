@@ -5,8 +5,8 @@ use crate::{
     local_context::LocalContext,
     reduction::{normalize, whnf},
     term::{
-        Sort, Term, TermApplication, TermConstant, TermFix, TermLambda, TermLetIn, TermMatch,
-        TermProduct, TermSort, TermVariable,
+        Sort, Term, TermApplication, TermConstant, TermLambda, TermLetIn, TermMatch, TermProduct,
+        TermSort, TermVariable,
     },
 };
 
@@ -25,27 +25,25 @@ pub enum TypeError {
     UnknownConstructor(String),
     InvalidConstructor(String),
     InvalidCase(String),
-    InvalidFix(String),
 }
 
 impl std::fmt::Display for TypeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TypeError::UnboundVariable(msg) => write!(f, "Unbound variable: {}", msg),
-            TypeError::UnboundConstant(msg) => write!(f, "Unbound constant: {}", msg),
-            TypeError::NotAFunction(msg) => write!(f, "Not a function: {}", msg),
+            TypeError::UnboundVariable(msg) => write!(f, "Unbound variable: {msg}"),
+            TypeError::UnboundConstant(msg) => write!(f, "Unbound constant: {msg}"),
+            TypeError::NotAFunction(msg) => write!(f, "Not a function: {msg}"),
             TypeError::TypeMismatch { expected, found } => {
-                write!(f, "Type mismatch: expected {}, found {}", expected, found)
+                write!(f, "Type mismatch: expected {expected}, found {found}")
             }
-            TypeError::NotAType(msg) => write!(f, "Not a type: {}", msg),
-            TypeError::InvalidApplication(msg) => write!(f, "Invalid application: {}", msg),
-            TypeError::InvalidProductSort(msg) => write!(f, "Invalid product sort: {}", msg),
-            TypeError::UniverseInconsistency(msg) => write!(f, "Universe inconsistency: {}", msg),
-            TypeError::UnknownInductive(msg) => write!(f, "Unknown inductive type: {}", msg),
-            TypeError::UnknownConstructor(msg) => write!(f, "Unknown constructor: {}", msg),
-            TypeError::InvalidConstructor(msg) => write!(f, "Invalid constructor: {}", msg),
-            TypeError::InvalidCase(msg) => write!(f, "Invalid case expression: {}", msg),
-            TypeError::InvalidFix(msg) => write!(f, "Invalid fix expression: {}", msg),
+            TypeError::NotAType(msg) => write!(f, "Not a type: {msg}"),
+            TypeError::InvalidApplication(msg) => write!(f, "Invalid application: {msg}"),
+            TypeError::InvalidProductSort(msg) => write!(f, "Invalid product sort: {msg}"),
+            TypeError::UniverseInconsistency(msg) => write!(f, "Universe inconsistency: {msg}"),
+            TypeError::UnknownInductive(msg) => write!(f, "Unknown inductive type: {msg}"),
+            TypeError::UnknownConstructor(msg) => write!(f, "Unknown constructor: {msg}"),
+            TypeError::InvalidConstructor(msg) => write!(f, "Invalid constructor: {msg}"),
+            TypeError::InvalidCase(msg) => write!(f, "Invalid case expression: {msg}"),
         }
     }
 }
@@ -66,7 +64,6 @@ pub fn infer_type(ctx: &LocalContext, env: &GlobalEnvironment, term: &Term) -> T
         Term::Application(app) => infer_application_type(ctx, env, app),
         Term::LetIn(let_in) => infer_let_in_type(ctx, env, let_in),
         Term::Match(case) => infer_case_type(ctx, env, case),
-        Term::Fix(fix) => infer_fix_type(ctx, env, fix),
     }
 }
 
@@ -80,8 +77,8 @@ pub fn check_type(
     let inferred_type = infer_type(ctx, env, term)?;
     if !is_convertible(ctx, env, &inferred_type, expected_type) {
         return Err(TypeError::TypeMismatch {
-            expected: format!("{:?}", expected_type),
-            found: format!("{:?}", inferred_type),
+            expected: format!("{expected_type:?}"),
+            found: format!("{inferred_type:?}"),
         });
     }
     Ok(())
@@ -226,8 +223,7 @@ fn infer_application_type(
             }
             _ => {
                 return Err(TypeError::NotAFunction(format!(
-                    "Expected function type, got {:?}",
-                    fun_whnf
+                    "Expected function type, got {fun_whnf:?}"
                 )));
             }
         }
@@ -267,7 +263,7 @@ fn ensure_sort(term: &Term) -> Result<Sort, TypeError> {
     let whnf_term = whnf(term);
     match &whnf_term {
         Term::Sort(sort) => Ok(sort.sort.clone()),
-        _ => Err(TypeError::NotAType(format!("{:?}", term))),
+        _ => Err(TypeError::NotAType(format!("{term:?}"))),
     }
 }
 
@@ -314,8 +310,7 @@ fn infer_case_type(ctx: &LocalContext, env: &GlobalEnvironment, case: &TermMatch
         }
         _ => {
             return Err(TypeError::InvalidCase(format!(
-                "Case scrutinee must have inductive type, got {:?}",
-                scrutinee_type
+                "Case scrutinee must have inductive type, got {scrutinee_type:?}"
             )));
         }
     };
@@ -357,29 +352,6 @@ fn infer_case_type(ctx: &LocalContext, env: &GlobalEnvironment, case: &TermMatch
     // For now, return the declared return type
     // TODO: Apply proper substitutions
     Ok(case.return_type.clone())
-}
-
-/// Infers the type of a fixpoint expression
-fn infer_fix_type(ctx: &LocalContext, env: &GlobalEnvironment, fix: &TermFix) -> TypeResult {
-    // Check that the body type is valid
-    let _body_type_type = infer_type(ctx, env, &fix.body_type)?;
-
-    // Add the fixpoint variable to the context with its type
-    let extended_ctx = ctx.with(fix.fix_var, fix.body_type.clone());
-
-    // Type check the body
-    let actual_body_type = infer_type(&extended_ctx, env, &fix.body)?;
-
-    // Check that the body has the declared type
-    if !is_convertible(ctx, env, &actual_body_type, &fix.body_type) {
-        return Err(TypeError::TypeMismatch {
-            expected: format!("{:?}", fix.body_type),
-            found: format!("{:?}", actual_body_type),
-        });
-    }
-
-    // The type of the fixpoint is the body type
-    Ok(fix.body_type.clone())
 }
 
 #[cfg(test)]

@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     substitution::{Substitution, substitute},
-    term::{Term, TermApplication, TermFix, TermLambda, TermLetIn, TermMatch, TermProduct},
+    term::{Term, TermApplication, TermLambda, TermLetIn, TermMatch, TermProduct},
 };
 
 /// Performs one step of reduction on a term.
@@ -17,7 +17,6 @@ pub fn reduce_step(term: &Term) -> Option<Term> {
         Term::Application(app) => reduce_application(app),
         Term::LetIn(let_in) => reduce_let_in(let_in),
         Term::Match(case) => reduce_case(case),
-        Term::Fix(fix) => reduce_fix(fix),
     }
 }
 
@@ -76,22 +75,22 @@ fn reduce_lambda(lambda: &TermLambda) -> Option<Term> {
 
 fn reduce_application(app: &TermApplication) -> Option<Term> {
     // β-reduction: (λx. t) u → t[x := u]
-    if let Term::Lambda(lambda) = app.f.as_ref() {
-        if !app.args.is_empty() {
-            // Apply the first argument
-            let mut subst = Substitution::new();
-            subst.add(lambda.var, Rc::new(app.args[0].clone()));
-            let reduced_body = substitute(&lambda.target, &subst);
+    if let Term::Lambda(lambda) = app.f.as_ref()
+        && !app.args.is_empty()
+    {
+        // Apply the first argument
+        let mut subst = Substitution::new();
+        subst.add(lambda.var, Rc::new(app.args[0].clone()));
+        let reduced_body = substitute(&lambda.target, &subst);
 
-            // If there are more arguments, create a new application
-            if app.args.len() > 1 {
-                return Some(Term::Application(TermApplication {
-                    f: Rc::new(reduced_body),
-                    args: app.args[1..].to_vec(),
-                }));
-            } else {
-                return Some(reduced_body);
-            }
+        // If there are more arguments, create a new application
+        if app.args.len() > 1 {
+            return Some(Term::Application(TermApplication {
+                f: Rc::new(reduced_body),
+                args: app.args[1..].to_vec(),
+            }));
+        } else {
+            return Some(reduced_body);
         }
     }
 
@@ -176,14 +175,6 @@ pub fn whnf(term: &Term) -> Term {
             // Try to reduce the case expression
             if let Some(reduced_case) = reduce_case(case) {
                 whnf(&reduced_case)
-            } else {
-                term.clone()
-            }
-        }
-        Term::Fix(fix) => {
-            // Try to reduce the fix expression
-            if let Some(reduced_fix) = reduce_fix(fix) {
-                whnf(&reduced_fix)
             } else {
                 term.clone()
             }
@@ -275,15 +266,6 @@ fn reduce_case(case: &TermMatch) -> Option<Term> {
     }
 
     None
-}
-
-/// Reduces a fixpoint expression (unfolding)
-/// fix f : T := body → body[f := fix f : T := body]
-fn reduce_fix(fix: &TermFix) -> Option<Term> {
-    // Unfold the fixpoint: substitute the entire fix expression for the fix variable
-    let mut subst = Substitution::new();
-    subst.add(fix.fix_var, Rc::new(Term::Fix(fix.clone())));
-    Some(substitute(&fix.body, &subst))
 }
 
 #[cfg(test)]

@@ -3,8 +3,8 @@ use std::{collections::HashMap, rc::Rc};
 use crate::{
     id::Id,
     term::{
-        MatchBranch, Term, TermApplication, TermConstant, TermFix, TermLambda, TermLetIn,
-        TermMatch, TermProduct, TermSort, TermVariable,
+        MatchBranch, Term, TermApplication, TermConstant, TermLambda, TermLetIn, TermMatch,
+        TermProduct, TermSort, TermVariable,
     },
 };
 
@@ -15,6 +15,12 @@ use crate::{
 
 pub struct Substitution {
     subst: HashMap<Id, Rc<Term>>,
+}
+
+impl Default for Substitution {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Substitution {
@@ -43,7 +49,6 @@ pub fn substitute(term: &Term, subst: &Substitution) -> Term {
         Term::Application(term_application) => substitute_application(term_application, subst),
         Term::LetIn(term_let_in) => substitute_let_in(term_let_in, subst),
         Term::Match(term_case) => substitute_case(term_case, subst),
-        Term::Fix(term_fix) => substitute_fix(term_fix, subst),
     }
 }
 
@@ -132,18 +137,4 @@ fn substitute_case_branch(branch: &MatchBranch, subst: &Substitution) -> MatchBr
         bound_vars: branch.bound_vars.clone(),
         body: Rc::new(body),
     }
-}
-
-fn substitute_fix(term_fix: &TermFix, subst: &Substitution) -> Term {
-    let body_type = substitute(&term_fix.body_type, subst);
-
-    // For simplicity, don't handle bound variable capture for now
-    // TODO: Properly handle bound variable capture
-    let body = substitute(&term_fix.body, subst);
-
-    Term::Fix(TermFix {
-        fix_var: term_fix.fix_var,
-        body_type: Rc::new(body_type),
-        body: Rc::new(body),
-    })
 }

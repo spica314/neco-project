@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
-    substitution::{substitute, Substitution},
+    substitution::{Substitution, substitute},
     term::{Term, TermApplication, TermLambda, TermLetIn, TermProduct},
 };
 

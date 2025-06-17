@@ -6,10 +6,3 @@ pub mod reduction;
 pub mod substitution;
 pub mod term;
 pub mod typechecker;
-
-#[cfg(test)]
-mod inductive_test;
-#[cfg(test)]
-mod reduction_test;
-#[cfg(test)]
-mod typechecker_test;

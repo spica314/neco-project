@@ -23,6 +23,25 @@ Each test function should test exactly one specific behavior or property. This m
 - Provide clearer error messages when they fail
 - Allow for better test organization and documentation
 
+**Rule: Place tests at the end of the target file**
+
+Unit tests should be placed at the end of the file they are testing, not in separate `*_test.rs` files. This keeps related code together and makes it easier to find and maintain tests.
+
+**Structure:**
+```rust
+// Implementation code...
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_specific_behavior() {
+        // Test implementation...
+    }
+}
+```
+
 **Good Example:**
 ```rust
 #[test]

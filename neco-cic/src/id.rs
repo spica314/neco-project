@@ -1,6 +1,15 @@
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Id(usize);
 
+impl Id {
+    #[cfg(test)]
+    pub fn new() -> Id {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static COUNTER: AtomicUsize = AtomicUsize::new(0);
+        Id(COUNTER.fetch_add(1, Ordering::SeqCst))
+    }
+}
+
 pub struct IdGenerator {
     next_id: usize,
 }

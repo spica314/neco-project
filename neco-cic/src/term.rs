@@ -61,18 +61,18 @@ pub struct TermConstructor {
     pub args: Vec<Term>,
 }
 
-/// Case analysis (pattern matching) on inductive types
+/// Match analysis (pattern matching) on inductive types
 /// Example: match n with | O => ... | S p => ...
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TermCase {
+pub struct TermMatch {
     pub scrutinee: Rc<Term>,
     pub return_type: Rc<Term>,
-    pub branches: Vec<CaseBranch>,
+    pub branches: Vec<MatchBranch>,
 }
 
-/// A branch in a case expression
+/// A branch in a match expression
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CaseBranch {
+pub struct MatchBranch {
     pub constructor_id: Id,
     pub bound_vars: Vec<Id>,
     pub body: Rc<Term>,
@@ -96,6 +96,6 @@ pub enum Term {
     Application(TermApplication),
     LetIn(TermLetIn),
     Constructor(TermConstructor),
-    Case(TermCase),
+    Match(TermMatch),
     Fix(TermFix),
 }

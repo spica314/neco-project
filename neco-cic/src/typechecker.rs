@@ -5,7 +5,7 @@ use crate::{
     local_context::LocalContext,
     reduction::{normalize, whnf},
     term::{
-        Sort, Term, TermApplication, TermCase, TermConstant, TermConstructor, TermFix,
+        Sort, Term, TermApplication, TermMatch, TermConstant, TermConstructor, TermFix,
         TermLambda, TermLetIn, TermProduct, TermSort, TermVariable,
     },
 };
@@ -66,7 +66,7 @@ pub fn infer_type(ctx: &LocalContext, env: &GlobalEnvironment, term: &Term) -> T
         Term::Application(app) => infer_application_type(ctx, env, app),
         Term::LetIn(let_in) => infer_let_in_type(ctx, env, let_in),
         Term::Constructor(constructor) => infer_constructor_type(ctx, env, constructor),
-        Term::Case(case) => infer_case_type(ctx, env, case),
+        Term::Match(case) => infer_case_type(ctx, env, case),
         Term::Fix(fix) => infer_fix_type(ctx, env, fix),
     }
 }
@@ -341,7 +341,7 @@ fn infer_constructor_type(
 fn infer_case_type(
     ctx: &LocalContext,
     env: &GlobalEnvironment,
-    case: &TermCase,
+    case: &TermMatch,
 ) -> TypeResult {
     // Infer the type of the scrutinee
     let scrutinee_type = infer_type(ctx, env, &case.scrutinee)?;

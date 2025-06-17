@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     substitution::{substitute, Substitution},
-    term::{Term, TermApplication, TermCase, TermConstructor, TermFix, TermLambda, TermLetIn, TermProduct},
+    term::{Term, TermApplication, TermMatch, TermConstructor, TermFix, TermLambda, TermLetIn, TermProduct},
 };
 
 /// Performs one step of reduction on a term.
@@ -17,7 +17,7 @@ pub fn reduce_step(term: &Term) -> Option<Term> {
         Term::Application(app) => reduce_application(app),
         Term::LetIn(let_in) => reduce_let_in(let_in),
         Term::Constructor(constructor) => reduce_constructor(constructor),
-        Term::Case(case) => reduce_case(case),
+        Term::Match(case) => reduce_case(case),
         Term::Fix(fix) => reduce_fix(fix),
     }
 }
@@ -173,7 +173,7 @@ pub fn whnf(term: &Term) -> Term {
             subst.add(let_in.var, let_in.term.clone());
             substitute(&let_in.body, &subst)
         }
-        Term::Case(case) => {
+        Term::Match(case) => {
             // Try to reduce the case expression
             if let Some(reduced_case) = reduce_case(case) {
                 whnf(&reduced_case)
@@ -213,7 +213,7 @@ fn reduce_constructor(constructor: &TermConstructor) -> Option<Term> {
 
 /// Reduces a case expression (ι-reduction)
 /// match (C a₁ ... aₙ) with | C x₁ ... xₙ => t | ... => t[x₁ := a₁, ..., xₙ := aₙ]
-fn reduce_case(case: &TermCase) -> Option<Term> {
+fn reduce_case(case: &TermMatch) -> Option<Term> {
     // First reduce the scrutinee to WHNF
     let scrutinee_whnf = whnf(&case.scrutinee);
     
@@ -241,7 +241,7 @@ fn reduce_case(case: &TermCase) -> Option<Term> {
     
     // If the scrutinee is not a constructor, try to reduce it
     if let Some(reduced_scrutinee) = reduce_step(&case.scrutinee) {
-        return Some(Term::Case(TermCase {
+        return Some(Term::Match(TermMatch {
             scrutinee: Rc::new(reduced_scrutinee),
             return_type: case.return_type.clone(),
             branches: case.branches.clone(),
@@ -250,7 +250,7 @@ fn reduce_case(case: &TermCase) -> Option<Term> {
     
     // Try to reduce the return type
     if let Some(reduced_return_type) = reduce_step(&case.return_type) {
-        return Some(Term::Case(TermCase {
+        return Some(Term::Match(TermMatch {
             scrutinee: case.scrutinee.clone(),
             return_type: Rc::new(reduced_return_type),
             branches: case.branches.clone(),
@@ -261,12 +261,12 @@ fn reduce_case(case: &TermCase) -> Option<Term> {
     for (i, branch) in case.branches.iter().enumerate() {
         if let Some(reduced_body) = reduce_step(&branch.body) {
             let mut new_branches = case.branches.clone();
-            new_branches[i] = crate::term::CaseBranch {
+            new_branches[i] = crate::term::MatchBranch {
                 constructor_id: branch.constructor_id,
                 bound_vars: branch.bound_vars.clone(),
                 body: Rc::new(reduced_body),
             };
-            return Some(Term::Case(TermCase {
+            return Some(Term::Match(TermMatch {
                 scrutinee: case.scrutinee.clone(),
                 return_type: case.return_type.clone(),
                 branches: new_branches,

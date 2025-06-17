@@ -8,7 +8,7 @@ mod tests {
         inductive::{ConstructorDefinition, InductiveDefinition, InductiveEnvironment, Parameter},
         local_context::LocalContext,
         term::{
-            Sort, Term, TermCase, TermConstant, TermConstructor, TermSort, TermVariable, CaseBranch,
+            Sort, Term, TermMatch, TermConstant, TermConstructor, TermSort, TermVariable, MatchBranch,
         },
         typechecker::infer_type,
         reduction::reduce_step,
@@ -161,16 +161,16 @@ mod tests {
             args: vec![],
         });
 
-        let case_expr = Term::Case(TermCase {
+        let case_expr = Term::Match(TermMatch {
             scrutinee: Rc::new(true_constr.clone()),
             return_type: Rc::new(Term::Constant(TermConstant { id: bool_id })),
             branches: vec![
-                CaseBranch {
+                MatchBranch {
                     constructor_id: true_id,
                     bound_vars: vec![],
                     body: Rc::new(true_constr.clone()),
                 },
-                CaseBranch {
+                MatchBranch {
                     constructor_id: false_id,
                     bound_vars: vec![],
                     body: Rc::new(false_constr),
@@ -205,16 +205,16 @@ mod tests {
             args: vec![],
         });
 
-        let case_expr = Term::Case(TermCase {
+        let case_expr = Term::Match(TermMatch {
             scrutinee: Rc::new(false_constr.clone()),
             return_type: Rc::new(Term::Constant(TermConstant { id: bool_id })),
             branches: vec![
-                CaseBranch {
+                MatchBranch {
                     constructor_id: true_id,
                     bound_vars: vec![],
                     body: Rc::new(true_constr),
                 },
-                CaseBranch {
+                MatchBranch {
                     constructor_id: false_id,
                     bound_vars: vec![],
                     body: Rc::new(false_constr.clone()),
@@ -241,16 +241,16 @@ mod tests {
             args: vec![],
         });
 
-        let case_expr = Term::Case(TermCase {
+        let case_expr = Term::Match(TermMatch {
             scrutinee: Rc::new(zero.clone()),
             return_type: Rc::new(Term::Constant(TermConstant { id: nat_id })),
             branches: vec![
-                CaseBranch {
+                MatchBranch {
                     constructor_id: zero_id,
                     bound_vars: vec![],
                     body: Rc::new(zero.clone()),
                 },
-                CaseBranch {
+                MatchBranch {
                     constructor_id: succ_id,
                     bound_vars: vec![Id::new()],
                     body: Rc::new(zero.clone()),
@@ -291,16 +291,16 @@ mod tests {
             args: vec![one.clone()],
         });
 
-        let case_expr = Term::Case(TermCase {
+        let case_expr = Term::Match(TermMatch {
             scrutinee: Rc::new(two),
             return_type: Rc::new(Term::Constant(TermConstant { id: nat_id })),
             branches: vec![
-                CaseBranch {
+                MatchBranch {
                     constructor_id: zero_id,
                     bound_vars: vec![],
                     body: Rc::new(zero),
                 },
-                CaseBranch {
+                MatchBranch {
                     constructor_id: succ_id,
                     bound_vars: vec![n],
                     body: Rc::new(Term::Variable(TermVariable { id: n })),

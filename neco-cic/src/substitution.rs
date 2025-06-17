@@ -8,6 +8,11 @@ use crate::{
     },
 };
 
+// Note: Variable capture is not a concern in this implementation because each binding
+// (in Lambda, Product, and LetIn) is assigned a unique ID when constructed.
+// This means that bound variables will always have different IDs from any variables
+// being substituted, preventing capture issues.
+
 pub struct Substitution {
     subst: HashMap<Id, Rc<Term>>,
 }

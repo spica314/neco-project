@@ -11,11 +11,10 @@ mod tests {
     };
 
     #[test]
-    fn test_sort_typing() {
+    fn test_set_has_type_type0() {
         let ctx = LocalContext::new();
         let env = GlobalEnvironment::new();
 
-        // Test: Set : Type(0)
         let set = Term::Sort(TermSort { sort: Sort::Set });
         let ty = infer_type(&ctx, &env, &set).unwrap();
         assert_eq!(
@@ -24,8 +23,13 @@ mod tests {
                 sort: Sort::Type(0)
             })
         );
+    }
 
-        // Test: Type(0) : Type(1)
+    #[test]
+    fn test_type0_has_type_type1() {
+        let ctx = LocalContext::new();
+        let env = GlobalEnvironment::new();
+
         let type0 = Term::Sort(TermSort {
             sort: Sort::Type(0),
         });
@@ -39,32 +43,53 @@ mod tests {
     }
 
     #[test]
-    fn test_variable_typing() {
-        let mut ctx = LocalContext::new();
+    fn test_prop_has_type_type0() {
+        let ctx = LocalContext::new();
+        let env = GlobalEnvironment::new();
+
+        let prop = Term::Sort(TermSort { sort: Sort::Prop });
+        let ty = infer_type(&ctx, &env, &prop).unwrap();
+        assert_eq!(
+            *ty,
+            Term::Sort(TermSort {
+                sort: Sort::Type(0)
+            })
+        );
+    }
+
+    #[test]
+    fn test_unbound_variable_fails() {
+        let ctx = LocalContext::new();
         let env = GlobalEnvironment::new();
         let x = Id::new();
 
-        // Test: unbound variable should fail
         let var = Term::Variable(TermVariable { id: x });
         assert!(matches!(
             infer_type(&ctx, &env, &var),
             Err(TypeError::UnboundVariable(_))
         ));
+    }
 
-        // Test: bound variable should succeed
+    #[test]
+    fn test_bound_variable_succeeds() {
+        let mut ctx = LocalContext::new();
+        let env = GlobalEnvironment::new();
+        let x = Id::new();
+
         let set = Rc::new(Term::Sort(TermSort { sort: Sort::Set }));
         ctx.extend(x, set.clone()).unwrap();
+        
+        let var = Term::Variable(TermVariable { id: x });
         let ty = infer_type(&ctx, &env, &var).unwrap();
         assert_eq!(ty, set);
     }
 
     #[test]
-    fn test_lambda_typing() {
+    fn test_lambda_identity_function_typing() {
         let ctx = LocalContext::new();
         let env = GlobalEnvironment::new();
         let x = Id::new();
 
-        // Test: λx:Set. x : Set → Set
         let set = Term::Sort(TermSort { sort: Sort::Set });
         let lambda = Term::Lambda(TermLambda {
             var: x,
@@ -105,18 +130,16 @@ mod tests {
             args: vec![Term::Variable(TermVariable { id: y })],
         });
 
-        // Test: (λx:Set. x) y : Set
         let ty = infer_type(&ctx_with_y, &env, &app).unwrap();
         assert_eq!(*ty, set);
     }
 
     #[test]
-    fn test_product_typing() {
+    fn test_simple_product_typing() {
         let ctx = LocalContext::new();
         let env = GlobalEnvironment::new();
         let x = Id::new();
 
-        // Test: Πx:Set. Set : Type(0)
         let set = Term::Sort(TermSort { sort: Sort::Set });
         let product = Term::Product(TermProduct {
             var: x,
@@ -134,7 +157,7 @@ mod tests {
     }
 
     #[test]
-    fn test_type_checking() {
+    fn test_type_checking_succeeds_with_correct_type() {
         let ctx = LocalContext::new();
         let env = GlobalEnvironment::new();
         let x = Id::new();
@@ -154,21 +177,35 @@ mod tests {
             target: Rc::new(set.clone()),
         });
 
-        // Should succeed
         assert!(check_type(&ctx, &env, &id_fun, &expected_type).is_ok());
+    }
+
+    #[test]
+    fn test_type_checking_fails_with_wrong_type() {
+        let ctx = LocalContext::new();
+        let env = GlobalEnvironment::new();
+        let x = Id::new();
+
+        // Create identity function: λx:Set. x
+        let set = Term::Sort(TermSort { sort: Sort::Set });
+        let id_fun = Term::Lambda(TermLambda {
+            var: x,
+            source_ty: Rc::new(set.clone()),
+            target: Rc::new(Term::Variable(TermVariable { id: x })),
+        });
 
         // Wrong type should fail
         assert!(check_type(&ctx, &env, &id_fun, &set).is_err());
     }
 
     #[test]
-    fn test_dependent_product() {
+    fn test_dependent_product_type_inference() {
         let ctx = LocalContext::new();
         let env = GlobalEnvironment::new();
         let a = Id::new();
         let x = Id::new();
 
-        // Test: Πa:Type(0). Πx:a. a : Type(0)
+        // Test: Πa:Type(0). Πx:a. a : Type(1)
         let type0 = Term::Sort(TermSort {
             sort: Sort::Type(0),
         });

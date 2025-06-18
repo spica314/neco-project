@@ -3,7 +3,7 @@ use std::{collections::HashMap, rc::Rc};
 use crate::{
     id::Id,
     term::{
-        MatchBranch, Term, TermApplication, TermConstant, TermLambda, TermLetIn, TermMatch,
+        Term, TermApplication, TermConstant, TermLambda, TermLetIn, TermMatch, TermMatchBranch,
         TermProduct, TermSort, TermVariable,
     },
 };
@@ -128,11 +128,11 @@ fn substitute_case(term_case: &TermMatch, subst: &Substitution) -> Term {
     })
 }
 
-fn substitute_case_branch(branch: &MatchBranch, subst: &Substitution) -> MatchBranch {
+fn substitute_case_branch(branch: &TermMatchBranch, subst: &Substitution) -> TermMatchBranch {
     // For simplicity, don't handle bound variable capture for now
     // TODO: Properly handle bound variable capture
     let body = substitute(&branch.body, subst);
-    MatchBranch {
+    TermMatchBranch {
         constructor_id: branch.constructor_id,
         bound_vars: branch.bound_vars.clone(),
         body: Rc::new(body),

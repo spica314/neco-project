@@ -252,7 +252,7 @@ fn reduce_case(case: &TermMatch) -> Option<Term> {
     for (i, branch) in case.branches.iter().enumerate() {
         if let Some(reduced_body) = reduce_step(&branch.body) {
             let mut new_branches = case.branches.clone();
-            new_branches[i] = crate::term::MatchBranch {
+            new_branches[i] = crate::term::TermMatchBranch {
                 constructor_id: branch.constructor_id,
                 bound_vars: branch.bound_vars.clone(),
                 body: Rc::new(reduced_body),

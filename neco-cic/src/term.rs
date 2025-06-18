@@ -58,12 +58,12 @@ pub struct TermLetIn {
 pub struct TermMatch {
     pub scrutinee: Rc<Term>,
     pub return_type: Rc<Term>,
-    pub branches: Vec<MatchBranch>,
+    pub branches: Vec<TermMatchBranch>,
 }
 
 /// A branch in a match expression
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MatchBranch {
+pub struct TermMatchBranch {
     pub constructor_id: Id,
     pub bound_vars: Vec<Id>,
     pub body: Rc<Term>,

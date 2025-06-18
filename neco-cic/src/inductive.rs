@@ -220,7 +220,7 @@ mod tests {
         id::Id,
         local_context::LocalContext,
         reduction::reduce_step,
-        term::{MatchBranch, Sort, Term, TermConstant, TermMatch, TermSort, TermVariable},
+        term::{Sort, Term, TermConstant, TermMatch, TermMatchBranch, TermSort, TermVariable},
         typechecker::infer_type,
     };
 
@@ -344,12 +344,12 @@ mod tests {
             scrutinee: Rc::new(true_constr.clone()),
             return_type: Rc::new(Term::Constant(TermConstant { id: bool_id })),
             branches: vec![
-                MatchBranch {
+                TermMatchBranch {
                     constructor_id: true_id,
                     bound_vars: vec![],
                     body: Rc::new(true_constr.clone()),
                 },
-                MatchBranch {
+                TermMatchBranch {
                     constructor_id: false_id,
                     bound_vars: vec![],
                     body: Rc::new(false_constr),
@@ -377,12 +377,12 @@ mod tests {
             scrutinee: Rc::new(false_constr.clone()),
             return_type: Rc::new(Term::Constant(TermConstant { id: bool_id })),
             branches: vec![
-                MatchBranch {
+                TermMatchBranch {
                     constructor_id: true_id,
                     bound_vars: vec![],
                     body: Rc::new(true_constr),
                 },
-                MatchBranch {
+                TermMatchBranch {
                     constructor_id: false_id,
                     bound_vars: vec![],
                     body: Rc::new(false_constr.clone()),
@@ -409,12 +409,12 @@ mod tests {
             scrutinee: Rc::new(zero.clone()),
             return_type: Rc::new(Term::Constant(TermConstant { id: nat_id })),
             branches: vec![
-                MatchBranch {
+                TermMatchBranch {
                     constructor_id: zero_id,
                     bound_vars: vec![],
                     body: Rc::new(zero.clone()),
                 },
-                MatchBranch {
+                TermMatchBranch {
                     constructor_id: succ_id,
                     bound_vars: vec![Id::new()],
                     body: Rc::new(zero.clone()),
@@ -453,12 +453,12 @@ mod tests {
             scrutinee: Rc::new(two),
             return_type: Rc::new(Term::Constant(TermConstant { id: nat_id })),
             branches: vec![
-                MatchBranch {
+                TermMatchBranch {
                     constructor_id: zero_id,
                     bound_vars: vec![],
                     body: Rc::new(zero),
                 },
-                MatchBranch {
+                TermMatchBranch {
                     constructor_id: succ_id,
                     bound_vars: vec![n],
                     body: Rc::new(Term::Variable(TermVariable { id: n })),
@@ -761,7 +761,7 @@ mod tests {
                     })),
                     branches: vec![
                         // Case n = O: need proof of plus O m = plus m O
-                        MatchBranch {
+                        TermMatchBranch {
                             constructor_id: zero_id,
                             bound_vars: vec![],
                             body: Rc::new(Term::Application(crate::term::TermApplication {
@@ -773,7 +773,7 @@ mod tests {
                             })),
                         },
                         // Case n = S p: would need inductive hypothesis
-                        MatchBranch {
+                        TermMatchBranch {
                             constructor_id: succ_id,
                             bound_vars: vec![Id::new()], // p variable
                             body: Rc::new(Term::Application(crate::term::TermApplication {

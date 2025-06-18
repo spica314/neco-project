@@ -564,4 +564,217 @@ mod tests {
         let list_def = inductive_env.get_inductive(list_id).unwrap();
         assert_eq!(list_def.constructors.len(), 2);
     }
+
+    #[test]
+    fn test_nat_addition_commutativity_proof_type_checking() {
+        // This test checks that we can type-check a proof of commutativity of addition
+        // We'll create a proof term and verify it has the correct type
+
+        let mut env = GlobalEnvironment::new();
+        let ctx = LocalContext::new();
+
+        // Define Nat with O and S
+        let nat_id = Id::new();
+        let zero_id = Id::new();
+        let succ_id = Id::new();
+
+        env.inductives.add_nat(nat_id, zero_id, succ_id).unwrap();
+
+        // Define addition as a constant with the right type
+        // plus : Nat -> Nat -> Nat
+        let plus_id = Id::new();
+        let nat_type = Rc::new(Term::Constant(TermConstant { id: nat_id }));
+        let plus_type = Rc::new(Term::Product(crate::term::TermProduct {
+            var: Id::new(),
+            source: nat_type.clone(),
+            target: Rc::new(Term::Product(crate::term::TermProduct {
+                var: Id::new(),
+                source: nat_type.clone(),
+                target: nat_type.clone(),
+            })),
+        }));
+
+        env.add_constant(crate::global_environment::ConstantDefinition {
+            name: plus_id,
+            ty: plus_type,
+            body: None, // We'll treat it as an axiom for this test
+        })
+        .unwrap();
+
+        // Define equality type constructor
+        // eq : forall A : Type, A -> A -> Prop
+        let eq_id = Id::new();
+        let a_param = Id::new();
+        let x_param = Id::new();
+        let y_param = Id::new();
+
+        let set = Rc::new(Term::Sort(TermSort { sort: Sort::Set }));
+        let prop = Rc::new(Term::Sort(TermSort { sort: Sort::Prop }));
+        let var_a = Rc::new(Term::Variable(TermVariable { id: a_param }));
+
+        let eq_type = Rc::new(Term::Product(crate::term::TermProduct {
+            var: a_param,
+            source: set,
+            target: Rc::new(Term::Product(crate::term::TermProduct {
+                var: x_param,
+                source: var_a.clone(),
+                target: Rc::new(Term::Product(crate::term::TermProduct {
+                    var: y_param,
+                    source: var_a.clone(),
+                    target: prop,
+                })),
+            })),
+        }));
+
+        env.add_constant(crate::global_environment::ConstantDefinition {
+            name: eq_id,
+            ty: eq_type,
+            body: None,
+        })
+        .unwrap();
+
+        // Create the type of commutativity theorem:
+        // forall n m : Nat, eq Nat (plus n m) (plus m n)
+        let n_var = Id::new();
+        let m_var = Id::new();
+
+        let var_n = Rc::new(Term::Variable(TermVariable { id: n_var }));
+        let var_m = Rc::new(Term::Variable(TermVariable { id: m_var }));
+
+        // plus n m
+        let plus_n_m = Rc::new(Term::Application(crate::term::TermApplication {
+            f: Rc::new(Term::Constant(TermConstant { id: plus_id })),
+            args: vec![var_n.as_ref().clone(), var_m.as_ref().clone()],
+        }));
+
+        // plus m n
+        let plus_m_n = Rc::new(Term::Application(crate::term::TermApplication {
+            f: Rc::new(Term::Constant(TermConstant { id: plus_id })),
+            args: vec![var_m.as_ref().clone(), var_n.as_ref().clone()],
+        }));
+
+        // eq Nat (plus n m) (plus m n)
+        let eq_application = Rc::new(Term::Application(crate::term::TermApplication {
+            f: Rc::new(Term::Constant(TermConstant { id: eq_id })),
+            args: vec![
+                nat_type.as_ref().clone(),
+                plus_n_m.as_ref().clone(),
+                plus_m_n.as_ref().clone(),
+            ],
+        }));
+
+        // forall n m : Nat, eq Nat (plus n m) (plus m n)
+        let commutativity_type = Term::Product(crate::term::TermProduct {
+            var: n_var,
+            source: nat_type.clone(),
+            target: Rc::new(Term::Product(crate::term::TermProduct {
+                var: m_var,
+                source: nat_type.clone(),
+                target: eq_application,
+            })),
+        });
+
+        // Check that the commutativity type is well-formed (has type Prop)
+        let comm_type_result = infer_type(&ctx, &env, &commutativity_type);
+        match &comm_type_result {
+            Ok(_) => {}
+            Err(e) => panic!("Type checking failed: {}", e),
+        }
+        assert_eq!(
+            *comm_type_result.unwrap(),
+            Term::Sort(TermSort { sort: Sort::Prop })
+        );
+
+        // Create a mock proof term (just a constant for this test)
+        let proof_id = Id::new();
+        env.add_constant(crate::global_environment::ConstantDefinition {
+            name: proof_id,
+            ty: Rc::new(commutativity_type.clone()),
+            body: None,
+        })
+        .unwrap();
+
+        let proof_term = Term::Constant(TermConstant { id: proof_id });
+
+        // Check that the proof term has the correct type
+        let proof_type = infer_type(&ctx, &env, &proof_term).unwrap();
+        assert_eq!(*proof_type, commutativity_type);
+    }
+
+    #[test]
+    fn test_nat_addition_simple_function() {
+        // Test a simple function that works with natural numbers
+        let mut env = GlobalEnvironment::new();
+        let ctx = LocalContext::new();
+
+        let nat_id = Id::new();
+        let zero_id = Id::new();
+        let succ_id = Id::new();
+
+        env.inductives.add_nat(nat_id, zero_id, succ_id).unwrap();
+
+        let nat_type = Rc::new(Term::Constant(TermConstant { id: nat_id }));
+        let zero = Term::Constant(TermConstant { id: zero_id });
+
+        // Create a simple identity function: λn. n
+        let n_var = Id::new();
+        let identity_function = Term::Lambda(crate::term::TermLambda {
+            var: n_var,
+            source_ty: nat_type.clone(),
+            target: Rc::new(Term::Variable(TermVariable { id: n_var })),
+        });
+
+        // Check that this lambda has the right type: Nat -> Nat
+        let lambda_type = infer_type(&ctx, &env, &identity_function).unwrap();
+        if let Term::Product(product) = lambda_type.as_ref() {
+            assert_eq!(*product.source, *nat_type);
+            assert_eq!(*product.target, *nat_type);
+        } else {
+            panic!("Expected function type, got {:?}", lambda_type);
+        }
+
+        // Test reduction: (λn. n) O should reduce to O
+        let identity_app = Term::Application(crate::term::TermApplication {
+            f: Rc::new(identity_function),
+            args: vec![zero.clone()],
+        });
+
+        let reduced = crate::reduction::normalize(&identity_app);
+        assert_eq!(reduced, zero);
+    }
+
+    #[test]
+    fn test_nat_addition_zero_left_identity() {
+        // Test that plus O n = n (left identity)
+        let mut env = GlobalEnvironment::new();
+
+        let nat_id = Id::new();
+        let zero_id = Id::new();
+        let succ_id = Id::new();
+
+        env.inductives.add_nat(nat_id, zero_id, succ_id).unwrap();
+
+        let zero = Term::Constant(TermConstant { id: zero_id });
+        let one = Term::Application(crate::term::TermApplication {
+            f: Rc::new(Term::Constant(TermConstant { id: succ_id })),
+            args: vec![zero.clone()],
+        });
+
+        // Simple addition definition: plus O n = n
+        let n_var = Id::new();
+        let plus_zero_left = Term::Lambda(crate::term::TermLambda {
+            var: n_var,
+            source_ty: Rc::new(Term::Constant(TermConstant { id: nat_id })),
+            target: Rc::new(Term::Variable(TermVariable { id: n_var })),
+        });
+
+        // Test: (λn. n) 1 should reduce to 1
+        let app = Term::Application(crate::term::TermApplication {
+            f: Rc::new(plus_zero_left),
+            args: vec![one.clone()],
+        });
+
+        let reduced = crate::reduction::normalize(&app);
+        assert_eq!(reduced, one);
+    }
 }

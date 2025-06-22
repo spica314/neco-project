@@ -454,7 +454,7 @@ mod tests {
             assert_eq!(app.args.len(), 1);
             assert_eq!(app.args[0], Term::Variable(TermVariable { id: z }));
         } else {
-            panic!("Expected application after WHNF, got {:?}", whnf_result);
+            panic!("Expected application after WHNF, got {whnf_result:?}");
         }
     }
 

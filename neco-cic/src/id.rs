@@ -10,6 +10,13 @@ impl Id {
     }
 }
 
+#[cfg(test)]
+impl Default for Id {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct IdGenerator {
     next_id: usize,
 }

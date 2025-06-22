@@ -678,7 +678,7 @@ mod tests {
         let comm_type_result = infer_type(&ctx, &env, &commutativity_type);
         match &comm_type_result {
             Ok(_) => {}
-            Err(e) => panic!("Type checking failed: {}", e),
+            Err(e) => panic!("Type checking failed: {e}"),
         }
         assert_eq!(
             *comm_type_result.unwrap(),
@@ -838,7 +838,7 @@ mod tests {
             assert_eq!(*product.source, *nat_type);
             assert_eq!(*product.target, *nat_type);
         } else {
-            panic!("Expected function type, got {:?}", lambda_type);
+            panic!("Expected function type, got {lambda_type:?}");
         }
 
         // Test reduction: (λn. n) O should reduce to O

@@ -3,3 +3,5 @@ a.out
 target
 
 .local
+
+**/.claude/settings.local.json

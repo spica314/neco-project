@@ -5,3 +5,7 @@ version = 4
 [[package]]
 name = "neco-cic"
 version = "0.1.0"
+
+[[package]]
+name = "neco-felis-syn"
+version = "0.1.0"

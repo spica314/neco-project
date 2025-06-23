@@ -1,3 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["neco-cic"]
+members = [
+    "neco-cic",
+    "neco-felis-syn",
+]

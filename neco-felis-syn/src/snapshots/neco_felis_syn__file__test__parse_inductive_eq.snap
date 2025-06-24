@@ -1,0 +1,488 @@
+---
+source: neco-felis-syn/src/file.rs
+expression: file
+---
+File {
+    items: [
+        Inductive(
+            ItemInductive {
+                keyword_inductive: TokenKeyword {
+                    pos: Pos {
+                        file_id: FileId(
+                            0,
+                        ),
+                        line: 1,
+                        column: 1,
+                    },
+                    s: "inductive",
+                },
+                name: TokenVariable {
+                    pos: Pos {
+                        file_id: FileId(
+                            0,
+                        ),
+                        line: 1,
+                        column: 12,
+                    },
+                    s: "eq",
+                },
+                colon: TokenColon {
+                    pos: Pos {
+                        file_id: FileId(
+                            0,
+                        ),
+                        line: 1,
+                        column: 15,
+                    },
+                },
+                ty: ArrowDep(
+                    TermArrowDep {
+                        paren_l: TokenParenL {
+                            pos: Pos {
+                                file_id: FileId(
+                                    0,
+                                ),
+                                line: 1,
+                                column: 17,
+                            },
+                        },
+                        from: TermVariable {
+                            variable: TokenVariable {
+                                pos: Pos {
+                                    file_id: FileId(
+                                        0,
+                                    ),
+                                    line: 1,
+                                    column: 18,
+                                },
+                                s: "A",
+                            },
+                        },
+                        colon: TokenColon {
+                            pos: Pos {
+                                file_id: FileId(
+                                    0,
+                                ),
+                                line: 1,
+                                column: 20,
+                            },
+                        },
+                        from_ty: Apply(
+                            TermApply {
+                                f: Variable(
+                                    TermVariable {
+                                        variable: TokenVariable {
+                                            pos: Pos {
+                                                file_id: FileId(
+                                                    0,
+                                                ),
+                                                line: 1,
+                                                column: 22,
+                                            },
+                                            s: "Type",
+                                        },
+                                    },
+                                ),
+                                args: [],
+                            },
+                        ),
+                        paren_r: TokenParenR {
+                            pos: Pos {
+                                file_id: FileId(
+                                    0,
+                                ),
+                                line: 1,
+                                column: 26,
+                            },
+                        },
+                        arrow: TokenOperator {
+                            pos: Pos {
+                                file_id: FileId(
+                                    0,
+                                ),
+                                line: 1,
+                                column: 28,
+                            },
+                            s: "->",
+                        },
+                        to: ArrowDep(
+                            TermArrowDep {
+                                paren_l: TokenParenL {
+                                    pos: Pos {
+                                        file_id: FileId(
+                                            0,
+                                        ),
+                                        line: 1,
+                                        column: 31,
+                                    },
+                                },
+                                from: TermVariable {
+                                    variable: TokenVariable {
+                                        pos: Pos {
+                                            file_id: FileId(
+                                                0,
+                                            ),
+                                            line: 1,
+                                            column: 32,
+                                        },
+                                        s: "x",
+                                    },
+                                },
+                                colon: TokenColon {
+                                    pos: Pos {
+                                        file_id: FileId(
+                                            0,
+                                        ),
+                                        line: 1,
+                                        column: 34,
+                                    },
+                                },
+                                from_ty: Apply(
+                                    TermApply {
+                                        f: Variable(
+                                            TermVariable {
+                                                variable: TokenVariable {
+                                                    pos: Pos {
+                                                        file_id: FileId(
+                                                            0,
+                                                        ),
+                                                        line: 1,
+                                                        column: 36,
+                                                    },
+                                                    s: "A",
+                                                },
+                                            },
+                                        ),
+                                        args: [],
+                                    },
+                                ),
+                                paren_r: TokenParenR {
+                                    pos: Pos {
+                                        file_id: FileId(
+                                            0,
+                                        ),
+                                        line: 1,
+                                        column: 37,
+                                    },
+                                },
+                                arrow: TokenOperator {
+                                    pos: Pos {
+                                        file_id: FileId(
+                                            0,
+                                        ),
+                                        line: 1,
+                                        column: 39,
+                                    },
+                                    s: "->",
+                                },
+                                to: ArrowNodep(
+                                    TermArrowNodep {
+                                        from: Variable(
+                                            TermVariable {
+                                                variable: TokenVariable {
+                                                    pos: Pos {
+                                                        file_id: FileId(
+                                                            0,
+                                                        ),
+                                                        line: 1,
+                                                        column: 42,
+                                                    },
+                                                    s: "A",
+                                                },
+                                            },
+                                        ),
+                                        arrow: TokenOperator {
+                                            pos: Pos {
+                                                file_id: FileId(
+                                                    0,
+                                                ),
+                                                line: 1,
+                                                column: 44,
+                                            },
+                                            s: "->",
+                                        },
+                                        to: Apply(
+                                            TermApply {
+                                                f: Variable(
+                                                    TermVariable {
+                                                        variable: TokenVariable {
+                                                            pos: Pos {
+                                                                file_id: FileId(
+                                                                    0,
+                                                                ),
+                                                                line: 1,
+                                                                column: 47,
+                                                            },
+                                                            s: "Prop",
+                                                        },
+                                                    },
+                                                ),
+                                                args: [],
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                brace_l: TokenBraceL {
+                    pos: Pos {
+                        file_id: FileId(
+                            0,
+                        ),
+                        line: 1,
+                        column: 52,
+                    },
+                },
+                branches: [
+                    ItemInductiveBranch {
+                        name: TokenVariable {
+                            pos: Pos {
+                                file_id: FileId(
+                                    0,
+                                ),
+                                line: 2,
+                                column: 5,
+                            },
+                            s: "eq_refl",
+                        },
+                        colon: TokenColon {
+                            pos: Pos {
+                                file_id: FileId(
+                                    0,
+                                ),
+                                line: 2,
+                                column: 12,
+                            },
+                        },
+                        ty: ArrowDep(
+                            TermArrowDep {
+                                paren_l: TokenParenL {
+                                    pos: Pos {
+                                        file_id: FileId(
+                                            0,
+                                        ),
+                                        line: 2,
+                                        column: 14,
+                                    },
+                                },
+                                from: TermVariable {
+                                    variable: TokenVariable {
+                                        pos: Pos {
+                                            file_id: FileId(
+                                                0,
+                                            ),
+                                            line: 2,
+                                            column: 15,
+                                        },
+                                        s: "A",
+                                    },
+                                },
+                                colon: TokenColon {
+                                    pos: Pos {
+                                        file_id: FileId(
+                                            0,
+                                        ),
+                                        line: 2,
+                                        column: 17,
+                                    },
+                                },
+                                from_ty: Apply(
+                                    TermApply {
+                                        f: Variable(
+                                            TermVariable {
+                                                variable: TokenVariable {
+                                                    pos: Pos {
+                                                        file_id: FileId(
+                                                            0,
+                                                        ),
+                                                        line: 2,
+                                                        column: 19,
+                                                    },
+                                                    s: "Type",
+                                                },
+                                            },
+                                        ),
+                                        args: [],
+                                    },
+                                ),
+                                paren_r: TokenParenR {
+                                    pos: Pos {
+                                        file_id: FileId(
+                                            0,
+                                        ),
+                                        line: 2,
+                                        column: 23,
+                                    },
+                                },
+                                arrow: TokenOperator {
+                                    pos: Pos {
+                                        file_id: FileId(
+                                            0,
+                                        ),
+                                        line: 2,
+                                        column: 25,
+                                    },
+                                    s: "->",
+                                },
+                                to: ArrowDep(
+                                    TermArrowDep {
+                                        paren_l: TokenParenL {
+                                            pos: Pos {
+                                                file_id: FileId(
+                                                    0,
+                                                ),
+                                                line: 2,
+                                                column: 28,
+                                            },
+                                        },
+                                        from: TermVariable {
+                                            variable: TokenVariable {
+                                                pos: Pos {
+                                                    file_id: FileId(
+                                                        0,
+                                                    ),
+                                                    line: 2,
+                                                    column: 29,
+                                                },
+                                                s: "x",
+                                            },
+                                        },
+                                        colon: TokenColon {
+                                            pos: Pos {
+                                                file_id: FileId(
+                                                    0,
+                                                ),
+                                                line: 2,
+                                                column: 31,
+                                            },
+                                        },
+                                        from_ty: Apply(
+                                            TermApply {
+                                                f: Variable(
+                                                    TermVariable {
+                                                        variable: TokenVariable {
+                                                            pos: Pos {
+                                                                file_id: FileId(
+                                                                    0,
+                                                                ),
+                                                                line: 2,
+                                                                column: 33,
+                                                            },
+                                                            s: "A",
+                                                        },
+                                                    },
+                                                ),
+                                                args: [],
+                                            },
+                                        ),
+                                        paren_r: TokenParenR {
+                                            pos: Pos {
+                                                file_id: FileId(
+                                                    0,
+                                                ),
+                                                line: 2,
+                                                column: 34,
+                                            },
+                                        },
+                                        arrow: TokenOperator {
+                                            pos: Pos {
+                                                file_id: FileId(
+                                                    0,
+                                                ),
+                                                line: 2,
+                                                column: 36,
+                                            },
+                                            s: "->",
+                                        },
+                                        to: Apply(
+                                            TermApply {
+                                                f: Variable(
+                                                    TermVariable {
+                                                        variable: TokenVariable {
+                                                            pos: Pos {
+                                                                file_id: FileId(
+                                                                    0,
+                                                                ),
+                                                                line: 2,
+                                                                column: 39,
+                                                            },
+                                                            s: "eq",
+                                                        },
+                                                    },
+                                                ),
+                                                args: [
+                                                    Variable(
+                                                        TermVariable {
+                                                            variable: TokenVariable {
+                                                                pos: Pos {
+                                                                    file_id: FileId(
+                                                                        0,
+                                                                    ),
+                                                                    line: 2,
+                                                                    column: 42,
+                                                                },
+                                                                s: "A",
+                                                            },
+                                                        },
+                                                    ),
+                                                    Variable(
+                                                        TermVariable {
+                                                            variable: TokenVariable {
+                                                                pos: Pos {
+                                                                    file_id: FileId(
+                                                                        0,
+                                                                    ),
+                                                                    line: 2,
+                                                                    column: 44,
+                                                                },
+                                                                s: "x",
+                                                            },
+                                                        },
+                                                    ),
+                                                    Variable(
+                                                        TermVariable {
+                                                            variable: TokenVariable {
+                                                                pos: Pos {
+                                                                    file_id: FileId(
+                                                                        0,
+                                                                    ),
+                                                                    line: 2,
+                                                                    column: 46,
+                                                                },
+                                                                s: "x",
+                                                            },
+                                                        },
+                                                    ),
+                                                ],
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        comma: TokenComma {
+                            pos: Pos {
+                                file_id: FileId(
+                                    0,
+                                ),
+                                line: 2,
+                                column: 47,
+                            },
+                        },
+                    },
+                ],
+                brace_r: TokenBraceR {
+                    pos: Pos {
+                        file_id: FileId(
+                            0,
+                        ),
+                        line: 3,
+                        column: 1,
+                    },
+                },
+            },
+        ),
+    ],
+}

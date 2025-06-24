@@ -1,0 +1,4 @@
+#inductive nat : Set {
+    O: nat,
+    S: nat -> nat,
+}

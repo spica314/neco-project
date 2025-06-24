@@ -1,0 +1,38 @@
+use crate::{
+    Parse, ParseError, Term,
+    token::{Token, TokenParenL, TokenParenR},
+};
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TermParen {
+    paren_l: TokenParenL,
+    term: Box<Term>,
+    paren_r: TokenParenR,
+}
+
+impl Parse for TermParen {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        let mut k = *i;
+
+        let Some(paren_l) = TokenParenL::parse(tokens, &mut k)? else {
+            return Ok(None);
+        };
+
+        let Some(term) = Term::parse(tokens, &mut k)? else {
+            return Err(ParseError::Unknown("term_paren_1"));
+        };
+
+        let Some(paren_r) = TokenParenR::parse(tokens, &mut k)? else {
+            return Err(ParseError::Unknown("term_paren_2"));
+        };
+
+        let term_paren = TermParen {
+            paren_l,
+            term: Box::new(term),
+            paren_r,
+        };
+
+        *i = k;
+        Ok(Some(term_paren))
+    }
+}

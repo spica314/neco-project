@@ -1,9 +1,30 @@
-use crate::{FileId, Pos};
+use crate::{FileId, Parse, ParseError, Pos};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenKeyword {
     pos: Pos,
     s: String,
+}
+
+impl TokenKeyword {
+    pub fn parse_keyword(
+        tokens: &[Token],
+        i: &mut usize,
+        s: &str,
+    ) -> Result<Option<Self>, ParseError> {
+        if *i >= tokens.len() {
+            return Ok(None);
+        }
+
+        if let Token::Keyword(token_keyword) = &tokens[*i]
+            && token_keyword.s == s
+        {
+            *i += 1;
+            return Ok(Some(token_keyword.clone()));
+        }
+
+        Ok(None)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -12,10 +33,38 @@ pub struct TokenVariable {
     s: String,
 }
 
+impl Parse for TokenVariable {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Token::Variable(variable) = &tokens[*i] {
+            *i += 1;
+            Ok(Some(variable.clone()))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenOperator {
     pos: Pos,
     s: String,
+}
+
+impl TokenOperator {
+    pub fn parse_operator(
+        tokens: &[Token],
+        i: &mut usize,
+        s: &str,
+    ) -> Result<Option<Self>, ParseError> {
+        if let Token::Operator(token_operator) = &tokens[*i]
+            && token_operator.s == s
+        {
+            *i += 1;
+            return Ok(Some(token_operator.clone()));
+        }
+
+        Ok(None)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -29,9 +78,31 @@ pub struct TokenParenL {
     pos: Pos,
 }
 
+impl Parse for TokenParenL {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Token::ParenL(paren_l) = &tokens[*i] {
+            *i += 1;
+            Ok(Some(paren_l.clone()))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenParenR {
     pos: Pos,
+}
+
+impl Parse for TokenParenR {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Token::ParenR(paren_r) = &tokens[*i] {
+            *i += 1;
+            Ok(Some(paren_r.clone()))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -49,9 +120,31 @@ pub struct TokenBraceL {
     pos: Pos,
 }
 
+impl Parse for TokenBraceL {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Token::BraceL(brace_l) = &tokens[*i] {
+            *i += 1;
+            Ok(Some(brace_l.clone()))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenBraceR {
     pos: Pos,
+}
+
+impl Parse for TokenBraceR {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Token::BraceR(brace_r) = &tokens[*i] {
+            *i += 1;
+            Ok(Some(brace_r.clone()))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -59,9 +152,31 @@ pub struct TokenComma {
     pos: Pos,
 }
 
+impl Parse for TokenComma {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Token::Comma(comma) = &tokens[*i] {
+            *i += 1;
+            Ok(Some(comma.clone()))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenColon {
     pos: Pos,
+}
+
+impl Parse for TokenColon {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Token::Colon(colon) = &tokens[*i] {
+            *i += 1;
+            Ok(Some(colon.clone()))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

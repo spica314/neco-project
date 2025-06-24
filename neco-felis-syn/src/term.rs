@@ -1,5 +1,5 @@
 use crate::{
-    Parse, ParseError, TermApply, TermArrowDep, TermArrowNodep, TermParen, TermVariable,
+    Parse, ParseError, TermApply, TermArrowDep, TermArrowNodep, TermMatch, TermParen, TermVariable,
     token::Token,
 };
 
@@ -10,10 +10,15 @@ pub enum Term {
     ArrowDep(TermArrowDep),
     Apply(TermApply),
     Variable(TermVariable),
+    Match(TermMatch),
 }
 
 impl Parse for Term {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Some(term_match) = TermMatch::parse(tokens, i)? {
+            return Ok(Some(Term::Match(term_match)));
+        }
+
         if let Some(term_arrow_dep) = TermArrowDep::parse(tokens, i)? {
             return Ok(Some(Term::ArrowDep(term_arrow_dep)));
         }

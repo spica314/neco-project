@@ -1,0 +1,19 @@
+#inductive eq : (A : Type) -> (x : A) -> A -> Prop {
+    eq_refl: (A : Type) -> (x : A) -> eq A x x
+}
+
+#inductive nat : Set {
+    O: nat,
+    S: nat -> nat,
+}
+
+#definition add : (n : nat) -> (m : nat) -> nat {
+    #match n {
+        O => m,
+        S p => S (add p m)
+    }
+}
+
+#theorem add_0_1_eq_add_1_0 : eq nat (add O (S O)) (add (S O) O) {
+    eq_refl nat (S O)
+}

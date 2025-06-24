@@ -4,3 +4,6 @@ members = [
     "neco-cic",
     "neco-felis-syn",
 ]
+
+[workspace.dependencies]
+insta = "1.43.1"

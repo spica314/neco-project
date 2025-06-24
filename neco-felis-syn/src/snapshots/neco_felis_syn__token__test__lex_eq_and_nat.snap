@@ -432,6 +432,17 @@ expression: tokens
             s: "x",
         },
     ),
+    Comma(
+        TokenComma {
+            pos: Pos {
+                file_id: FileId(
+                    0,
+                ),
+                line: 2,
+                column: 47,
+            },
+        },
+    ),
     BraceR(
         TokenBraceR {
             pos: Pos {
@@ -1009,6 +1020,17 @@ expression: tokens
                 ),
                 line: 13,
                 column: 26,
+            },
+        },
+    ),
+    Comma(
+        TokenComma {
+            pos: Pos {
+                file_id: FileId(
+                    0,
+                ),
+                line: 13,
+                column: 27,
             },
         },
     ),

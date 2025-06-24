@@ -1,5 +1,5 @@
 #inductive eq : (A : Type) -> (x : A) -> A -> Prop {
-    eq_refl: (A : Type) -> (x : A) -> eq A x x
+    eq_refl: (A : Type) -> (x : A) -> eq A x x,
 }
 
 #inductive nat : Set {
@@ -10,7 +10,7 @@
 #definition add : (n : nat) -> (m : nat) -> nat {
     #match n {
         O => m,
-        S p => S (add p m)
+        S p => S (add p m),
     }
 }
 

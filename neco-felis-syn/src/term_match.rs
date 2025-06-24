@@ -43,7 +43,9 @@ impl Parse for TermMatch {
         }
 
         if branches.is_empty() {
-            return Err(ParseError::Unknown("match expression must have at least one branch"));
+            return Err(ParseError::Unknown(
+                "match expression must have at least one branch",
+            ));
         }
 
         // Parse closing brace

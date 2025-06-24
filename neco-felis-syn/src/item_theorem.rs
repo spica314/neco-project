@@ -1,4 +1,7 @@
-use crate::{Parse, ParseError, Term, token::{Token, TokenKeyword, TokenVariable, TokenColon, TokenBraceL, TokenBraceR}};
+use crate::{
+    Parse, ParseError, Term,
+    token::{Token, TokenBraceL, TokenBraceR, TokenColon, TokenKeyword, TokenVariable},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ItemTheorem {
@@ -16,8 +19,7 @@ impl Parse for ItemTheorem {
         let mut k = *i;
 
         // Parse #theorem keyword
-        let Some(keyword_theorem) = TokenKeyword::parse_keyword(tokens, &mut k, "theorem")?
-        else {
+        let Some(keyword_theorem) = TokenKeyword::parse_keyword(tokens, &mut k, "theorem")? else {
             return Ok(None);
         };
 

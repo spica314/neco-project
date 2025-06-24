@@ -1,4 +1,7 @@
-use crate::{Parse, ParseError, Term, token::{Token, TokenKeyword, TokenVariable, TokenColon, TokenBraceL, TokenBraceR}};
+use crate::{
+    Parse, ParseError, Term,
+    token::{Token, TokenBraceL, TokenBraceR, TokenColon, TokenKeyword, TokenVariable},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ItemDefinition {

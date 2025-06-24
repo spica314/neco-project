@@ -25,7 +25,10 @@ impl Parse for Pattern {
 
             // Check if next token is => to stop parsing arguments
             let mut test_k = k;
-            if TokenOperator::parse_operator(tokens, &mut test_k, "=>").unwrap_or(None).is_some() {
+            if TokenOperator::parse_operator(tokens, &mut test_k, "=>")
+                .unwrap_or(None)
+                .is_some()
+            {
                 break;
             }
         }

@@ -53,6 +53,7 @@ Felis source → `neco-felis-syn` (parsing) → `neco-felis-type-check` (validat
 - **Unique IDs**: Variables use unique IDs to avoid capture issues in substitution
 - **Reference Counting**: Extensive use of `Rc<T>` for sharing AST nodes
 - **Modular Type Theory**: Clean separation between frontend syntax and kernel implementation
+- **Trees That Grow**: Extensible AST using phase-parameterized types for multi-stage compilation
 
 ### Testing Strategy
 - **Unit tests**: Place tests at end of implementation files, one assertion per test function
@@ -71,11 +72,12 @@ neco-cic/src/
 └── substitution.rs      # Variable substitution
 
 neco-felis-syn/src/
+├── phase.rs             # Trees That Grow phase definitions
 ├── token.rs             # Lexical analysis
 ├── parse.rs             # Parser framework
-├── file.rs              # File-level parsing
-├── item_*.rs            # Top-level items
-└── term_*.rs            # Term-level syntax
+├── file.rs              # File-level parsing (phase-parameterized)
+├── item*.rs             # Top-level items (phase-parameterized)
+└── term*.rs             # Term-level syntax (phase-parameterized)
 
 testcases/felis/single/  # Test cases for language features
 ```
@@ -101,3 +103,77 @@ Felis supports dependent types with syntax for:
 - Use clear, descriptive names
 - Document public APIs with doc comments
 - Follow CIC typing rules precisely in kernel implementation
+
+## Trees That Grow Architecture
+
+**neco-felis-syn** implements the Trees That Grow design pattern for extensible syntax trees that can carry phase-specific information during different compilation stages.
+
+### Phase System
+
+The phase system is defined in `phase.rs`:
+
+```rust
+pub trait Phase {
+    type FileExt: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash;
+    type ItemExt: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash;
+    type ItemDefinitionExt: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash;
+    // ... and so on for all syntax node types
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PhaseParse();
+
+impl Phase for PhaseParse {
+    type FileExt = ();
+    type ItemExt = ();
+    // ... all extension types are () for parsing phase
+}
+```
+
+### Phase-Parameterized Syntax
+
+All syntax structures are parameterized by phase:
+
+```rust
+pub struct File<P: Phase> {
+    items: Vec<Item<P>>,
+    ext: P::FileExt,
+}
+
+pub enum Item<P: Phase> {
+    Inductive(ItemInductive<P>),
+    Definition(ItemDefinition<P>),
+    Theorem(ItemTheorem<P>),
+    Ext(P::ItemExt),  // Extension point for new item types
+}
+
+pub enum Term<P: Phase> {
+    Variable(TermVariable<P>),
+    Apply(TermApply<P>),
+    // ... other term variants
+    Ext(P::TermExt),  // Extension point for new term types
+}
+```
+
+### Phase Usage Guidelines
+
+1. **Parse Phase**: Use `PhaseParse` for parsing operations
+   - All `*Ext` types are `()` (empty)
+   - Parse implementations target `Struct<PhaseParse>`
+
+2. **Extension Points**: Each syntax node has an `Ext(P::*Ext)` variant
+   - Allows adding new syntax without modifying existing code
+   - Must handle with `unreachable!()` for phases that don't use extensions
+
+3. **Trait Bounds**: All extension types must implement standard traits:
+   - `Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash`
+
+4. **Type Checking Integration**: `neco-felis-type-check` uses `PhaseParse` types
+   - Must handle `Ext(_)` variants with `unreachable!()` patterns
+
+### Benefits
+
+- **Extensibility**: New phases can add information without changing existing code
+- **Type Safety**: Phase mismatches caught at compile time
+- **Clean Separation**: Each phase carries only relevant information
+- **Future-Proof**: Easy to add new compilation phases or syntax variants

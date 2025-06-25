@@ -1,0 +1,12 @@
+#inductive eq : (A : Type) -> (x : A) -> A -> Prop {
+    eq_refl: (A : Type) -> (x : A) -> eq A x x,
+}
+
+#inductive nat : Set {
+    O: nat,
+    S: nat -> nat,
+}
+
+#theorem unknown_constructor : eq nat O O {
+    eq_refl nat unknown_term
+}

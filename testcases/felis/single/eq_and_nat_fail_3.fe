@@ -1,0 +1,17 @@
+#inductive eq : (A : Type) -> (x : A) -> A -> Prop {
+    eq_refl: (A : Type) -> (x : A) -> eq A x x,
+}
+
+#inductive nat : Set {
+    O: nat,
+    S: nat -> nat,
+}
+
+#inductive bool : Set {
+    true: bool,
+    false: bool,
+}
+
+#theorem wrong_type : eq nat (S O) (S O) {
+    eq_refl bool true
+}

@@ -1,30 +1,32 @@
 use crate::{
-    Parse, ParseError, TermMatchBranch,
+    Parse, ParseError, Phase, PhaseParse, TermMatchBranch,
     token::{Token, TokenBraceL, TokenBraceR, TokenKeyword, TokenVariable},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TermMatch {
+pub struct TermMatch<P: Phase> {
     pub keyword_match: TokenKeyword,
     pub scrutinee: TokenVariable,
     pub brace_l: TokenBraceL,
-    pub branches: Vec<TermMatchBranch>,
+    pub branches: Vec<TermMatchBranch<P>>,
     pub brace_r: TokenBraceR,
+    #[allow(dead_code)]
+    ext: P::TermMatchExt,
 }
 
-impl TermMatch {
+impl<P: Phase> TermMatch<P> {
     /// Get the scrutinee (the expression being matched)
     pub fn scrutinee(&self) -> &TokenVariable {
         &self.scrutinee
     }
 
     /// Get the match branches
-    pub fn branches(&self) -> &[TermMatchBranch] {
+    pub fn branches(&self) -> &[TermMatchBranch<P>] {
         &self.branches
     }
 }
 
-impl Parse for TermMatch {
+impl Parse for TermMatch<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;
 
@@ -71,6 +73,7 @@ impl Parse for TermMatch {
             brace_l,
             branches,
             brace_r,
+            ext: (),
         };
 
         *i = k;

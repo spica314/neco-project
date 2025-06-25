@@ -1,34 +1,36 @@
 use crate::{
-    Parse, ParseError, Term,
+    Parse, ParseError, Phase, PhaseParse, Term,
     token::{Token, TokenBraceL, TokenBraceR, TokenColon, TokenKeyword, TokenVariable},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ItemTheorem {
+pub struct ItemTheorem<P: Phase> {
     keyword_theorem: TokenKeyword,
     name: TokenVariable,
     colon: TokenColon,
-    type_: Box<Term>,
+    type_: Box<Term<P>>,
     brace_l: TokenBraceL,
-    body: Box<Term>,
+    body: Box<Term<P>>,
     brace_r: TokenBraceR,
+    #[allow(dead_code)]
+    ext: P::ItemTheoremExt,
 }
 
-impl ItemTheorem {
+impl<P: Phase> ItemTheorem<P> {
     pub fn name(&self) -> &TokenVariable {
         &self.name
     }
 
-    pub fn type_(&self) -> &Term {
+    pub fn type_(&self) -> &Term<P> {
         &self.type_
     }
 
-    pub fn body(&self) -> &Term {
+    pub fn body(&self) -> &Term<P> {
         &self.body
     }
 }
 
-impl Parse for ItemTheorem {
+impl Parse for ItemTheorem<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;
 
@@ -75,6 +77,7 @@ impl Parse for ItemTheorem {
             brace_l,
             body: Box::new(body),
             brace_r,
+            ext: (),
         };
 
         *i = k;

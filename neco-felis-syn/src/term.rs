@@ -1,19 +1,21 @@
 use crate::{
-    Parse, ParseError, TermApply, TermArrowDep, TermArrowNodep, TermMatch, TermParen, TermVariable,
-    token::Token,
+    Parse, ParseError, Phase, PhaseParse, TermApply, TermArrowDep, TermArrowNodep, TermMatch,
+    TermParen, TermVariable, token::Token,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Term {
-    Paren(TermParen),
-    ArrowNodep(TermArrowNodep),
-    ArrowDep(TermArrowDep),
-    Apply(TermApply),
-    Variable(TermVariable),
-    Match(TermMatch),
+pub enum Term<P: Phase> {
+    Paren(TermParen<P>),
+    ArrowNodep(TermArrowNodep<P>),
+    ArrowDep(TermArrowDep<P>),
+    Apply(TermApply<P>),
+    Variable(TermVariable<P>),
+    Match(TermMatch<P>),
+    #[allow(dead_code)]
+    Ext(P::TermExt),
 }
 
-impl Parse for Term {
+impl Parse for Term<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         if let Some(term_match) = TermMatch::parse(tokens, i)? {
             return Ok(Some(Term::Match(term_match)));

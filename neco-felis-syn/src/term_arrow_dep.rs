@@ -1,34 +1,36 @@
 use crate::{
-    Parse, ParseError, Term, TermVariable,
+    Parse, ParseError, Phase, PhaseParse, Term, TermVariable,
     token::{Token, TokenColon, TokenOperator, TokenParenL, TokenParenR},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TermArrowDep {
+pub struct TermArrowDep<P: Phase> {
     paren_l: TokenParenL,
-    from: TermVariable,
+    from: TermVariable<P>,
     colon: TokenColon,
-    from_ty: Box<Term>,
+    from_ty: Box<Term<P>>,
     paren_r: TokenParenR,
     arrow: TokenOperator,
-    to: Box<Term>,
+    to: Box<Term<P>>,
+    #[allow(dead_code)]
+    ext: P::TermArrowDepExt,
 }
 
-impl TermArrowDep {
-    pub fn from(&self) -> &TermVariable {
+impl<P: Phase> TermArrowDep<P> {
+    pub fn from(&self) -> &TermVariable<P> {
         &self.from
     }
 
-    pub fn from_ty(&self) -> &Term {
+    pub fn from_ty(&self) -> &Term<P> {
         &self.from_ty
     }
 
-    pub fn to(&self) -> &Term {
+    pub fn to(&self) -> &Term<P> {
         &self.to
     }
 }
 
-impl Parse for TermArrowDep {
+impl Parse for TermArrowDep<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;
 
@@ -68,6 +70,7 @@ impl Parse for TermArrowDep {
             paren_r,
             arrow,
             to: Box::new(to),
+            ext: (),
         };
 
         *i = k;

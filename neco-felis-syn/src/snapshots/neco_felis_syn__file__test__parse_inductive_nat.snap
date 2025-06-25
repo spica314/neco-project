@@ -49,9 +49,11 @@ File {
                                     },
                                     s: "Set",
                                 },
+                                ext: (),
                             },
                         ),
                         args: [],
+                        ext: (),
                     },
                 ),
                 brace_l: TokenBraceL {
@@ -98,9 +100,11 @@ File {
                                             },
                                             s: "nat",
                                         },
+                                        ext: (),
                                     },
                                 ),
                                 args: [],
+                                ext: (),
                             },
                         ),
                         comma: TokenComma {
@@ -112,6 +116,7 @@ File {
                                 column: 11,
                             },
                         },
+                        ext: (),
                     },
                     ItemInductiveBranch {
                         name: TokenVariable {
@@ -147,6 +152,7 @@ File {
                                             },
                                             s: "nat",
                                         },
+                                        ext: (),
                                     },
                                 ),
                                 arrow: TokenOperator {
@@ -173,11 +179,14 @@ File {
                                                     },
                                                     s: "nat",
                                                 },
+                                                ext: (),
                                             },
                                         ),
                                         args: [],
+                                        ext: (),
                                     },
                                 ),
+                                ext: (),
                             },
                         ),
                         comma: TokenComma {
@@ -189,6 +198,7 @@ File {
                                 column: 18,
                             },
                         },
+                        ext: (),
                     },
                 ],
                 brace_r: TokenBraceR {
@@ -200,7 +210,9 @@ File {
                         column: 1,
                     },
                 },
+                ext: (),
             },
         ),
     ],
+    ext: (),
 }

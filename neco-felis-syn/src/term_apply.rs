@@ -1,22 +1,24 @@
-use crate::{Parse, ParseError, Term, TermParen, TermVariable, token::Token};
+use crate::{Parse, ParseError, Phase, PhaseParse, Term, TermParen, TermVariable, token::Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TermApply {
-    f: Box<Term>,
-    args: Vec<Term>,
+pub struct TermApply<P: Phase> {
+    f: Box<Term<P>>,
+    args: Vec<Term<P>>,
+    #[allow(dead_code)]
+    ext: P::TermApplyExt,
 }
 
-impl TermApply {
-    pub fn f(&self) -> &Term {
+impl<P: Phase> TermApply<P> {
+    pub fn f(&self) -> &Term<P> {
         &self.f
     }
 
-    pub fn args(&self) -> &[Term] {
+    pub fn args(&self) -> &[Term<P>] {
         &self.args
     }
 }
 
-impl Parse for TermApply {
+impl Parse for TermApply<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;
 
@@ -32,6 +34,7 @@ impl Parse for TermApply {
         let term_apply = TermApply {
             f: Box::new(f.into()),
             args,
+            ext: (),
         };
 
         *i = k;
@@ -41,11 +44,11 @@ impl Parse for TermApply {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum TermForApplyElem {
-    Paren(TermParen),
-    Variable(TermVariable),
+    Paren(TermParen<PhaseParse>),
+    Variable(TermVariable<PhaseParse>),
 }
 
-impl From<TermForApplyElem> for Term {
+impl From<TermForApplyElem> for Term<PhaseParse> {
     fn from(value: TermForApplyElem) -> Self {
         match value {
             TermForApplyElem::Paren(term_paren) => Term::Paren(term_paren),

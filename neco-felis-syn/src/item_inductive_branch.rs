@@ -1,27 +1,29 @@
 use crate::{
-    Parse, ParseError, Term,
+    Parse, ParseError, Phase, PhaseParse, Term,
     token::{TokenColon, TokenComma, TokenVariable},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ItemInductiveBranch {
+pub struct ItemInductiveBranch<P: Phase> {
     name: TokenVariable,
     colon: TokenColon,
-    ty: Box<Term>,
+    ty: Box<Term<P>>,
     comma: TokenComma,
+    #[allow(dead_code)]
+    ext: P::ItemInductiveBranchExt,
 }
 
-impl ItemInductiveBranch {
+impl<P: Phase> ItemInductiveBranch<P> {
     pub fn name(&self) -> &TokenVariable {
         &self.name
     }
 
-    pub fn ty(&self) -> &Term {
+    pub fn ty(&self) -> &Term<P> {
         &self.ty
     }
 }
 
-impl Parse for ItemInductiveBranch {
+impl Parse for ItemInductiveBranch<PhaseParse> {
     fn parse(
         tokens: &[crate::token::Token],
         i: &mut usize,
@@ -49,6 +51,7 @@ impl Parse for ItemInductiveBranch {
             colon,
             ty: Box::new(ty),
             comma,
+            ext: (),
         };
 
         *i = k;

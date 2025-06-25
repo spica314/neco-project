@@ -57,6 +57,7 @@ File {
                                 },
                                 s: "A",
                             },
+                            ext: (),
                         },
                         colon: TokenColon {
                             pos: Pos {
@@ -81,9 +82,11 @@ File {
                                             },
                                             s: "Type",
                                         },
+                                        ext: (),
                                     },
                                 ),
                                 args: [],
+                                ext: (),
                             },
                         ),
                         paren_r: TokenParenR {
@@ -127,6 +130,7 @@ File {
                                         },
                                         s: "x",
                                     },
+                                    ext: (),
                                 },
                                 colon: TokenColon {
                                     pos: Pos {
@@ -151,9 +155,11 @@ File {
                                                     },
                                                     s: "A",
                                                 },
+                                                ext: (),
                                             },
                                         ),
                                         args: [],
+                                        ext: (),
                                     },
                                 ),
                                 paren_r: TokenParenR {
@@ -189,6 +195,7 @@ File {
                                                     },
                                                     s: "A",
                                                 },
+                                                ext: (),
                                             },
                                         ),
                                         arrow: TokenOperator {
@@ -215,15 +222,20 @@ File {
                                                             },
                                                             s: "Prop",
                                                         },
+                                                        ext: (),
                                                     },
                                                 ),
                                                 args: [],
+                                                ext: (),
                                             },
                                         ),
+                                        ext: (),
                                     },
                                 ),
+                                ext: (),
                             },
                         ),
+                        ext: (),
                     },
                 ),
                 brace_l: TokenBraceL {
@@ -278,6 +290,7 @@ File {
                                         },
                                         s: "A",
                                     },
+                                    ext: (),
                                 },
                                 colon: TokenColon {
                                     pos: Pos {
@@ -302,9 +315,11 @@ File {
                                                     },
                                                     s: "Type",
                                                 },
+                                                ext: (),
                                             },
                                         ),
                                         args: [],
+                                        ext: (),
                                     },
                                 ),
                                 paren_r: TokenParenR {
@@ -348,6 +363,7 @@ File {
                                                 },
                                                 s: "x",
                                             },
+                                            ext: (),
                                         },
                                         colon: TokenColon {
                                             pos: Pos {
@@ -372,9 +388,11 @@ File {
                                                             },
                                                             s: "A",
                                                         },
+                                                        ext: (),
                                                     },
                                                 ),
                                                 args: [],
+                                                ext: (),
                                             },
                                         ),
                                         paren_r: TokenParenR {
@@ -410,6 +428,7 @@ File {
                                                             },
                                                             s: "eq",
                                                         },
+                                                        ext: (),
                                                     },
                                                 ),
                                                 args: [
@@ -425,6 +444,7 @@ File {
                                                                 },
                                                                 s: "A",
                                                             },
+                                                            ext: (),
                                                         },
                                                     ),
                                                     Variable(
@@ -439,6 +459,7 @@ File {
                                                                 },
                                                                 s: "x",
                                                             },
+                                                            ext: (),
                                                         },
                                                     ),
                                                     Variable(
@@ -453,13 +474,17 @@ File {
                                                                 },
                                                                 s: "x",
                                                             },
+                                                            ext: (),
                                                         },
                                                     ),
                                                 ],
+                                                ext: (),
                                             },
                                         ),
+                                        ext: (),
                                     },
                                 ),
+                                ext: (),
                             },
                         ),
                         comma: TokenComma {
@@ -471,6 +496,7 @@ File {
                                 column: 47,
                             },
                         },
+                        ext: (),
                     },
                 ],
                 brace_r: TokenBraceR {
@@ -482,7 +508,9 @@ File {
                         column: 1,
                     },
                 },
+                ext: (),
             },
         ),
     ],
+    ext: (),
 }

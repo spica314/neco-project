@@ -13,7 +13,8 @@ use neco_cic::{
 
 use neco_felis_syn::{
     File, FileIdGenerator, Item, ItemDefinition, ItemInductive, ItemTheorem, Parse, Pattern,
-    Term as FTerm, TermMatch as FTermMatch, TermMatchBranch as FTermMatchBranch, token::Token,
+    PhaseParse, Term as FTerm, TermMatch as FTermMatch, TermMatchBranch as FTermMatchBranch,
+    token::Token,
 };
 
 pub struct TypeChecker {
@@ -37,22 +38,23 @@ impl TypeChecker {
         }
     }
 
-    pub fn check_file(&mut self, file: &File) -> Result<(), String> {
+    pub fn check_file(&mut self, file: &File<PhaseParse>) -> Result<(), String> {
         for item in file.items() {
             self.process_item(item)?;
         }
         Ok(())
     }
 
-    fn process_item(&mut self, item: &Item) -> Result<(), String> {
+    fn process_item(&mut self, item: &Item<PhaseParse>) -> Result<(), String> {
         match item {
             Item::Inductive(inductive) => self.process_inductive(inductive),
             Item::Definition(definition) => self.process_definition(definition),
             Item::Theorem(theorem) => self.process_theorem(theorem),
+            Item::Ext(_) => unreachable!("Extension variants should not exist in PhaseParse"),
         }
     }
 
-    fn process_inductive(&mut self, inductive: &ItemInductive) -> Result<(), String> {
+    fn process_inductive(&mut self, inductive: &ItemInductive<PhaseParse>) -> Result<(), String> {
         let name = inductive.name().s();
         let id = self.id_gen.generate_id();
         self.name_to_id.insert(name.to_string(), id);
@@ -90,7 +92,10 @@ impl TypeChecker {
         Ok(())
     }
 
-    fn process_definition(&mut self, definition: &ItemDefinition) -> Result<(), String> {
+    fn process_definition(
+        &mut self,
+        definition: &ItemDefinition<PhaseParse>,
+    ) -> Result<(), String> {
         let name = definition.name().s();
         let id = self.id_gen.generate_id();
         self.name_to_id.insert(name.to_string(), id);
@@ -113,7 +118,7 @@ impl TypeChecker {
         Ok(())
     }
 
-    fn process_theorem(&mut self, theorem: &ItemTheorem) -> Result<(), String> {
+    fn process_theorem(&mut self, theorem: &ItemTheorem<PhaseParse>) -> Result<(), String> {
         let name = theorem.name().s();
         let id = self.id_gen.generate_id();
         self.name_to_id.insert(name.to_string(), id);
@@ -144,7 +149,7 @@ impl TypeChecker {
     }
 
     // Simple structural check for proof validity
-    fn check_proof_structure(&self, theorem: &ItemTheorem) -> Result<bool, String> {
+    fn check_proof_structure(&self, theorem: &ItemTheorem<PhaseParse>) -> Result<bool, String> {
         let theorem_name = theorem.name().s();
 
         // For eq_and_nat_fail_1, the theorem is trying to prove 0+1 = 1+1
@@ -180,7 +185,10 @@ impl TypeChecker {
         Ok(true)
     }
 
-    fn check_proof_reflexivity_argument(&self, theorem: &ItemTheorem) -> Result<bool, String> {
+    fn check_proof_reflexivity_argument(
+        &self,
+        theorem: &ItemTheorem<PhaseParse>,
+    ) -> Result<bool, String> {
         // Check if the proof is eq_refl with the wrong argument
         // This is a simplified check - in practice, we'd parse the proof term more carefully
 
@@ -205,7 +213,7 @@ impl TypeChecker {
         Ok(true)
     }
 
-    fn check_proof_type_mismatch(&self, theorem: &ItemTheorem) -> Result<bool, String> {
+    fn check_proof_type_mismatch(&self, theorem: &ItemTheorem<PhaseParse>) -> Result<bool, String> {
         // Check if the proof uses the wrong type (e.g., eq_refl bool instead of eq_refl nat)
         if let FTerm::Apply(apply) = theorem.body()
             && !apply.args().is_empty()
@@ -220,7 +228,7 @@ impl TypeChecker {
         Ok(true)
     }
 
-    fn check_proof_unknown_terms(&self, theorem: &ItemTheorem) -> Result<bool, String> {
+    fn check_proof_unknown_terms(&self, theorem: &ItemTheorem<PhaseParse>) -> Result<bool, String> {
         // Check if the proof references unknown terms
         if let FTerm::Apply(apply) = theorem.body()
             && apply.args().len() >= 2
@@ -235,7 +243,7 @@ impl TypeChecker {
         Ok(true)
     }
 
-    fn convert_term(&mut self, term: &FTerm) -> Result<Term, String> {
+    fn convert_term(&mut self, term: &FTerm<PhaseParse>) -> Result<Term, String> {
         match term {
             FTerm::Variable(var) => {
                 let name = var.variable().s();
@@ -294,10 +302,11 @@ impl TypeChecker {
             }
             FTerm::Paren(paren) => self.convert_term(paren.term()),
             FTerm::Match(match_expr) => self.convert_match(match_expr),
+            FTerm::Ext(_) => unreachable!("Extension variants should not exist in PhaseParse"),
         }
     }
 
-    fn convert_match(&mut self, match_expr: &FTermMatch) -> Result<Term, String> {
+    fn convert_match(&mut self, match_expr: &FTermMatch<PhaseParse>) -> Result<Term, String> {
         let scrutinee_name = match_expr.scrutinee().s();
         let scrutinee_id = self
             .name_to_id
@@ -324,7 +333,7 @@ impl TypeChecker {
 
     fn convert_match_branch(
         &mut self,
-        branch: &FTermMatchBranch,
+        branch: &FTermMatchBranch<PhaseParse>,
     ) -> Result<TermMatchBranch, String> {
         match branch.pattern() {
             Pattern::Variable(var) => {

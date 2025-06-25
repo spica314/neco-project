@@ -1,13 +1,17 @@
-use crate::{ItemDefinition, ItemInductive, ItemTheorem, Parse, ParseError, token::Token};
+use crate::{
+    ItemDefinition, ItemInductive, ItemTheorem, Parse, ParseError, Phase, PhaseParse, token::Token,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Item {
-    Inductive(ItemInductive),
-    Definition(ItemDefinition),
-    Theorem(ItemTheorem),
+pub enum Item<P: Phase> {
+    Inductive(ItemInductive<P>),
+    Definition(ItemDefinition<P>),
+    Theorem(ItemTheorem<P>),
+    #[allow(dead_code)]
+    Ext(P::ItemExt),
 }
 
-impl Parse for Item {
+impl Parse for Item<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         if let Some(inductive) = ItemInductive::parse(tokens, i)? {
             Ok(Some(Item::Inductive(inductive)))

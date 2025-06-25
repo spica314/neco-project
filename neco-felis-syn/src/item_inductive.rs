@@ -1,34 +1,36 @@
 use crate::{
-    ItemInductiveBranch, Parse, ParseError, Term,
+    ItemInductiveBranch, Parse, ParseError, Phase, PhaseParse, Term,
     token::{TokenBraceL, TokenBraceR, TokenColon, TokenKeyword, TokenVariable},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ItemInductive {
+pub struct ItemInductive<P: Phase> {
     keyword_inductive: TokenKeyword,
     name: TokenVariable,
     colon: TokenColon,
-    ty: Box<Term>,
+    ty: Box<Term<P>>,
     brace_l: TokenBraceL,
-    branches: Vec<ItemInductiveBranch>,
+    branches: Vec<ItemInductiveBranch<P>>,
     brace_r: TokenBraceR,
+    #[allow(dead_code)]
+    ext: P::ItemInductiveExt,
 }
 
-impl ItemInductive {
+impl<P: Phase> ItemInductive<P> {
     pub fn name(&self) -> &TokenVariable {
         &self.name
     }
 
-    pub fn ty(&self) -> &Term {
+    pub fn ty(&self) -> &Term<P> {
         &self.ty
     }
 
-    pub fn branches(&self) -> &[ItemInductiveBranch] {
+    pub fn branches(&self) -> &[ItemInductiveBranch<P>] {
         &self.branches
     }
 }
 
-impl Parse for ItemInductive {
+impl Parse for ItemInductive<PhaseParse> {
     fn parse(
         tokens: &[crate::token::Token],
         i: &mut usize,
@@ -73,6 +75,7 @@ impl Parse for ItemInductive {
             brace_l,
             branches,
             brace_r,
+            ext: (),
         };
 
         *i = k;

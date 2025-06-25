@@ -1,22 +1,24 @@
 use crate::{
-    Parse, ParseError, Term,
+    Parse, ParseError, Phase, PhaseParse, Term,
     token::{Token, TokenParenL, TokenParenR},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TermParen {
+pub struct TermParen<P: Phase> {
     paren_l: TokenParenL,
-    term: Box<Term>,
+    term: Box<Term<P>>,
     paren_r: TokenParenR,
+    #[allow(dead_code)]
+    ext: P::TermParenExt,
 }
 
-impl TermParen {
-    pub fn term(&self) -> &Term {
+impl<P: Phase> TermParen<P> {
+    pub fn term(&self) -> &Term<P> {
         &self.term
     }
 }
 
-impl Parse for TermParen {
+impl Parse for TermParen<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;
 
@@ -36,6 +38,7 @@ impl Parse for TermParen {
             paren_l,
             term: Box::new(term),
             paren_r,
+            ext: (),
         };
 
         *i = k;

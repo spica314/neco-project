@@ -1,17 +1,18 @@
-use crate::{Item, Parse, ParseError, token::Token};
+use crate::{Item, Parse, ParseError, Phase, PhaseParse, token::Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct File {
-    items: Vec<Item>,
+pub struct File<P: Phase> {
+    items: Vec<Item<P>>,
+    ext: P::FileExt,
 }
 
-impl File {
-    pub fn items(&self) -> &[Item] {
+impl<P: Phase> File<P> {
+    pub fn items(&self) -> &[Item<P>] {
         &self.items
     }
 }
 
-impl Parse for File {
+impl Parse for File<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;
 
@@ -20,7 +21,7 @@ impl Parse for File {
             items.push(item);
         }
 
-        let file = File { items };
+        let file = File { items, ext: () };
 
         *i = k;
         Ok(Some(file))

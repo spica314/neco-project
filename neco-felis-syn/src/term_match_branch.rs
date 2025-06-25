@@ -1,5 +1,5 @@
 use crate::{
-    Parse, ParseError, Term,
+    Parse, ParseError, Phase, PhaseParse, Term,
     token::{Token, TokenOperator, TokenVariable},
 };
 
@@ -73,25 +73,27 @@ impl Parse for Pattern {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TermMatchBranch {
+pub struct TermMatchBranch<P: Phase> {
     pub pattern: Pattern,
     pub arrow: TokenOperator,
-    pub body: Box<Term>,
+    pub body: Box<Term<P>>,
+    #[allow(dead_code)]
+    ext: P::TermMatchBranchExt,
 }
 
-impl TermMatchBranch {
+impl<P: Phase> TermMatchBranch<P> {
     /// Get the pattern of this match branch
     pub fn pattern(&self) -> &Pattern {
         &self.pattern
     }
 
     /// Get the body term of this match branch
-    pub fn body(&self) -> &Term {
+    pub fn body(&self) -> &Term<P> {
         &self.body
     }
 }
 
-impl Parse for TermMatchBranch {
+impl Parse for TermMatchBranch<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;
 
@@ -114,6 +116,7 @@ impl Parse for TermMatchBranch {
             pattern,
             arrow,
             body: Box::new(body),
+            ext: (),
         };
 
         *i = k;

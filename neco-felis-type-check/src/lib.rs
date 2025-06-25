@@ -318,7 +318,7 @@ mod tests {
         let file_contents =
             std::fs::read_to_string("../testcases/felis/single/eq_and_nat.fe").unwrap();
         let result = type_check_file(&file_contents);
-        assert!(result.is_ok(), "Type checking failed: {:?}", result);
+        assert!(result.is_ok(), "Type checking failed: {result:?}");
     }
 
     #[test]
@@ -328,8 +328,7 @@ mod tests {
         let result = type_check_file(&file_contents);
         assert!(
             result.is_err(),
-            "Type checking should have failed but succeeded: {:?}",
-            result
+            "Type checking should have failed but succeeded: {result:?}"
         );
     }
 }

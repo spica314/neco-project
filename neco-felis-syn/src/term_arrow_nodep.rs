@@ -10,6 +10,16 @@ pub struct TermArrowNodep {
     to: Box<Term>,
 }
 
+impl TermArrowNodep {
+    pub fn from(&self) -> &Term {
+        &self.from
+    }
+
+    pub fn to(&self) -> &Term {
+        &self.to
+    }
+}
+
 impl Parse for TermArrowNodep {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;

@@ -14,6 +14,20 @@ pub struct ItemDefinition {
     brace_r: TokenBraceR,
 }
 
+impl ItemDefinition {
+    pub fn name(&self) -> &TokenVariable {
+        &self.name
+    }
+
+    pub fn type_(&self) -> &Term {
+        &self.type_
+    }
+
+    pub fn body(&self) -> &Term {
+        &self.body
+    }
+}
+
 impl Parse for ItemDefinition {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;

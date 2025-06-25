@@ -5,6 +5,12 @@ pub struct File {
     items: Vec<Item>,
 }
 
+impl File {
+    pub fn items(&self) -> &[Item] {
+        &self.items
+    }
+}
+
 impl Parse for File {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;

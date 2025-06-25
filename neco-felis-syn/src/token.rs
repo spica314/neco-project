@@ -33,6 +33,12 @@ pub struct TokenVariable {
     s: String,
 }
 
+impl TokenVariable {
+    pub fn s(&self) -> &str {
+        &self.s
+    }
+}
+
 impl Parse for TokenVariable {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         if let Token::Variable(variable) = &tokens[*i] {

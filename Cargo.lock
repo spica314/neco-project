@@ -49,6 +49,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "neco-felis-type-check"
+version = "0.1.0"
+dependencies = [
+ "insta",
+ "neco-cic",
+ "neco-felis-syn",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

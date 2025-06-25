@@ -12,6 +12,18 @@ pub struct TermMatch {
     pub brace_r: TokenBraceR,
 }
 
+impl TermMatch {
+    /// Get the scrutinee (the expression being matched)
+    pub fn scrutinee(&self) -> &TokenVariable {
+        &self.scrutinee
+    }
+
+    /// Get the match branches
+    pub fn branches(&self) -> &[TermMatchBranch] {
+        &self.branches
+    }
+}
+
 impl Parse for TermMatch {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;

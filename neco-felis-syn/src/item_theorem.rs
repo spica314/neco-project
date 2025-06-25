@@ -14,6 +14,20 @@ pub struct ItemTheorem {
     brace_r: TokenBraceR,
 }
 
+impl ItemTheorem {
+    pub fn name(&self) -> &TokenVariable {
+        &self.name
+    }
+
+    pub fn type_(&self) -> &Term {
+        &self.type_
+    }
+
+    pub fn body(&self) -> &Term {
+        &self.body
+    }
+}
+
 impl Parse for ItemTheorem {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;

@@ -10,6 +10,12 @@ pub struct TermParen {
     paren_r: TokenParenR,
 }
 
+impl TermParen {
+    pub fn term(&self) -> &Term {
+        &self.term
+    }
+}
+
 impl Parse for TermParen {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;

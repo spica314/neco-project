@@ -5,6 +5,12 @@ pub struct TermVariable {
     variable: TokenVariable,
 }
 
+impl TermVariable {
+    pub fn variable(&self) -> &TokenVariable {
+        &self.variable
+    }
+}
+
 impl Parse for TermVariable {
     fn parse(tokens: &[crate::token::Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         if let Some(token_variable) = TokenVariable::parse(tokens, i)? {

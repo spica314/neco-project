@@ -11,6 +11,16 @@ pub struct ItemInductiveBranch {
     comma: TokenComma,
 }
 
+impl ItemInductiveBranch {
+    pub fn name(&self) -> &TokenVariable {
+        &self.name
+    }
+
+    pub fn ty(&self) -> &Term {
+        &self.ty
+    }
+}
+
 impl Parse for ItemInductiveBranch {
     fn parse(
         tokens: &[crate::token::Token],

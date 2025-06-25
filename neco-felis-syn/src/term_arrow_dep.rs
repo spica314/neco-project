@@ -14,6 +14,20 @@ pub struct TermArrowDep {
     to: Box<Term>,
 }
 
+impl TermArrowDep {
+    pub fn from(&self) -> &TermVariable {
+        &self.from
+    }
+
+    pub fn from_ty(&self) -> &Term {
+        &self.from_ty
+    }
+
+    pub fn to(&self) -> &Term {
+        &self.to
+    }
+}
+
 impl Parse for TermArrowDep {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;

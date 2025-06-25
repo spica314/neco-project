@@ -14,6 +14,20 @@ pub struct ItemInductive {
     brace_r: TokenBraceR,
 }
 
+impl ItemInductive {
+    pub fn name(&self) -> &TokenVariable {
+        &self.name
+    }
+
+    pub fn ty(&self) -> &Term {
+        &self.ty
+    }
+
+    pub fn branches(&self) -> &[ItemInductiveBranch] {
+        &self.branches
+    }
+}
+
 impl Parse for ItemInductive {
     fn parse(
         tokens: &[crate::token::Token],

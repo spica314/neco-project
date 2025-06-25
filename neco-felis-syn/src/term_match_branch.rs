@@ -9,6 +9,34 @@ pub enum Pattern {
     Constructor(TokenVariable, Vec<TokenVariable>),
 }
 
+impl Pattern {
+    /// Check if this pattern is a variable pattern
+    pub fn is_variable(&self) -> bool {
+        matches!(self, Pattern::Variable(_))
+    }
+
+    /// Check if this pattern is a constructor pattern
+    pub fn is_constructor(&self) -> bool {
+        matches!(self, Pattern::Constructor(_, _))
+    }
+
+    /// Get the variable if this is a variable pattern
+    pub fn as_variable(&self) -> Option<&TokenVariable> {
+        match self {
+            Pattern::Variable(var) => Some(var),
+            _ => None,
+        }
+    }
+
+    /// Get the constructor name and arguments if this is a constructor pattern
+    pub fn as_constructor(&self) -> Option<(&TokenVariable, &[TokenVariable])> {
+        match self {
+            Pattern::Constructor(name, args) => Some((name, args)),
+            _ => None,
+        }
+    }
+}
+
 impl Parse for Pattern {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;
@@ -49,6 +77,18 @@ pub struct TermMatchBranch {
     pub pattern: Pattern,
     pub arrow: TokenOperator,
     pub body: Box<Term>,
+}
+
+impl TermMatchBranch {
+    /// Get the pattern of this match branch
+    pub fn pattern(&self) -> &Pattern {
+        &self.pattern
+    }
+
+    /// Get the body term of this match branch
+    pub fn body(&self) -> &Term {
+        &self.body
+    }
 }
 
 impl Parse for TermMatchBranch {

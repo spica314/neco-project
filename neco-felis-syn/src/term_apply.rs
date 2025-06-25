@@ -6,6 +6,16 @@ pub struct TermApply {
     args: Vec<Term>,
 }
 
+impl TermApply {
+    pub fn f(&self) -> &Term {
+        &self.f
+    }
+
+    pub fn args(&self) -> &[Term] {
+        &self.args
+    }
+}
+
 impl Parse for TermApply {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;

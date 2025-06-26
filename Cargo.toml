@@ -1,9 +1,12 @@
 [workspace]
 resolver = "2"
 members = [
-    "neco-cic",
+    "neco-cic", "neco-felis-rename",
     "neco-felis-syn", "neco-felis-type-check", "neco-scope",
 ]
 
 [workspace.dependencies]
 insta = "1.43.1"
+
+neco-felis-syn = { path = "./neco-felis-syn" }
+neco-scope = { path = "./neco-scope" }

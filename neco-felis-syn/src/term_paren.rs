@@ -5,11 +5,10 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TermParen<P: Phase> {
-    paren_l: TokenParenL,
-    term: Box<Term<P>>,
-    paren_r: TokenParenR,
-    #[allow(dead_code)]
-    ext: P::TermParenExt,
+    pub paren_l: TokenParenL,
+    pub term: Box<Term<P>>,
+    pub paren_r: TokenParenR,
+    pub ext: P::TermParenExt,
 }
 
 impl<P: Phase> TermParen<P> {

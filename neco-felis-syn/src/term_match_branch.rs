@@ -77,8 +77,7 @@ pub struct TermMatchBranch<P: Phase> {
     pub pattern: Pattern,
     pub arrow: TokenOperator,
     pub body: Box<Term<P>>,
-    #[allow(dead_code)]
-    ext: P::TermMatchBranchExt,
+    pub ext: P::TermMatchBranchExt,
 }
 
 impl<P: Phase> TermMatchBranch<P> {

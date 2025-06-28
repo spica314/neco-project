@@ -11,7 +11,6 @@ pub enum Term<P: Phase> {
     Apply(TermApply<P>),
     Variable(TermVariable<P>),
     Match(TermMatch<P>),
-    #[allow(dead_code)]
     Ext(P::TermExt),
 }
 

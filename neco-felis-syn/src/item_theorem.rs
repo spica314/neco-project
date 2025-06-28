@@ -5,15 +5,14 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ItemTheorem<P: Phase> {
-    keyword_theorem: TokenKeyword,
-    name: TokenVariable,
-    colon: TokenColon,
-    type_: Box<Term<P>>,
-    brace_l: TokenBraceL,
-    body: Box<Term<P>>,
-    brace_r: TokenBraceR,
-    #[allow(dead_code)]
-    ext: P::ItemTheoremExt,
+    pub keyword_theorem: TokenKeyword,
+    pub name: TokenVariable,
+    pub colon: TokenColon,
+    pub type_: Box<Term<P>>,
+    pub brace_l: TokenBraceL,
+    pub body: Box<Term<P>>,
+    pub brace_r: TokenBraceR,
+    pub ext: P::ItemTheoremExt,
 }
 
 impl<P: Phase> ItemTheorem<P> {

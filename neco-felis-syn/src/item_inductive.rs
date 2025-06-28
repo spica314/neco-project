@@ -5,15 +5,14 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ItemInductive<P: Phase> {
-    keyword_inductive: TokenKeyword,
-    name: TokenVariable,
-    colon: TokenColon,
-    ty: Box<Term<P>>,
-    brace_l: TokenBraceL,
-    branches: Vec<ItemInductiveBranch<P>>,
-    brace_r: TokenBraceR,
-    #[allow(dead_code)]
-    ext: P::ItemInductiveExt,
+    pub keyword_inductive: TokenKeyword,
+    pub name: TokenVariable,
+    pub colon: TokenColon,
+    pub ty: Box<Term<P>>,
+    pub brace_l: TokenBraceL,
+    pub branches: Vec<ItemInductiveBranch<P>>,
+    pub brace_r: TokenBraceR,
+    pub ext: P::ItemInductiveExt,
 }
 
 impl<P: Phase> ItemInductive<P> {

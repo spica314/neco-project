@@ -5,11 +5,10 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TermArrowNodep<P: Phase> {
-    from: Box<Term<P>>,
-    arrow: TokenOperator,
-    to: Box<Term<P>>,
-    #[allow(dead_code)]
-    ext: P::TermArrowNodepExt,
+    pub from: Box<Term<P>>,
+    pub arrow: TokenOperator,
+    pub to: Box<Term<P>>,
+    pub ext: P::TermArrowNodepExt,
 }
 
 impl<P: Phase> TermArrowNodep<P> {

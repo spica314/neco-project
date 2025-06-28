@@ -2,9 +2,8 @@ use crate::{Parse, ParseError, Phase, PhaseParse, token::TokenVariable};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TermVariable<P: Phase> {
-    variable: TokenVariable,
-    #[allow(dead_code)]
-    ext: P::TermVariableExt,
+    pub variable: TokenVariable,
+    pub ext: P::TermVariableExt,
 }
 
 impl<P: Phase> TermVariable<P> {

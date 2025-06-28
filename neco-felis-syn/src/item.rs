@@ -7,7 +7,6 @@ pub enum Item<P: Phase> {
     Inductive(ItemInductive<P>),
     Definition(ItemDefinition<P>),
     Theorem(ItemTheorem<P>),
-    #[allow(dead_code)]
     Ext(P::ItemExt),
 }
 

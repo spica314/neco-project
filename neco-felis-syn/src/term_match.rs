@@ -10,8 +10,7 @@ pub struct TermMatch<P: Phase> {
     pub brace_l: TokenBraceL,
     pub branches: Vec<TermMatchBranch<P>>,
     pub brace_r: TokenBraceR,
-    #[allow(dead_code)]
-    ext: P::TermMatchExt,
+    pub ext: P::TermMatchExt,
 }
 
 impl<P: Phase> TermMatch<P> {

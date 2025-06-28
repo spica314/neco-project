@@ -2,8 +2,8 @@ use crate::{Item, Parse, ParseError, Phase, PhaseParse, token::Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct File<P: Phase> {
-    items: Vec<Item<P>>,
-    ext: P::FileExt,
+    pub items: Vec<Item<P>>,
+    pub ext: P::FileExt,
 }
 
 impl<P: Phase> File<P> {

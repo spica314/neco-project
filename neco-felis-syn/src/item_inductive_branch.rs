@@ -5,12 +5,11 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ItemInductiveBranch<P: Phase> {
-    name: TokenVariable,
-    colon: TokenColon,
-    ty: Box<Term<P>>,
-    comma: TokenComma,
-    #[allow(dead_code)]
-    ext: P::ItemInductiveBranchExt,
+    pub name: TokenVariable,
+    pub colon: TokenColon,
+    pub ty: Box<Term<P>>,
+    pub comma: TokenComma,
+    pub ext: P::ItemInductiveBranchExt,
 }
 
 impl<P: Phase> ItemInductiveBranch<P> {

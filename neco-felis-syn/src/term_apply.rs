@@ -2,10 +2,9 @@ use crate::{Parse, ParseError, Phase, PhaseParse, Term, TermParen, TermVariable,
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TermApply<P: Phase> {
-    f: Box<Term<P>>,
-    args: Vec<Term<P>>,
-    #[allow(dead_code)]
-    ext: P::TermApplyExt,
+    pub f: Box<Term<P>>,
+    pub args: Vec<Term<P>>,
+    pub ext: P::TermApplyExt,
 }
 
 impl<P: Phase> TermApply<P> {

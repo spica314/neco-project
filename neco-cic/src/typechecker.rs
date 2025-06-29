@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::{
     global_environment::GlobalEnvironment,
     local_context::LocalContext,
-    reduction::{normalize, whnf},
+    reduction::{normalize_with_env, whnf_with_env},
     term::{
         Sort, Term, TermApplication, TermConstant, TermLambda, TermLetIn, TermMatch, TermProduct,
         TermSort, TermVariable,
@@ -87,14 +87,13 @@ pub fn check_type(
 /// Checks if two terms are convertible (definitionally equal)
 pub fn is_convertible(
     _ctx: &LocalContext,
-    _env: &GlobalEnvironment,
+    env: &GlobalEnvironment,
     term1: &Term,
     term2: &Term,
 ) -> bool {
-    // For now, we use syntactic equality after normalization
-    // TODO: Implement proper conversion checking with η-conversion
-    let norm1 = normalize(term1);
-    let norm2 = normalize(term2);
+    // Use normalization with environment to handle δ-reduction
+    let norm1 = normalize_with_env(term1, env);
+    let norm2 = normalize_with_env(term2, env);
     norm1 == norm2
 }
 
@@ -151,12 +150,12 @@ fn infer_product_type(
 ) -> TypeResult {
     // Check that the source type is a valid type
     let source_type = infer_type(ctx, env, &product.source)?;
-    let source_sort = ensure_sort(&source_type)?;
+    let source_sort = ensure_sort_with_env(&source_type, env)?;
 
     // Check the target in the extended context
     let extended_ctx = ctx.with(product.var, product.source.clone());
     let target_type = infer_type(&extended_ctx, env, &product.target)?;
-    let target_sort = ensure_sort(&target_type)?;
+    let target_sort = ensure_sort_with_env(&target_type, env)?;
 
     // Apply sort rule
     let result_sort = sort_rule(&source_sort, &target_sort)?;
@@ -174,7 +173,7 @@ fn infer_lambda_type(
 ) -> TypeResult {
     // Check that the source type is valid
     let source_type = infer_type(ctx, env, &lambda.source_ty)?;
-    ensure_sort(&source_type)?;
+    ensure_sort_with_env(&source_type, env)?;
 
     // Infer the type of the body in the extended context
     let extended_ctx = ctx.with(lambda.var, lambda.source_ty.clone());
@@ -209,7 +208,7 @@ fn infer_application_type(
     let mut result_type = fun_type;
     for arg in &app.args {
         // Reduce to WHNF to expose the product type
-        let fun_whnf = whnf(&result_type);
+        let fun_whnf = whnf_with_env(&result_type, env);
 
         match &fun_whnf {
             Term::Product(product) => {
@@ -219,7 +218,8 @@ fn infer_application_type(
                 // Substitute the argument in the return type
                 let mut subst = crate::substitution::Substitution::new();
                 subst.add(product.var, Rc::new(arg.clone()));
-                result_type = Rc::new(crate::substitution::substitute(&product.target, &subst));
+                let substituted_target = crate::substitution::substitute(&product.target, &subst);
+                result_type = Rc::new(substituted_target);
             }
             _ => {
                 return Err(TypeError::NotAFunction(format!(
@@ -246,7 +246,7 @@ fn infer_let_in_type(
 
     // Check that the type is valid
     let ty_type = infer_type(ctx, env, &let_in.ty)?;
-    ensure_sort(&ty_type)?;
+    ensure_sort_with_env(&ty_type, env)?;
 
     // Infer the type of the body in the extended context
     let extended_ctx = ctx.with(let_in.var, let_in.ty.clone());
@@ -258,9 +258,9 @@ fn infer_let_in_type(
     Ok(Rc::new(crate::substitution::substitute(&body_type, &subst)))
 }
 
-/// Ensures that a term is a sort and returns it
-fn ensure_sort(term: &Term) -> Result<Sort, TypeError> {
-    let whnf_term = whnf(term);
+/// Ensures that a term is a sort and returns it (with environment)
+fn ensure_sort_with_env(term: &Term, env: &GlobalEnvironment) -> Result<Sort, TypeError> {
+    let whnf_term = whnf_with_env(term, env);
     match &whnf_term {
         Term::Sort(sort) => Ok(sort.sort.clone()),
         _ => Err(TypeError::NotAType(format!("{term:?}"))),

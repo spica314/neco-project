@@ -68,24 +68,18 @@ File {
                                 column: 20,
                             },
                         },
-                        from_ty: Apply(
-                            TermApply {
-                                f: Variable(
-                                    TermVariable {
-                                        variable: TokenVariable {
-                                            pos: Pos {
-                                                file_id: FileId(
-                                                    0,
-                                                ),
-                                                line: 1,
-                                                column: 22,
-                                            },
-                                            s: "Type",
-                                        },
-                                        ext: (),
+                        from_ty: Variable(
+                            TermVariable {
+                                variable: TokenVariable {
+                                    pos: Pos {
+                                        file_id: FileId(
+                                            0,
+                                        ),
+                                        line: 1,
+                                        column: 22,
                                     },
-                                ),
-                                args: [],
+                                    s: "Set",
+                                },
                                 ext: (),
                             },
                         ),
@@ -95,7 +89,7 @@ File {
                                     0,
                                 ),
                                 line: 1,
-                                column: 26,
+                                column: 25,
                             },
                         },
                         arrow: TokenOperator {
@@ -104,7 +98,7 @@ File {
                                     0,
                                 ),
                                 line: 1,
-                                column: 28,
+                                column: 27,
                             },
                             s: "->",
                         },
@@ -116,7 +110,7 @@ File {
                                             0,
                                         ),
                                         line: 1,
-                                        column: 31,
+                                        column: 30,
                                     },
                                 },
                                 from: TermVariable {
@@ -126,7 +120,7 @@ File {
                                                 0,
                                             ),
                                             line: 1,
-                                            column: 32,
+                                            column: 31,
                                         },
                                         s: "x",
                                     },
@@ -138,27 +132,21 @@ File {
                                             0,
                                         ),
                                         line: 1,
-                                        column: 34,
+                                        column: 33,
                                     },
                                 },
-                                from_ty: Apply(
-                                    TermApply {
-                                        f: Variable(
-                                            TermVariable {
-                                                variable: TokenVariable {
-                                                    pos: Pos {
-                                                        file_id: FileId(
-                                                            0,
-                                                        ),
-                                                        line: 1,
-                                                        column: 36,
-                                                    },
-                                                    s: "A",
-                                                },
-                                                ext: (),
+                                from_ty: Variable(
+                                    TermVariable {
+                                        variable: TokenVariable {
+                                            pos: Pos {
+                                                file_id: FileId(
+                                                    0,
+                                                ),
+                                                line: 1,
+                                                column: 35,
                                             },
-                                        ),
-                                        args: [],
+                                            s: "A",
+                                        },
                                         ext: (),
                                     },
                                 ),
@@ -168,7 +156,7 @@ File {
                                             0,
                                         ),
                                         line: 1,
-                                        column: 37,
+                                        column: 36,
                                     },
                                 },
                                 arrow: TokenOperator {
@@ -177,7 +165,7 @@ File {
                                             0,
                                         ),
                                         line: 1,
-                                        column: 39,
+                                        column: 38,
                                     },
                                     s: "->",
                                 },
@@ -191,7 +179,7 @@ File {
                                                             0,
                                                         ),
                                                         line: 1,
-                                                        column: 42,
+                                                        column: 41,
                                                     },
                                                     s: "A",
                                                 },
@@ -204,28 +192,22 @@ File {
                                                     0,
                                                 ),
                                                 line: 1,
-                                                column: 44,
+                                                column: 43,
                                             },
                                             s: "->",
                                         },
-                                        to: Apply(
-                                            TermApply {
-                                                f: Variable(
-                                                    TermVariable {
-                                                        variable: TokenVariable {
-                                                            pos: Pos {
-                                                                file_id: FileId(
-                                                                    0,
-                                                                ),
-                                                                line: 1,
-                                                                column: 47,
-                                                            },
-                                                            s: "Prop",
-                                                        },
-                                                        ext: (),
+                                        to: Variable(
+                                            TermVariable {
+                                                variable: TokenVariable {
+                                                    pos: Pos {
+                                                        file_id: FileId(
+                                                            0,
+                                                        ),
+                                                        line: 1,
+                                                        column: 46,
                                                     },
-                                                ),
-                                                args: [],
+                                                    s: "Prop",
+                                                },
                                                 ext: (),
                                             },
                                         ),
@@ -244,7 +226,7 @@ File {
                             0,
                         ),
                         line: 1,
-                        column: 52,
+                        column: 51,
                     },
                 },
                 branches: [
@@ -301,24 +283,18 @@ File {
                                         column: 17,
                                     },
                                 },
-                                from_ty: Apply(
-                                    TermApply {
-                                        f: Variable(
-                                            TermVariable {
-                                                variable: TokenVariable {
-                                                    pos: Pos {
-                                                        file_id: FileId(
-                                                            0,
-                                                        ),
-                                                        line: 2,
-                                                        column: 19,
-                                                    },
-                                                    s: "Type",
-                                                },
-                                                ext: (),
+                                from_ty: Variable(
+                                    TermVariable {
+                                        variable: TokenVariable {
+                                            pos: Pos {
+                                                file_id: FileId(
+                                                    0,
+                                                ),
+                                                line: 2,
+                                                column: 19,
                                             },
-                                        ),
-                                        args: [],
+                                            s: "Set",
+                                        },
                                         ext: (),
                                     },
                                 ),
@@ -328,7 +304,7 @@ File {
                                             0,
                                         ),
                                         line: 2,
-                                        column: 23,
+                                        column: 22,
                                     },
                                 },
                                 arrow: TokenOperator {
@@ -337,7 +313,7 @@ File {
                                             0,
                                         ),
                                         line: 2,
-                                        column: 25,
+                                        column: 24,
                                     },
                                     s: "->",
                                 },
@@ -349,7 +325,7 @@ File {
                                                     0,
                                                 ),
                                                 line: 2,
-                                                column: 28,
+                                                column: 27,
                                             },
                                         },
                                         from: TermVariable {
@@ -359,7 +335,7 @@ File {
                                                         0,
                                                     ),
                                                     line: 2,
-                                                    column: 29,
+                                                    column: 28,
                                                 },
                                                 s: "x",
                                             },
@@ -371,27 +347,21 @@ File {
                                                     0,
                                                 ),
                                                 line: 2,
-                                                column: 31,
+                                                column: 30,
                                             },
                                         },
-                                        from_ty: Apply(
-                                            TermApply {
-                                                f: Variable(
-                                                    TermVariable {
-                                                        variable: TokenVariable {
-                                                            pos: Pos {
-                                                                file_id: FileId(
-                                                                    0,
-                                                                ),
-                                                                line: 2,
-                                                                column: 33,
-                                                            },
-                                                            s: "A",
-                                                        },
-                                                        ext: (),
+                                        from_ty: Variable(
+                                            TermVariable {
+                                                variable: TokenVariable {
+                                                    pos: Pos {
+                                                        file_id: FileId(
+                                                            0,
+                                                        ),
+                                                        line: 2,
+                                                        column: 32,
                                                     },
-                                                ),
-                                                args: [],
+                                                    s: "A",
+                                                },
                                                 ext: (),
                                             },
                                         ),
@@ -401,7 +371,7 @@ File {
                                                     0,
                                                 ),
                                                 line: 2,
-                                                column: 34,
+                                                column: 33,
                                             },
                                         },
                                         arrow: TokenOperator {
@@ -410,7 +380,7 @@ File {
                                                     0,
                                                 ),
                                                 line: 2,
-                                                column: 36,
+                                                column: 35,
                                             },
                                             s: "->",
                                         },
@@ -424,7 +394,7 @@ File {
                                                                     0,
                                                                 ),
                                                                 line: 2,
-                                                                column: 39,
+                                                                column: 38,
                                                             },
                                                             s: "eq",
                                                         },
@@ -440,7 +410,7 @@ File {
                                                                         0,
                                                                     ),
                                                                     line: 2,
-                                                                    column: 42,
+                                                                    column: 41,
                                                                 },
                                                                 s: "A",
                                                             },
@@ -455,7 +425,7 @@ File {
                                                                         0,
                                                                     ),
                                                                     line: 2,
-                                                                    column: 44,
+                                                                    column: 43,
                                                                 },
                                                                 s: "x",
                                                             },
@@ -470,7 +440,7 @@ File {
                                                                         0,
                                                                     ),
                                                                     line: 2,
-                                                                    column: 46,
+                                                                    column: 45,
                                                                 },
                                                                 s: "x",
                                                             },
@@ -493,7 +463,7 @@ File {
                                     0,
                                 ),
                                 line: 2,
-                                column: 47,
+                                column: 46,
                             },
                         },
                         ext: (),

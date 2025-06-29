@@ -1,8 +1,9 @@
 use std::rc::Rc;
 
 use crate::{
+    global_environment::GlobalEnvironment,
     substitution::{Substitution, substitute},
-    term::{Term, TermApplication, TermLambda, TermLetIn, TermMatch, TermProduct},
+    term::{Term, TermApplication, TermConstant, TermLambda, TermLetIn, TermMatch, TermProduct},
 };
 
 /// Performs one step of reduction on a term.
@@ -27,6 +28,99 @@ pub fn normalize(term: &Term) -> Term {
         current = reduced;
     }
     current
+}
+
+/// Performs one step of reduction on a term with access to global environment.
+/// Returns None if the term is already in normal form.
+pub fn reduce_step_with_env(term: &Term, env: &GlobalEnvironment) -> Option<Term> {
+    match term {
+        Term::Sort(_) => None,
+        Term::Variable(_) => None,
+        Term::Constant(const_) => reduce_constant(const_, env),
+        Term::Product(product) => reduce_product_with_env(product, env),
+        Term::Lambda(lambda) => reduce_lambda_with_env(lambda, env),
+        Term::Application(app) => reduce_application_with_env(app, env),
+        Term::LetIn(let_in) => reduce_let_in_with_env(let_in, env),
+        Term::Match(case) => reduce_case_with_env(case, env),
+    }
+}
+
+/// Reduces a term to its normal form with access to global environment.
+pub fn normalize_with_env(term: &Term, env: &GlobalEnvironment) -> Term {
+    let mut current = term.clone();
+    while let Some(reduced) = reduce_step_with_env(&current, env) {
+        current = reduced;
+    }
+    current
+}
+
+/// Performs weak head normal form reduction (WHNF) with access to global environment.
+pub fn whnf_with_env(term: &Term, env: &GlobalEnvironment) -> Term {
+    match term {
+        Term::Constant(const_) => {
+            // δ-reduction: unfold constant if it has a body
+            if let Some(const_def) = env.get_constant(const_.id)
+                && let Some(body) = &const_def.body
+            {
+                return whnf_with_env(body, env);
+            }
+            term.clone()
+        }
+        Term::Application(app) => {
+            // First reduce the function to WHNF
+            let f_whnf = whnf_with_env(&app.f, env);
+
+            // If it's a lambda, perform ONE β-reduction step
+            if let Term::Lambda(lambda) = &f_whnf {
+                if !app.args.is_empty() {
+                    let mut subst = Substitution::new();
+                    subst.add(lambda.var, Rc::new(app.args[0].clone()));
+                    let reduced_body = substitute(&lambda.target, &subst);
+
+                    if app.args.len() > 1 {
+                        // Create new application with remaining arguments
+                        whnf_with_env(
+                            &Term::Application(TermApplication {
+                                f: Rc::new(reduced_body),
+                                args: app.args[1..].to_vec(),
+                            }),
+                            env,
+                        )
+                    } else {
+                        // Return the substituted body as-is (don't reduce further)
+                        reduced_body
+                    }
+                } else {
+                    Term::Application(TermApplication {
+                        f: Rc::new(f_whnf),
+                        args: app.args.clone(),
+                    })
+                }
+            } else {
+                // Function is not a lambda after WHNF
+                Term::Application(TermApplication {
+                    f: Rc::new(f_whnf),
+                    args: app.args.clone(),
+                })
+            }
+        }
+        Term::LetIn(let_in) => {
+            // ζ-reduction: immediately substitute
+            let mut subst = Substitution::new();
+            subst.add(let_in.var, let_in.term.clone());
+            substitute(&let_in.body, &subst)
+        }
+        Term::Match(case) => {
+            // Try to reduce the case expression
+            if let Some(reduced_case) = reduce_case_with_env(case, env) {
+                whnf_with_env(&reduced_case, env)
+            } else {
+                term.clone()
+            }
+        }
+        // Other terms are already in WHNF
+        _ => term.clone(),
+    }
 }
 
 fn reduce_product(product: &TermProduct) -> Option<Term> {
@@ -251,6 +345,194 @@ fn reduce_case(case: &TermMatch) -> Option<Term> {
     // Try to reduce branches
     for (i, branch) in case.branches.iter().enumerate() {
         if let Some(reduced_body) = reduce_step(&branch.body) {
+            let mut new_branches = case.branches.clone();
+            new_branches[i] = crate::term::TermMatchBranch {
+                constructor_id: branch.constructor_id,
+                bound_vars: branch.bound_vars.clone(),
+                body: Rc::new(reduced_body),
+            };
+            return Some(Term::Match(TermMatch {
+                scrutinee: case.scrutinee.clone(),
+                return_type: case.return_type.clone(),
+                branches: new_branches,
+            }));
+        }
+    }
+
+    None
+}
+
+/// δ-reduction: unfold constant definition
+fn reduce_constant(const_: &TermConstant, env: &GlobalEnvironment) -> Option<Term> {
+    if let Some(const_def) = env.get_constant(const_.id)
+        && let Some(body) = &const_def.body
+    {
+        eprintln!("δ-reducing constant {:?} to {:?}", const_.id, body);
+        return Some(body.as_ref().clone());
+    }
+    None
+}
+
+fn reduce_product_with_env(product: &TermProduct, env: &GlobalEnvironment) -> Option<Term> {
+    // Try to reduce the source type
+    if let Some(source) = reduce_step_with_env(&product.source, env) {
+        return Some(Term::Product(TermProduct {
+            var: product.var,
+            source: Rc::new(source),
+            target: product.target.clone(),
+        }));
+    }
+
+    // Try to reduce the target type
+    if let Some(target) = reduce_step_with_env(&product.target, env) {
+        return Some(Term::Product(TermProduct {
+            var: product.var,
+            source: product.source.clone(),
+            target: Rc::new(target),
+        }));
+    }
+
+    None
+}
+
+fn reduce_lambda_with_env(lambda: &TermLambda, env: &GlobalEnvironment) -> Option<Term> {
+    // Try to reduce the source type
+    if let Some(source_ty) = reduce_step_with_env(&lambda.source_ty, env) {
+        return Some(Term::Lambda(TermLambda {
+            var: lambda.var,
+            source_ty: Rc::new(source_ty),
+            target: lambda.target.clone(),
+        }));
+    }
+
+    // Try to reduce the body
+    if let Some(target) = reduce_step_with_env(&lambda.target, env) {
+        return Some(Term::Lambda(TermLambda {
+            var: lambda.var,
+            source_ty: lambda.source_ty.clone(),
+            target: Rc::new(target),
+        }));
+    }
+
+    None
+}
+
+fn reduce_application_with_env(app: &TermApplication, env: &GlobalEnvironment) -> Option<Term> {
+    // β-reduction: (λx. t) u → t[x := u]
+    if let Term::Lambda(lambda) = app.f.as_ref()
+        && !app.args.is_empty()
+    {
+        // Apply the first argument
+        let mut subst = Substitution::new();
+        subst.add(lambda.var, Rc::new(app.args[0].clone()));
+        let reduced_body = substitute(&lambda.target, &subst);
+
+        // If there are more arguments, create a new application
+        if app.args.len() > 1 {
+            return Some(Term::Application(TermApplication {
+                f: Rc::new(reduced_body),
+                args: app.args[1..].to_vec(),
+            }));
+        } else {
+            return Some(reduced_body);
+        }
+    }
+
+    // Try to reduce the function
+    if let Some(f) = reduce_step_with_env(&app.f, env) {
+        return Some(Term::Application(TermApplication {
+            f: Rc::new(f),
+            args: app.args.clone(),
+        }));
+    }
+
+    // Try to reduce the arguments (left to right)
+    for (i, arg) in app.args.iter().enumerate() {
+        if let Some(reduced_arg) = reduce_step_with_env(arg, env) {
+            let mut new_args = app.args.clone();
+            new_args[i] = reduced_arg;
+            return Some(Term::Application(TermApplication {
+                f: app.f.clone(),
+                args: new_args,
+            }));
+        }
+    }
+
+    None
+}
+
+fn reduce_let_in_with_env(let_in: &TermLetIn, _env: &GlobalEnvironment) -> Option<Term> {
+    // ζ-reduction: let x = t : T in u → u[x := t]
+    let mut subst = Substitution::new();
+    subst.add(let_in.var, let_in.term.clone());
+    Some(substitute(&let_in.body, &subst))
+}
+
+fn reduce_case_with_env(case: &TermMatch, env: &GlobalEnvironment) -> Option<Term> {
+    // First reduce the scrutinee to WHNF
+    let scrutinee_whnf = whnf_with_env(&case.scrutinee, env);
+
+    // Check if the scrutinee is a constructor application
+    // Constructor applications are represented as Application(Constant(constructor_id), args)
+    match &scrutinee_whnf {
+        Term::Constant(const_) => {
+            // Zero-argument constructor
+            for branch in &case.branches {
+                if branch.constructor_id == const_.id {
+                    if !branch.bound_vars.is_empty() {
+                        // This should not happen if type checking is correct
+                        return None;
+                    }
+                    return Some(branch.body.as_ref().clone());
+                }
+            }
+        }
+        Term::Application(app) => {
+            if let Term::Constant(const_) = app.f.as_ref() {
+                // Constructor with arguments
+                for branch in &case.branches {
+                    if branch.constructor_id == const_.id {
+                        // Check that the number of bound variables matches the constructor arguments
+                        if branch.bound_vars.len() != app.args.len() {
+                            // This should not happen if type checking is correct
+                            return None;
+                        }
+
+                        // Apply substitutions: substitute constructor arguments for bound variables
+                        let mut subst = Substitution::new();
+                        for (bound_var, arg) in branch.bound_vars.iter().zip(&app.args) {
+                            subst.add(*bound_var, Rc::new(arg.clone()));
+                        }
+
+                        return Some(substitute(&branch.body, &subst));
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+
+    // If the scrutinee is not a constructor, try to reduce it
+    if let Some(reduced_scrutinee) = reduce_step_with_env(&case.scrutinee, env) {
+        return Some(Term::Match(TermMatch {
+            scrutinee: Rc::new(reduced_scrutinee),
+            return_type: case.return_type.clone(),
+            branches: case.branches.clone(),
+        }));
+    }
+
+    // Try to reduce the return type
+    if let Some(reduced_return_type) = reduce_step_with_env(&case.return_type, env) {
+        return Some(Term::Match(TermMatch {
+            scrutinee: case.scrutinee.clone(),
+            return_type: Rc::new(reduced_return_type),
+            branches: case.branches.clone(),
+        }));
+    }
+
+    // Try to reduce branches
+    for (i, branch) in case.branches.iter().enumerate() {
+        if let Some(reduced_body) = reduce_step_with_env(&branch.body, env) {
             let mut new_branches = case.branches.clone();
             new_branches[i] = crate::term::TermMatchBranch {
                 constructor_id: branch.constructor_id,

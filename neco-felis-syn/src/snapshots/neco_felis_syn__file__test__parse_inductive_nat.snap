@@ -35,24 +35,18 @@ File {
                         column: 16,
                     },
                 },
-                ty: Apply(
-                    TermApply {
-                        f: Variable(
-                            TermVariable {
-                                variable: TokenVariable {
-                                    pos: Pos {
-                                        file_id: FileId(
-                                            0,
-                                        ),
-                                        line: 1,
-                                        column: 18,
-                                    },
-                                    s: "Set",
-                                },
-                                ext: (),
+                ty: Variable(
+                    TermVariable {
+                        variable: TokenVariable {
+                            pos: Pos {
+                                file_id: FileId(
+                                    0,
+                                ),
+                                line: 1,
+                                column: 18,
                             },
-                        ),
-                        args: [],
+                            s: "Set",
+                        },
                         ext: (),
                     },
                 ),
@@ -86,24 +80,18 @@ File {
                                 column: 6,
                             },
                         },
-                        ty: Apply(
-                            TermApply {
-                                f: Variable(
-                                    TermVariable {
-                                        variable: TokenVariable {
-                                            pos: Pos {
-                                                file_id: FileId(
-                                                    0,
-                                                ),
-                                                line: 2,
-                                                column: 8,
-                                            },
-                                            s: "nat",
-                                        },
-                                        ext: (),
+                        ty: Variable(
+                            TermVariable {
+                                variable: TokenVariable {
+                                    pos: Pos {
+                                        file_id: FileId(
+                                            0,
+                                        ),
+                                        line: 2,
+                                        column: 8,
                                     },
-                                ),
-                                args: [],
+                                    s: "nat",
+                                },
                                 ext: (),
                             },
                         ),
@@ -165,24 +153,18 @@ File {
                                     },
                                     s: "->",
                                 },
-                                to: Apply(
-                                    TermApply {
-                                        f: Variable(
-                                            TermVariable {
-                                                variable: TokenVariable {
-                                                    pos: Pos {
-                                                        file_id: FileId(
-                                                            0,
-                                                        ),
-                                                        line: 3,
-                                                        column: 15,
-                                                    },
-                                                    s: "nat",
-                                                },
-                                                ext: (),
+                                to: Variable(
+                                    TermVariable {
+                                        variable: TokenVariable {
+                                            pos: Pos {
+                                                file_id: FileId(
+                                                    0,
+                                                ),
+                                                line: 3,
+                                                column: 15,
                                             },
-                                        ),
-                                        args: [],
+                                            s: "nat",
+                                        },
                                         ext: (),
                                     },
                                 ),

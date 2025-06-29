@@ -5,10 +5,13 @@ use neco_cic::{
     global_environment::GlobalEnvironment,
     id::{Id, IdGenerator},
     inductive::{ConstructorDefinition, InductiveDefinition},
+    local_context::LocalContext,
+    reduction,
     term::{
         Sort, Term, TermApplication, TermConstant, TermMatch, TermMatchBranch, TermProduct,
         TermSort, TermVariable,
     },
+    typechecker,
 };
 
 use neco_felis_syn::{
@@ -100,15 +103,16 @@ impl TypeChecker {
         self.name_to_id.insert(name.to_string(), id);
 
         let type_term = self.convert_term(definition.type_())?;
+        let body_term = self.convert_term(definition.body())?;
 
-        // For now, skip type checking the body due to variable scoping complexity
-        // In a full implementation, we'd need to properly handle lambda abstractions
-        // and local contexts for the parameters
+        // Convert type into lambda abstraction
+        let lambda_body = Self::create_lambda_from_product(&type_term, body_term)?;
+
         println!("Processing definition: {name}");
 
         let const_def = neco_cic::global_environment::ConstantDefinition {
             name: id,
-            body: None, // For now, don't store the body
+            body: Some(Rc::new(lambda_body)),
             ty: Rc::new(type_term),
         };
         self.global_env
@@ -124,122 +128,41 @@ impl TypeChecker {
 
         println!("Processing theorem: {name}");
 
-        // First, let's do a simple structural check on the proof term
-        // This is a simplified approach to catch obvious errors
-        let proof_matches_expected = self.check_proof_structure(theorem)?;
+        // Convert the theorem type and proof
+        let theorem_type = self.convert_term(theorem.type_())?;
+        let proof_term = self.convert_term(theorem.body())?;
 
-        if !proof_matches_expected {
+        // Type check the proof against the theorem type using CIC type checker
+        let local_ctx = LocalContext::new();
+
+        // Get the type of the proof term
+        let proof_type = typechecker::infer_type(&local_ctx, &self.global_env, &proof_term)
+            .map_err(|e| format!("Failed to infer proof type: {e}"))?;
+
+        // Check if the reduced theorem type equals the reduced proof type
+        let theorem_type_reduced = reduction::normalize_with_env(&theorem_type, &self.global_env);
+        let proof_type_reduced = reduction::normalize_with_env(&proof_type, &self.global_env);
+
+        if !typechecker::is_convertible(
+            &local_ctx,
+            &self.global_env,
+            &theorem_type_reduced,
+            &proof_type_reduced,
+        ) {
             return Err(format!(
-                "Proof structure does not match expected theorem type for: {name}"
+                "Theorem type does not match proof type for: {name}\nTheorem type (reduced): {theorem_type_reduced:?}\nProof type (reduced): {proof_type_reduced:?}"
             ));
         }
 
-        let type_term = self.convert_term(theorem.type_())?;
-
         let const_def = neco_cic::global_environment::ConstantDefinition {
             name: id,
-            body: None, // Skip storing proof body for now
-            ty: Rc::new(type_term),
+            body: Some(Rc::new(proof_term)),
+            ty: Rc::new(theorem_type),
         };
         self.global_env
             .add_constant(const_def)
             .map_err(|e| e.to_string())?;
         Ok(())
-    }
-
-    // Simple structural check for proof validity
-    fn check_proof_structure(&self, theorem: &ItemTheorem<PhaseParse>) -> Result<bool, String> {
-        let theorem_name = theorem.name().s();
-
-        // For eq_and_nat_fail_1, the theorem is trying to prove 0+1 = 1+1
-        // but the proof is eq_refl nat (S O) which proves 1 = 1
-        // This is a structural mismatch we can detect
-
-        if theorem_name == "add_0_1_eq_add_1_1" {
-            // This theorem should fail because it's trying to prove something false
-            // The correct proof would require showing that add O (S O) evaluates to the same as add (S O) (S O)
-            // But add O (S O) = S O and add (S O) (S O) = S (S O), so they're not equal
-            return Ok(false);
-        }
-
-        // For eq_and_nat_fail_2, we need to check if the proof term matches the expected type
-        if theorem_name == "add_0_1_eq_add_1_0" {
-            // This should check if the proof is using the right reflexivity argument
-            // The theorem proves add O (S O) = add (S O) O, which both evaluate to S O
-            // So the proof should be eq_refl nat (S O), not eq_refl nat O
-            return self.check_proof_reflexivity_argument(theorem);
-        }
-
-        // For eq_and_nat_fail_3, check for type mismatch (eq_refl bool instead of eq_refl nat)
-        if theorem_name == "wrong_type" {
-            return self.check_proof_type_mismatch(theorem);
-        }
-
-        // For eq_and_nat_fail_4, check for unknown terms
-        if theorem_name == "unknown_constructor" {
-            return self.check_proof_unknown_terms(theorem);
-        }
-
-        // For other theorems, accept them for now
-        Ok(true)
-    }
-
-    fn check_proof_reflexivity_argument(
-        &self,
-        theorem: &ItemTheorem<PhaseParse>,
-    ) -> Result<bool, String> {
-        // Check if the proof is eq_refl with the wrong argument
-        // This is a simplified check - in practice, we'd parse the proof term more carefully
-
-        // We expect the theorem to prove add O (S O) = add (S O) O
-        // Both sides evaluate to S O, so the correct proof would be eq_refl nat (S O)
-        // But if we see eq_refl nat O, that's wrong
-
-        // For now, let's do a simple text-based check
-        if let FTerm::Apply(apply) = theorem.body()
-            && apply.args().len() >= 2
-        {
-            // Check the last argument of eq_refl
-            if let FTerm::Variable(var) = &apply.args()[1] {
-                let arg_name = var.variable().s();
-                if arg_name == "O" {
-                    // This is eq_refl nat O, which is wrong for this theorem
-                    return Ok(false);
-                }
-            }
-        }
-
-        Ok(true)
-    }
-
-    fn check_proof_type_mismatch(&self, theorem: &ItemTheorem<PhaseParse>) -> Result<bool, String> {
-        // Check if the proof uses the wrong type (e.g., eq_refl bool instead of eq_refl nat)
-        if let FTerm::Apply(apply) = theorem.body()
-            && !apply.args().is_empty()
-            && let FTerm::Variable(type_var) = &apply.args()[0]
-        {
-            let type_name = type_var.variable().s();
-            if type_name == "bool" {
-                // The theorem is about nat equality but proof uses bool
-                return Ok(false);
-            }
-        }
-        Ok(true)
-    }
-
-    fn check_proof_unknown_terms(&self, theorem: &ItemTheorem<PhaseParse>) -> Result<bool, String> {
-        // Check if the proof references unknown terms
-        if let FTerm::Apply(apply) = theorem.body()
-            && apply.args().len() >= 2
-            && let FTerm::Variable(term_var) = &apply.args()[1]
-        {
-            let term_name = term_var.variable().s();
-            if term_name == "unknown_term" {
-                // Reference to undefined term
-                return Ok(false);
-            }
-        }
-        Ok(true)
     }
 
     fn convert_term(&mut self, term: &FTerm<PhaseParse>) -> Result<Term, String> {
@@ -373,6 +296,29 @@ impl TypeChecker {
             }
         }
     }
+
+    /// Creates lambda abstractions from a product type
+    /// For example: (n : nat) -> (m : nat) -> nat with body becomes
+    /// λn:nat. λm:nat. body
+    fn create_lambda_from_product(product_type: &Term, body: Term) -> Result<Term, String> {
+        use neco_cic::term::TermLambda;
+
+        match product_type {
+            Term::Product(product) => {
+                // Create lambda for this parameter
+                let inner_lambda = Self::create_lambda_from_product(&product.target, body)?;
+                Ok(Term::Lambda(TermLambda {
+                    var: product.var,
+                    source_ty: product.source.clone(),
+                    target: Rc::new(inner_lambda),
+                }))
+            }
+            _ => {
+                // Base case: no more products, return the body
+                Ok(body)
+            }
+        }
+    }
 }
 
 pub fn type_check_file(file_contents: &str) -> Result<(), String> {
@@ -406,6 +352,7 @@ mod tests {
         let file_contents =
             std::fs::read_to_string("../testcases/felis/single/eq_and_nat_fail_1.fe").unwrap();
         let result = type_check_file(&file_contents);
+        eprintln!("result = {:?}", result);
         assert!(
             result.is_err(),
             "Type checking should have failed but succeeded: {result:?}"
@@ -451,5 +398,78 @@ mod tests {
             std::fs::read_to_string("../testcases/felis/single/eq_and_nat_correct_2.fe").unwrap();
         let result = type_check_file(&file_contents);
         assert!(result.is_ok(), "Type checking failed: {result:?}");
+    }
+
+    #[test]
+    fn test_type_check_eq_and_nat_correct_3() {
+        let file_contents =
+            std::fs::read_to_string("../testcases/felis/single/eq_and_nat_correct_3.fe").unwrap();
+        let result = type_check_file(&file_contents);
+        assert!(result.is_ok(), "Type checking failed: {result:?}");
+    }
+
+    #[test]
+    fn test_theorem_type_matches_proof_type() {
+        let mut type_checker = TypeChecker::new();
+        let x = type_checker.id_gen.generate_id();
+        let proof_term = Term::Constant(TermConstant { id: x });
+        let theorem_type = Term::Sort(TermSort { sort: Sort::Set });
+        let local_ctx = LocalContext::new();
+
+        // Add x : Set to the context by creating a constant
+        let const_def = neco_cic::global_environment::ConstantDefinition {
+            name: x,
+            body: None,
+            ty: Rc::new(theorem_type.clone()),
+        };
+        type_checker.global_env.add_constant(const_def).unwrap();
+
+        // Infer the type of the proof term
+        let proof_type =
+            typechecker::infer_type(&local_ctx, &type_checker.global_env, &proof_term).unwrap();
+
+        // Check that the types are convertible after reduction
+        let theorem_reduced = reduction::normalize(&theorem_type);
+        let proof_reduced = reduction::normalize(&*proof_type);
+
+        assert!(typechecker::is_convertible(
+            &local_ctx,
+            &type_checker.global_env,
+            &theorem_reduced,
+            &proof_reduced
+        ));
+    }
+
+    #[test]
+    fn test_theorem_type_mismatch_proof_type() {
+        let mut type_checker = TypeChecker::new();
+        let x = type_checker.id_gen.generate_id();
+        let proof_term = Term::Constant(TermConstant { id: x });
+        let theorem_type = Term::Sort(TermSort { sort: Sort::Prop });
+        let proof_type_decl = Term::Sort(TermSort { sort: Sort::Set });
+        let local_ctx = LocalContext::new();
+
+        // Add x : Set to the context (different from what theorem expects)
+        let const_def = neco_cic::global_environment::ConstantDefinition {
+            name: x,
+            body: None,
+            ty: Rc::new(proof_type_decl),
+        };
+        type_checker.global_env.add_constant(const_def).unwrap();
+
+        // Infer the type of the proof term
+        let proof_type =
+            typechecker::infer_type(&local_ctx, &type_checker.global_env, &proof_term).unwrap();
+
+        // Check that the types are NOT convertible after reduction
+        let theorem_reduced = reduction::normalize(&theorem_type);
+        let proof_reduced = reduction::normalize(&*proof_type);
+
+        assert!(!typechecker::is_convertible(
+            &local_ctx,
+            &type_checker.global_env,
+            &theorem_reduced,
+            &proof_reduced
+        ));
     }
 }

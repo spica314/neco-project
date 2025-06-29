@@ -30,6 +30,10 @@ impl Parse for TermApply<PhaseParse> {
             args.push(arg.into());
         }
 
+        if args.is_empty() {
+            return Ok(None);
+        }
+
         let term_apply = TermApply {
             f: Box::new(f.into()),
             args,

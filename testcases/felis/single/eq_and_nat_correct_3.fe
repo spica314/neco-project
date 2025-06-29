@@ -14,6 +14,10 @@
     }
 }
 
-#theorem add_0_1_eq_add_1_0 : eq nat (add O (S O)) (add (S O) O) {
+#theorem nat_0_eq_0 : eq nat O O {
     eq_refl nat O
+}
+
+#theorem nat_1_eq_1 : eq nat (S O) (S O) {
+    eq_refl nat (S O)
 }

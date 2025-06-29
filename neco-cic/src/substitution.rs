@@ -64,8 +64,13 @@ fn substitute_variable(term_variable: &TermVariable, subst: &Substitution) -> Te
     }
 }
 
-fn substitute_constant(term_constant: &TermConstant, _subst: &Substitution) -> Term {
-    Term::Constant(term_constant.clone())
+fn substitute_constant(term_constant: &TermConstant, subst: &Substitution) -> Term {
+    // Check if this constant should be substituted as if it were a variable
+    if let Some(replacement) = subst.get(term_constant.id) {
+        replacement.as_ref().clone()
+    } else {
+        Term::Constant(term_constant.clone())
+    }
 }
 
 fn substitute_product(term_product: &TermProduct, subst: &Substitution) -> Term {

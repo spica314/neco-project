@@ -31,6 +31,14 @@ impl Parse for Term<PhaseParse> {
             return Ok(Some(Term::Apply(term_apply)));
         }
 
+        if let Some(term_variable) = TermVariable::parse(tokens, i)? {
+            return Ok(Some(Term::Variable(term_variable)));
+        }
+
+        if let Some(term_paren) = TermParen::parse(tokens, i)? {
+            return Ok(Some(Term::Paren(term_paren)));
+        }
+
         Ok(None)
     }
 }

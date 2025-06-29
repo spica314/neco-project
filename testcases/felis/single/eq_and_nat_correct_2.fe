@@ -1,5 +1,5 @@
-#inductive eq : (A : Type) -> (x : A) -> A -> Prop {
-    eq_refl: (A : Type) -> (x : A) -> eq A x x,
+#inductive eq : (A : Set) -> (x : A) -> A -> Prop {
+    eq_refl: (A : Set) -> (x : A) -> eq A x x,
 }
 
 #inductive nat : Set {

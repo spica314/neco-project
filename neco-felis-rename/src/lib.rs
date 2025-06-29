@@ -292,20 +292,16 @@ mod tests {
         // Check that the renamed file has the expected structure
         if let Item::Definition(def) = &renamed_file.items[0] {
             // Variables are wrapped in TermApply by the parser
-            if let Term::Apply(apply) = def.body.as_ref() {
-                if let Term::Variable(var) = apply.f.as_ref() {
-                    // Variable should have been assigned an ID
-                    let VariableId(file_id, var_id) = var.ext;
-                    assert_eq!(file_id, 0); // File ID should be 0
-                    assert!(var_id > 0); // Variable ID should be greater than 0
+            if let Term::Variable(var) = def.body.as_ref() {
+                // Variable should have been assigned an ID
+                let VariableId(file_id, var_id) = var.ext;
+                assert_eq!(file_id, 0); // File ID should be 0
+                assert!(var_id > 0); // Variable ID should be greater than 0
 
-                    // The variable name should still be "y"
-                    assert_eq!(var.variable.s(), "y");
-                } else {
-                    panic!("Expected variable in apply function position");
-                }
+                // The variable name should still be "y"
+                assert_eq!(var.variable.s(), "y");
             } else {
-                panic!("Expected apply in definition body");
+                panic!("Expected variable in apply function position");
             }
         } else {
             panic!("Expected definition item");

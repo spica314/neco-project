@@ -1,6 +1,5 @@
 pub trait Phase {
     type FileExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
-    type ItemExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
     type ItemDefinitionExt: std::fmt::Debug
         + Clone
         + PartialEq
@@ -29,7 +28,6 @@ pub trait Phase {
         + PartialOrd
         + Ord
         + std::hash::Hash;
-    type TermExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
     type TermApplyExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
     type TermArrowDepExt: std::fmt::Debug
         + Clone
@@ -68,12 +66,10 @@ pub struct PhaseParse();
 
 impl Phase for PhaseParse {
     type FileExt = ();
-    type ItemExt = ();
     type ItemDefinitionExt = ();
     type ItemInductiveExt = ();
     type ItemInductiveBranchExt = ();
     type ItemTheoremExt = ();
-    type TermExt = ();
     type TermApplyExt = ();
     type TermArrowDepExt = ();
     type TermArrowNodepExt = ();

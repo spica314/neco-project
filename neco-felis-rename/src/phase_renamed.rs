@@ -7,12 +7,10 @@ pub struct PhaseRenamed();
 
 impl Phase for PhaseRenamed {
     type FileExt = ();
-    type ItemExt = ();
     type ItemDefinitionExt = ();
     type ItemInductiveExt = ();
     type ItemInductiveBranchExt = ();
     type ItemTheoremExt = ();
-    type TermExt = ();
     type TermApplyExt = ();
     type TermArrowDepExt = ();
     type TermArrowNodepExt = ();

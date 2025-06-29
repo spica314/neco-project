@@ -11,7 +11,6 @@ pub enum Term<P: Phase> {
     Apply(TermApply<P>),
     Variable(TermVariable<P>),
     Match(TermMatch<P>),
-    Ext(P::TermExt),
 }
 
 impl Parse for Term<PhaseParse> {

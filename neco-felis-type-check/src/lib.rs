@@ -50,7 +50,6 @@ impl TypeChecker {
             Item::Inductive(inductive) => self.process_inductive(inductive),
             Item::Definition(definition) => self.process_definition(definition),
             Item::Theorem(theorem) => self.process_theorem(theorem),
-            Item::Ext(_) => unreachable!("Extension variants should not exist in PhaseParse"),
         }
     }
 
@@ -302,7 +301,6 @@ impl TypeChecker {
             }
             FTerm::Paren(paren) => self.convert_term(paren.term()),
             FTerm::Match(match_expr) => self.convert_match(match_expr),
-            FTerm::Ext(_) => unreachable!("Extension variants should not exist in PhaseParse"),
         }
     }
 

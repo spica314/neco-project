@@ -119,7 +119,6 @@ fn rename_item(context: &mut RenameContext, item: &Item<PhaseParse>) -> Item<Pha
             context.leave_scope();
             Item::Theorem(renamed_theorem)
         }
-        Item::Ext(_) => unreachable!("PhaseParse should not have Ext variants"),
     }
 }
 
@@ -219,7 +218,6 @@ fn rename_term(context: &mut RenameContext, term: &Term<PhaseParse>) -> Term<Pha
             paren_r: paren.paren_r.clone(),
             ext: (),
         }),
-        Term::Ext(_) => unreachable!("PhaseParse should not have Ext variants"),
     }
 }
 

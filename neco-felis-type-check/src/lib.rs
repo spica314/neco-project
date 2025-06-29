@@ -352,7 +352,7 @@ mod tests {
         let file_contents =
             std::fs::read_to_string("../testcases/felis/single/eq_and_nat_fail_1.fe").unwrap();
         let result = type_check_file(&file_contents);
-        eprintln!("result = {:?}", result);
+        eprintln!("result = {result:?}");
         assert!(
             result.is_err(),
             "Type checking should have failed but succeeded: {result:?}"
@@ -430,7 +430,7 @@ mod tests {
 
         // Check that the types are convertible after reduction
         let theorem_reduced = reduction::normalize(&theorem_type);
-        let proof_reduced = reduction::normalize(&*proof_type);
+        let proof_reduced = reduction::normalize(&proof_type);
 
         assert!(typechecker::is_convertible(
             &local_ctx,
@@ -463,7 +463,7 @@ mod tests {
 
         // Check that the types are NOT convertible after reduction
         let theorem_reduced = reduction::normalize(&theorem_type);
-        let proof_reduced = reduction::normalize(&*proof_type);
+        let proof_reduced = reduction::normalize(&proof_type);
 
         assert!(!typechecker::is_convertible(
             &local_ctx,

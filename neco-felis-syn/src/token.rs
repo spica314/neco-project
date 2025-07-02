@@ -79,6 +79,34 @@ pub struct TokenNumber {
     s: String,
 }
 
+impl Parse for TokenNumber {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Token::Number(number) = &tokens[*i] {
+            *i += 1;
+            Ok(Some(number.clone()))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TokenString {
+    pos: Pos,
+    s: String,
+}
+
+impl Parse for TokenString {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Token::String(string) = &tokens[*i] {
+            *i += 1;
+            Ok(Some(string.clone()))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenParenL {
     pos: Pos,
@@ -190,6 +218,17 @@ pub struct TokenSemicolon {
     pos: Pos,
 }
 
+impl Parse for TokenSemicolon {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<TokenSemicolon>, ParseError> {
+        if let Token::Semicolon(semicolon) = &tokens[*i] {
+            *i += 1;
+            Ok(Some(semicolon.clone()))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Token {
     Keyword(TokenKeyword),
@@ -205,6 +244,7 @@ pub enum Token {
     Comma(TokenComma),
     Colon(TokenColon),
     Semicolon(TokenSemicolon),
+    String(TokenString),
 }
 
 fn is_operator_char(c: char) -> bool {
@@ -231,6 +271,42 @@ impl Token {
             while cs[i].is_whitespace() {
                 i += 1;
                 column += 1;
+                continue;
+            }
+
+            // TokenString
+            if cs[i] == '\"' {
+                let token_line = line;
+                let token_column = column;
+
+                let mut buf = String::new();
+                // skip '\"'
+                i += 1;
+                column += 1;
+                // string body
+                while i < cs.len() && (cs[i] != '\"') {
+                    if cs[i] == '\\' {
+                        i += 1;
+                        column += 1;
+                        buf.push(cs[i]);
+                        i += 1;
+                        column += 1;
+                    } else {
+                        buf.push(cs[i]);
+                        i += 1;
+                        column += 1;
+                    }
+                }
+                // skip '\"'
+                i += 1;
+                column += 1;
+
+                let token = Token::String(TokenString {
+                    pos: Pos::new(file_id, token_line, token_column),
+                    s: buf,
+                });
+
+                tokens.push(token);
                 continue;
             }
 
@@ -376,7 +452,7 @@ impl Token {
                 i += 1;
                 column += 1;
                 let mut buf = String::new();
-                while i < cs.len() && cs[i].is_ascii_alphanumeric() {
+                while i < cs.len() && (cs[i].is_ascii_alphanumeric() || cs[i] == '_') {
                     buf.push(cs[i]);
                     i += 1;
                     column += 1;
@@ -474,6 +550,16 @@ mod test {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
         let s = std::fs::read_to_string("../testcases/felis/single/eq_and_nat.fe").unwrap();
+        let tokens = Token::lex(&s, file_id);
+
+        assert_debug_snapshot!(tokens);
+    }
+
+    #[test]
+    fn test_lex_exit_42() {
+        let mut file_id_generator = FileIdGenerator::new();
+        let file_id = file_id_generator.generate_file_id();
+        let s = std::fs::read_to_string("../testcases/felis/single/exit_42.fe").unwrap();
         let tokens = Token::lex(&s, file_id);
 
         assert_debug_snapshot!(tokens);

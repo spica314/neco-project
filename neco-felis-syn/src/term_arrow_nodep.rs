@@ -1,5 +1,5 @@
 use crate::{
-    Parse, ParseError, Phase, PhaseParse, Term, TermParen, TermVariable,
+    Parse, ParseError, Phase, PhaseParse, Term, TermNumber, TermParen, TermUnit, TermVariable,
     token::{Token, TokenOperator},
 };
 
@@ -54,6 +54,8 @@ impl Parse for TermArrowNodep<PhaseParse> {
 enum TermForArrowNodepFrom {
     Paren(TermParen<PhaseParse>),
     Variable(TermVariable<PhaseParse>),
+    Unit(TermUnit<PhaseParse>),
+    Number(TermNumber<PhaseParse>),
 }
 
 impl From<TermForArrowNodepFrom> for Term<PhaseParse> {
@@ -61,12 +63,18 @@ impl From<TermForArrowNodepFrom> for Term<PhaseParse> {
         match value {
             TermForArrowNodepFrom::Paren(term_paren) => Term::Paren(term_paren),
             TermForArrowNodepFrom::Variable(term_variable) => Term::Variable(term_variable),
+            TermForArrowNodepFrom::Unit(term_unit) => Term::Unit(term_unit),
+            TermForArrowNodepFrom::Number(term_number) => Term::Number(term_number),
         }
     }
 }
 
 impl Parse for TermForArrowNodepFrom {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Some(term_unit) = TermUnit::parse(tokens, i)? {
+            return Ok(Some(TermForArrowNodepFrom::Unit(term_unit)));
+        }
+
         if let Some(term_paren) = TermParen::parse(tokens, i)? {
             return Ok(Some(TermForArrowNodepFrom::Paren(term_paren)));
         }
@@ -75,6 +83,10 @@ impl Parse for TermForArrowNodepFrom {
             return Ok(Some(TermForArrowNodepFrom::Variable(term_variable)));
         }
 
-        Err(ParseError::Unknown("term_for_arrow_nodep_from_1"))
+        if let Some(term_number) = TermNumber::parse(tokens, i)? {
+            return Ok(Some(TermForArrowNodepFrom::Number(term_number)));
+        }
+
+        Ok(None)
     }
 }

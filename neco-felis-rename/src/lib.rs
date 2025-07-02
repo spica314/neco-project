@@ -1,7 +1,7 @@
 use neco_felis_syn::{
     File, Item, ItemDefinition, ItemInductive, ItemInductiveBranch, ItemTheorem, Pattern,
     PhaseParse, Term, TermApply, TermArrowDep, TermArrowNodep, TermMatch, TermMatchBranch,
-    TermParen, TermVariable,
+    TermNumber, TermParen, TermUnit, TermVariable,
 };
 use neco_scope::ScopeStack;
 
@@ -119,6 +119,18 @@ fn rename_item(context: &mut RenameContext, item: &Item<PhaseParse>) -> Item<Pha
             context.leave_scope();
             Item::Theorem(renamed_theorem)
         }
+        Item::Entrypoint(_) => {
+            // For now, just return the item unchanged since we don't handle entrypoints in renaming
+            unreachable!("Entrypoint items are not yet supported in renaming")
+        }
+        Item::UseBuiltin(_) => {
+            // For now, just return the item unchanged since we don't handle builtins in renaming
+            unreachable!("UseBuiltin items are not yet supported in renaming")
+        }
+        Item::Proc(_) => {
+            // For now, just return the item unchanged since we don't handle builtins in renaming
+            unreachable!("Proc items are not yet supported in renaming")
+        }
     }
 }
 
@@ -216,6 +228,15 @@ fn rename_term(context: &mut RenameContext, term: &Term<PhaseParse>) -> Term<Pha
             paren_l: paren.paren_l.clone(),
             term: Box::new(rename_term(context, paren.term())),
             paren_r: paren.paren_r.clone(),
+            ext: (),
+        }),
+        Term::Unit(unit) => Term::Unit(TermUnit {
+            paren_l: unit.paren_l.clone(),
+            paren_r: unit.paren_r.clone(),
+            ext: (),
+        }),
+        Term::Number(number) => Term::Number(TermNumber {
+            number: number.number.clone(),
             ext: (),
         }),
     }

@@ -76,4 +76,18 @@ mod test {
         assert_debug_snapshot!(file);
         assert_eq!(i, tokens.len());
     }
+
+    #[test]
+    fn test_parse_exit_42() {
+        let mut file_id_generator = FileIdGenerator::new();
+        let file_id = file_id_generator.generate_file_id();
+        let s = std::fs::read_to_string("../testcases/felis/single/exit_42.fe").unwrap();
+        let tokens = Token::lex(&s, file_id);
+
+        let mut i = 0;
+        let file = File::parse(&tokens, &mut i).unwrap().unwrap();
+
+        assert_debug_snapshot!(file);
+        assert_eq!(i, tokens.len());
+    }
 }

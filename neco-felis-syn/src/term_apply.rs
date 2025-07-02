@@ -1,4 +1,7 @@
-use crate::{Parse, ParseError, Phase, PhaseParse, Term, TermParen, TermVariable, token::Token};
+use crate::{
+    Parse, ParseError, Phase, PhaseParse, Term, TermNumber, TermParen, TermUnit, TermVariable,
+    token::Token,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TermApply<P: Phase> {
@@ -49,6 +52,8 @@ impl Parse for TermApply<PhaseParse> {
 enum TermForApplyElem {
     Paren(TermParen<PhaseParse>),
     Variable(TermVariable<PhaseParse>),
+    Unit(TermUnit<PhaseParse>),
+    Number(TermNumber<PhaseParse>),
 }
 
 impl From<TermForApplyElem> for Term<PhaseParse> {
@@ -56,18 +61,28 @@ impl From<TermForApplyElem> for Term<PhaseParse> {
         match value {
             TermForApplyElem::Paren(term_paren) => Term::Paren(term_paren),
             TermForApplyElem::Variable(term_variable) => Term::Variable(term_variable),
+            TermForApplyElem::Unit(term_unit) => Term::Unit(term_unit),
+            TermForApplyElem::Number(term_number) => Term::Number(term_number),
         }
     }
 }
 
 impl Parse for TermForApplyElem {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Some(term_unit) = TermUnit::parse(tokens, i)? {
+            return Ok(Some(TermForApplyElem::Unit(term_unit)));
+        }
+
         if let Some(term_paren) = TermParen::parse(tokens, i)? {
             return Ok(Some(TermForApplyElem::Paren(term_paren)));
         }
 
         if let Some(term_variable) = TermVariable::parse(tokens, i)? {
             return Ok(Some(TermForApplyElem::Variable(term_variable)));
+        }
+
+        if let Some(term_number) = TermNumber::parse(tokens, i)? {
+            return Ok(Some(TermForApplyElem::Number(term_number)));
         }
 
         Ok(None)

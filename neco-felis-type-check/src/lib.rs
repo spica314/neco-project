@@ -53,6 +53,15 @@ impl TypeChecker {
             Item::Inductive(inductive) => self.process_inductive(inductive),
             Item::Definition(definition) => self.process_definition(definition),
             Item::Theorem(theorem) => self.process_theorem(theorem),
+            Item::Entrypoint(_entrypoint) => {
+                // Entrypoint items are handled separately and don't need type checking
+                Ok(())
+            }
+            Item::UseBuiltin(_use_builtin) => {
+                // Builtin items are handled separately and don't need type checking
+                Ok(())
+            }
+            Item::Proc(_item_proc) => Ok(()),
         }
     }
 
@@ -224,6 +233,8 @@ impl TypeChecker {
             }
             FTerm::Paren(paren) => self.convert_term(paren.term()),
             FTerm::Match(match_expr) => self.convert_match(match_expr),
+            FTerm::Unit(_term_unit) => todo!(),
+            FTerm::Number(_term_number) => todo!(),
         }
     }
 

@@ -28,6 +28,20 @@ pub trait Phase {
         + PartialOrd
         + Ord
         + std::hash::Hash;
+    type ItemEntrypointExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type ItemBuiltinExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
     type TermApplyExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
     type TermArrowDepExt: std::fmt::Debug
         + Clone
@@ -59,6 +73,43 @@ pub trait Phase {
         + PartialOrd
         + Ord
         + std::hash::Hash;
+    type TermStringExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type StatementsExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type StatementsThenExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type ItemProcBlockExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type ItemProcExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
+    type TermUnitExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
+    type TermNumberExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -70,6 +121,8 @@ impl Phase for PhaseParse {
     type ItemInductiveExt = ();
     type ItemInductiveBranchExt = ();
     type ItemTheoremExt = ();
+    type ItemEntrypointExt = ();
+    type ItemBuiltinExt = ();
     type TermApplyExt = ();
     type TermArrowDepExt = ();
     type TermArrowNodepExt = ();
@@ -77,4 +130,11 @@ impl Phase for PhaseParse {
     type TermMatchBranchExt = ();
     type TermParenExt = ();
     type TermVariableExt = ();
+    type TermStringExt = ();
+    type StatementsExt = ();
+    type StatementsThenExt = ();
+    type ItemProcBlockExt = ();
+    type ItemProcExt = ();
+    type TermUnitExt = ();
+    type TermNumberExt = ();
 }

@@ -11,6 +11,8 @@ impl Phase for PhaseRenamed {
     type ItemInductiveExt = ();
     type ItemInductiveBranchExt = ();
     type ItemTheoremExt = ();
+    type ItemEntrypointExt = ();
+    type ItemBuiltinExt = ();
     type TermApplyExt = ();
     type TermArrowDepExt = ();
     type TermArrowNodepExt = ();
@@ -18,4 +20,11 @@ impl Phase for PhaseRenamed {
     type TermMatchBranchExt = ();
     type TermParenExt = ();
     type TermVariableExt = VariableId;
+    type TermStringExt = ();
+    type StatementsExt = ();
+    type StatementsThenExt = ();
+    type ItemProcBlockExt = ();
+    type ItemProcExt = ();
+    type TermUnitExt = ();
+    type TermNumberExt = ();
 }

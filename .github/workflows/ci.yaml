@@ -42,11 +42,5 @@ jobs:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
       
-      - name: Check format
-        run: cargo fmt --all -- --check
-      
-      - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
-      
-      - name: Run tests
-        run: cargo test --workspace --offline
+      - name: Run checks
+        run: tools/check.sh

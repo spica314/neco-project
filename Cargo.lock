@@ -42,6 +42,13 @@ name = "neco-cic"
 version = "0.1.0"
 
 [[package]]
+name = "neco-felis-compile"
+version = "0.1.0"
+dependencies = [
+ "neco-felis-syn",
+]
+
+[[package]]
 name = "neco-felis-rename"
 version = "0.1.0"
 dependencies = [

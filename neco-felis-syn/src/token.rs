@@ -79,6 +79,12 @@ pub struct TokenNumber {
     s: String,
 }
 
+impl TokenNumber {
+    pub fn s(&self) -> &str {
+        &self.s
+    }
+}
+
 impl Parse for TokenNumber {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         if let Token::Number(number) = &tokens[*i] {
@@ -94,6 +100,12 @@ impl Parse for TokenNumber {
 pub struct TokenString {
     pos: Pos,
     s: String,
+}
+
+impl TokenString {
+    pub fn s(&self) -> &str {
+        &self.s
+    }
 }
 
 impl Parse for TokenString {

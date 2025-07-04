@@ -52,3 +52,4 @@ pub use term_number::*;
 pub use term_paren::*;
 pub use term_unit::*;
 pub use term_variable::*;
+pub use token::*;

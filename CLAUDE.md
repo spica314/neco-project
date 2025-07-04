@@ -10,11 +10,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Workspace Architecture
 
-This is a Rust workspace with 3 crates forming a compiler pipeline:
+This is a Rust workspace with 6 crates forming a compiler pipeline:
 
 1. **neco-cic** - Core CIC kernel with type theory, reduction, and type checking
 2. **neco-felis-syn** - Frontend parser and syntax for Felis language
 3. **neco-felis-type-check** - Bridges Felis syntax with CIC kernel
+4. **neco-felis-compile** - Compiler frontend and main binary
+5. **neco-felis-rename** - Variable renaming and scope resolution
+6. **neco-scope** - Scope management utilities
 
 ## Common Commands
 
@@ -30,6 +33,9 @@ cargo test --workspace
 cargo test -p neco-cic
 cargo test -p neco-felis-syn
 cargo test -p neco-felis-type-check
+cargo test -p neco-felis-compile
+cargo test -p neco-felis-rename
+cargo test -p neco-scope
 
 # Test with snapshots (neco-felis-syn uses insta)
 cargo test -p neco-felis-syn
@@ -37,17 +43,14 @@ cargo test -p neco-felis-syn
 
 ### Development
 ```bash
-# Run clippy
-cargo clippy --workspace
-
-# Format code
-cargo fmt --workspace
+# Complete check (format, lint, test)
+tools/check.sh
 ```
 
 ## Architecture Notes
 
 ### Data Flow
-Felis source → `neco-felis-syn` (parsing) → `neco-felis-type-check` (validation) → `neco-cic` (kernel evaluation)
+Felis source → `neco-felis-syn` (parsing) → `neco-felis-rename` (scope resolution) → `neco-felis-type-check` (validation) → `neco-cic` (kernel evaluation) → `neco-felis-compile` (compilation)
 
 ### Key Design Patterns
 - **Unique IDs**: Variables use unique IDs to avoid capture issues in substitution
@@ -68,18 +71,37 @@ neco-cic/src/
 ├── typechecker.rs       # Type checking rules
 ├── reduction.rs         # Term reduction/normalization
 ├── global_environment.rs # Global definitions
+├── local_context.rs     # Local context management
 ├── inductive.rs         # Inductive type support
-└── substitution.rs      # Variable substitution
+├── substitution.rs      # Variable substitution
+└── id.rs                # Unique identifier system
 
 neco-felis-syn/src/
 ├── phase.rs             # Trees That Grow phase definitions
 ├── token.rs             # Lexical analysis
 ├── parse.rs             # Parser framework
 ├── file.rs              # File-level parsing (phase-parameterized)
+├── file_id.rs           # File identification
+├── pos.rs               # Position tracking
 ├── item*.rs             # Top-level items (phase-parameterized)
-└── term*.rs             # Term-level syntax (phase-parameterized)
+├── term*.rs             # Term-level syntax (phase-parameterized)
+└── statements*.rs       # Statement parsing
 
-testcases/felis/single/  # Test cases for language features
+neco-felis-rename/src/
+├── lib.rs               # Variable renaming logic
+└── phase_renamed.rs     # Renamed phase definitions
+
+neco-felis-compile/src/
+├── lib.rs               # Compilation logic
+└── main.rs              # Main compiler binary
+
+neco-felis-type-check/src/
+└── lib.rs               # Type checking bridge
+
+neco-scope/src/
+└── lib.rs               # Scope management utilities
+
+testcases/felis/single/  # Test cases for language features (9 test files)
 ```
 
 ## Language Features (Felis)
@@ -103,6 +125,10 @@ Felis supports dependent types with syntax for:
 - Use clear, descriptive names
 - Document public APIs with doc comments
 - Follow CIC typing rules precisely in kernel implementation
+
+### Task Completion
+- **Always run `tools/check.sh`** after completing tasks to verify format, lint, and tests pass
+- This ensures code quality before considering a task complete
 
 ## Trees That Grow Architecture
 

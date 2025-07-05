@@ -34,7 +34,7 @@ Unit tests should be placed at the end of the file they are testing, not in sepa
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_specific_behavior() {
         // Test implementation...
@@ -51,7 +51,7 @@ fn test_set_has_type_type0() {
     assert_eq!(*ty, Term::Sort(TermSort { sort: Sort::Type(0) }));
 }
 
-#[test] 
+#[test]
 fn test_type0_has_type_type1() {
     let type0 = Term::Sort(TermSort { sort: Sort::Type(0) });
     let ty = infer_type(&ctx, &env, &type0).unwrap();
@@ -68,7 +68,7 @@ fn test_sort_typing() {
     let ty = infer_type(&ctx, &env, &set).unwrap();
     assert_eq!(*ty, Term::Sort(TermSort { sort: Sort::Type(0) }));
 
-    // Test: Type(0) : Type(1) 
+    // Test: Type(0) : Type(1)
     let type0 = Term::Sort(TermSort { sort: Sort::Type(0) });
     let ty = infer_type(&ctx, &env, &type0).unwrap();
     assert_eq!(*ty, Term::Sort(TermSort { sort: Sort::Type(1) }));

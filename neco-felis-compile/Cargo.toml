@@ -8,7 +8,3 @@ neco-felis-syn = { path = "../neco-felis-syn" }
 
 [dev-dependencies]
 tempfile = { workspace = true }
-
-[[bin]]
-name = "neco-felis-compile"
-path = "src/main.rs"

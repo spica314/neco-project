@@ -231,6 +231,11 @@ impl AssemblyCompiler {
                         "u64_mul" => return self.compile_u64_mul_let(apply, offset),
                         "u64_div" => return self.compile_u64_div_let(apply, offset),
                         "u64_mod" => return self.compile_u64_mod_let(apply, offset),
+                        "f32_add" => return self.compile_f32_add_let(apply, offset),
+                        "f32_sub" => return self.compile_f32_sub_let(apply, offset),
+                        "f32_mul" => return self.compile_f32_mul_let(apply, offset),
+                        "f32_div" => return self.compile_f32_div_let(apply, offset),
+                        "f32_to_u64" => return self.compile_f32_to_u64_let(apply, offset),
                         _ => {}
                     }
                 }
@@ -400,6 +405,211 @@ impl AssemblyCompiler {
             .push_str(&format!("    mov qword ptr [rsp + {}], rdx\n", offset - 8));
 
         Ok(())
+    }
+
+    fn compile_f32_add_let(
+        &mut self,
+        apply: &TermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        // f32_add expects exactly 2 arguments
+        if apply.args.len() != 2 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "f32_add expects 2 arguments, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg1 = &apply.args[0];
+        let arg2 = &apply.args[1];
+
+        // Load first argument into xmm0
+        self.load_f32_argument_into_register(arg1, "xmm0")?;
+
+        // Load second argument into xmm1 and add to xmm0
+        self.load_f32_argument_into_register(arg2, "xmm1")?;
+        self.output.push_str("    addss xmm0, xmm1\n");
+
+        // Store result from xmm0 to the variable's stack location
+        self.output.push_str(&format!(
+            "    movss dword ptr [rsp + {}], xmm0\n",
+            offset - 8
+        ));
+
+        Ok(())
+    }
+
+    fn compile_f32_sub_let(
+        &mut self,
+        apply: &TermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        // f32_sub expects exactly 2 arguments
+        if apply.args.len() != 2 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "f32_sub expects 2 arguments, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg1 = &apply.args[0];
+        let arg2 = &apply.args[1];
+
+        // Load first argument into xmm0
+        self.load_f32_argument_into_register(arg1, "xmm0")?;
+
+        // Load second argument into xmm1 and subtract from xmm0
+        self.load_f32_argument_into_register(arg2, "xmm1")?;
+        self.output.push_str("    subss xmm0, xmm1\n");
+
+        // Store result from xmm0 to the variable's stack location
+        self.output.push_str(&format!(
+            "    movss dword ptr [rsp + {}], xmm0\n",
+            offset - 8
+        ));
+
+        Ok(())
+    }
+
+    fn compile_f32_mul_let(
+        &mut self,
+        apply: &TermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        // f32_mul expects exactly 2 arguments
+        if apply.args.len() != 2 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "f32_mul expects 2 arguments, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg1 = &apply.args[0];
+        let arg2 = &apply.args[1];
+
+        // Load first argument into xmm0
+        self.load_f32_argument_into_register(arg1, "xmm0")?;
+
+        // Load second argument into xmm1 and multiply with xmm0
+        self.load_f32_argument_into_register(arg2, "xmm1")?;
+        self.output.push_str("    mulss xmm0, xmm1\n");
+
+        // Store result from xmm0 to the variable's stack location
+        self.output.push_str(&format!(
+            "    movss dword ptr [rsp + {}], xmm0\n",
+            offset - 8
+        ));
+
+        Ok(())
+    }
+
+    fn compile_f32_div_let(
+        &mut self,
+        apply: &TermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        // f32_div expects exactly 2 arguments
+        if apply.args.len() != 2 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "f32_div expects 2 arguments, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg1 = &apply.args[0];
+        let arg2 = &apply.args[1];
+
+        // Load first argument into xmm0
+        self.load_f32_argument_into_register(arg1, "xmm0")?;
+
+        // Load second argument into xmm1
+        self.load_f32_argument_into_register(arg2, "xmm1")?;
+
+        // Divide xmm0 by xmm1
+        self.output.push_str("    divss xmm0, xmm1\n");
+
+        // Store result from xmm0 to the variable's stack location
+        self.output.push_str(&format!(
+            "    movss dword ptr [rsp + {}], xmm0\n",
+            offset - 8
+        ));
+
+        Ok(())
+    }
+
+    fn compile_f32_to_u64_let(
+        &mut self,
+        apply: &TermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        // f32_to_u64 expects exactly 1 argument
+        if apply.args.len() != 1 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "f32_to_u64 expects 1 argument, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg = &apply.args[0];
+
+        // Load f32 argument into xmm0
+        self.load_f32_argument_into_register(arg, "xmm0")?;
+
+        // Convert f32 to u64
+        self.output.push_str("    cvttss2si rax, xmm0\n");
+
+        // Store result from rax to the variable's stack location
+        self.output
+            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+
+        Ok(())
+    }
+
+    fn load_f32_argument_into_register(
+        &mut self,
+        arg: &Term<PhaseParse>,
+        register: &str,
+    ) -> Result<(), CompileError> {
+        match arg {
+            Term::Number(num) => {
+                let number_str = num.number.s();
+                if let Some(float_value) = number_str.strip_suffix("f32") {
+                    // Use direct encoding (this is a simplified approach)
+                    self.output.push_str(&format!(
+                        "    mov eax, {}\n",
+                        Self::float_to_hex(float_value.parse::<f32>().unwrap_or(0.0))
+                    ));
+                    self.output.push_str(&format!("    movd {register}, eax\n"));
+                } else {
+                    return Err(CompileError::UnsupportedConstruct(format!(
+                        "Expected f32 number, got: {number_str}"
+                    )));
+                }
+            }
+            Term::Variable(var) => {
+                let var_name = var.variable.s();
+                if let Some(&var_offset) = self.variables.get(var_name) {
+                    self.output.push_str(&format!(
+                        "    movss {register}, dword ptr [rsp + {}]\n",
+                        var_offset - 8
+                    ));
+                } else {
+                    return Err(CompileError::UnsupportedConstruct(format!(
+                        "Unknown variable: {var_name}"
+                    )));
+                }
+            }
+            _ => {
+                return Err(CompileError::UnsupportedConstruct(format!(
+                    "Unsupported f32 argument type: {arg:?}"
+                )));
+            }
+        }
+        Ok(())
+    }
+
+    fn float_to_hex(f: f32) -> String {
+        format!("0x{:08x}", f.to_bits())
     }
 
     fn load_argument_into_register(
@@ -757,6 +967,150 @@ mod tests {
             Err(e) => {
                 // Skip test if assembler/linker not available
                 println!("Skipping mod.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_compile_add_f32() {
+        let assembly = compile_file_to_assembly("../testcases/felis/single/add_f32.fe").unwrap();
+        assert!(assembly.contains(".intel_syntax noprefix"));
+        assert!(assembly.contains("mov eax, 0x42200000")); // 40.0f32
+        assert!(assembly.contains("movd xmm0, eax"));
+        assert!(assembly.contains("mov eax, 0x40000000")); // 2.0f32
+        assert!(assembly.contains("movd xmm1, eax"));
+        assert!(assembly.contains("addss xmm0, xmm1"));
+        assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
+        assert!(assembly.contains("cvttss2si rax, xmm0"));
+        assert!(assembly.contains("syscall"));
+        assert!(assembly.contains("main:"));
+        assert!(assembly.contains("_start:"));
+    }
+
+    #[test]
+    fn test_compile_sub_f32() {
+        let assembly = compile_file_to_assembly("../testcases/felis/single/sub_f32.fe").unwrap();
+        assert!(assembly.contains(".intel_syntax noprefix"));
+        assert!(assembly.contains("mov eax, 0x42480000")); // 50.0f32
+        assert!(assembly.contains("movd xmm0, eax"));
+        assert!(assembly.contains("mov eax, 0x41000000")); // 8.0f32
+        assert!(assembly.contains("movd xmm1, eax"));
+        assert!(assembly.contains("subss xmm0, xmm1"));
+        assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
+        assert!(assembly.contains("cvttss2si rax, xmm0"));
+        assert!(assembly.contains("syscall"));
+        assert!(assembly.contains("main:"));
+        assert!(assembly.contains("_start:"));
+    }
+
+    #[test]
+    fn test_compile_mul_f32() {
+        let assembly = compile_file_to_assembly("../testcases/felis/single/mul_f32.fe").unwrap();
+        assert!(assembly.contains(".intel_syntax noprefix"));
+        assert!(assembly.contains("mov eax, 0x40c00000")); // 6.0f32
+        assert!(assembly.contains("movd xmm0, eax"));
+        assert!(assembly.contains("mov eax, 0x40e00000")); // 7.0f32
+        assert!(assembly.contains("movd xmm1, eax"));
+        assert!(assembly.contains("mulss xmm0, xmm1"));
+        assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
+        assert!(assembly.contains("cvttss2si rax, xmm0"));
+        assert!(assembly.contains("syscall"));
+        assert!(assembly.contains("main:"));
+        assert!(assembly.contains("_start:"));
+    }
+
+    #[test]
+    fn test_compile_div_f32() {
+        let assembly = compile_file_to_assembly("../testcases/felis/single/div_f32.fe").unwrap();
+        assert!(assembly.contains(".intel_syntax noprefix"));
+        assert!(assembly.contains("mov eax, 0x42a80000")); // 84.0f32
+        assert!(assembly.contains("movd xmm0, eax"));
+        assert!(assembly.contains("mov eax, 0x40000000")); // 2.0f32
+        assert!(assembly.contains("movd xmm1, eax"));
+        assert!(assembly.contains("divss xmm0, xmm1"));
+        assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
+        assert!(assembly.contains("cvttss2si rax, xmm0"));
+        assert!(assembly.contains("syscall"));
+        assert!(assembly.contains("main:"));
+        assert!(assembly.contains("_start:"));
+    }
+
+    #[test]
+    fn test_add_f32_integration() {
+        let result = compile_and_execute("../testcases/felis/single/add_f32.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "add_f32.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // add_f32.fe should exit with code 42 (40.0 + 2.0 = 42.0)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping add_f32.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_sub_f32_integration() {
+        let result = compile_and_execute("../testcases/felis/single/sub_f32.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "sub_f32.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // sub_f32.fe should exit with code 42 (50.0 - 8.0 = 42.0)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping sub_f32.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_mul_f32_integration() {
+        let result = compile_and_execute("../testcases/felis/single/mul_f32.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "mul_f32.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // mul_f32.fe should exit with code 42 (6.0 * 7.0 = 42.0)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping mul_f32.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_div_f32_integration() {
+        let result = compile_and_execute("../testcases/felis/single/div_f32.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "div_f32.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // div_f32.fe should exit with code 42 (84.0 / 2.0 = 42.0)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping div_f32.fe integration test: {e}");
             }
         }
     }

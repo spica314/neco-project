@@ -235,6 +235,11 @@ impl TypeChecker {
             FTerm::Match(match_expr) => self.convert_match(match_expr),
             FTerm::Unit(_term_unit) => todo!(),
             FTerm::Number(_term_number) => todo!(),
+            FTerm::Let(_term_let) => {
+                // For now, let expressions are not supported in the type checker
+                // They should be handled at the compilation level
+                Err("Let expressions are not supported in type checker yet".to_string())
+            }
         }
     }
 

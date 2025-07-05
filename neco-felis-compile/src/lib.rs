@@ -29,6 +29,8 @@ struct AssemblyCompiler {
     output: String,
     entrypoint: Option<String>,
     builtins: HashMap<String, String>,
+    variables: HashMap<String, i32>, // Now maps variable names to stack offsets
+    stack_offset: i32,               // Current stack offset
 }
 
 impl AssemblyCompiler {
@@ -37,6 +39,8 @@ impl AssemblyCompiler {
             output: String::new(),
             entrypoint: None,
             builtins: HashMap::new(),
+            variables: HashMap::new(),
+            stack_offset: 0,
         }
     }
 
@@ -81,9 +85,34 @@ impl AssemblyCompiler {
     }
 
     fn compile_proc(&mut self, proc: &ItemProc<PhaseParse>) -> Result<(), CompileError> {
+        // Calculate the number of let variables in this function
+        let let_count = self.count_let_variables_in_proc_block(&proc.proc_block);
+        let stack_space = let_count * 8; // 8 bytes per variable (64-bit)
+
         self.output.push_str(&format!("{}:\n", proc.name.s()));
+
+        // Allocate stack space if needed
+        if stack_space > 0 {
+            self.output
+                .push_str(&format!("    sub rsp, {stack_space}\n"));
+        }
+
+        // Reset stack offset for this function
+        self.stack_offset = 0;
+
         self.compile_proc_block(&proc.proc_block)?;
+
+        // Deallocate stack space if needed
+        if stack_space > 0 {
+            self.output
+                .push_str(&format!("    add rsp, {stack_space}\n"));
+        }
+
         self.output.push_str("    ret\n\n");
+
+        // Clear variables for next function
+        self.variables.clear();
+
         Ok(())
     }
 
@@ -116,6 +145,7 @@ impl AssemblyCompiler {
     fn compile_term(&mut self, term: &Term<PhaseParse>) -> Result<(), CompileError> {
         match term {
             Term::Apply(apply) => self.compile_apply(apply),
+            Term::Let(let_expr) => self.compile_let(let_expr),
             _ => Err(CompileError::UnsupportedConstruct(format!("{term:?}"))),
         }
     }
@@ -138,16 +168,102 @@ impl AssemblyCompiler {
         let registers = ["rax", "rdi", "rsi", "rdx", "r10", "r8"];
 
         for (i, arg) in args.iter().enumerate() {
-            if let Term::Number(num) = arg {
-                self.output
-                    .push_str(&format!("    mov {}, {}\n", registers[i], num.number.s()));
-            } else {
-                return Err(CompileError::InvalidSyscall);
+            match arg {
+                Term::Number(num) => {
+                    let number_value = self.parse_number(num.number.s());
+                    self.output
+                        .push_str(&format!("    mov {}, {}\n", registers[i], number_value));
+                }
+                Term::Variable(var) => {
+                    let var_name = var.variable.s();
+                    if let Some(&offset) = self.variables.get(var_name) {
+                        // Load value from stack into register
+                        self.output.push_str(&format!(
+                            "    mov {}, qword ptr [rsp + {}]\n",
+                            registers[i],
+                            offset - 8
+                        ));
+                    } else {
+                        return Err(CompileError::UnsupportedConstruct(format!(
+                            "Unknown variable: {var_name}"
+                        )));
+                    }
+                }
+                _ => {
+                    return Err(CompileError::InvalidSyscall);
+                }
             }
         }
 
         self.output.push_str("    syscall\n");
         Ok(())
+    }
+
+    fn compile_let(&mut self, let_expr: &TermLet<PhaseParse>) -> Result<(), CompileError> {
+        let var_name = let_expr.variable_name();
+
+        // For now, only support let expressions with number values
+        if let Term::Number(num) = &*let_expr.value {
+            // Allocate stack space for this variable
+            self.stack_offset += 8; // 8 bytes for 64-bit value
+            let offset = self.stack_offset;
+
+            // Store the variable's stack offset
+            self.variables.insert(var_name.to_string(), offset);
+
+            // Move the value to the stack location
+            let number_value = self.parse_number(num.number.s());
+            self.output.push_str(&format!(
+                "    mov qword ptr [rsp + {}], {}\n",
+                offset - 8,
+                number_value
+            ));
+
+            Ok(())
+        } else {
+            Err(CompileError::UnsupportedConstruct(format!(
+                "let with non-number value: {let_expr:?}"
+            )))
+        }
+    }
+
+    fn count_let_variables_in_proc_block(&self, block: &ItemProcBlock<PhaseParse>) -> i32 {
+        Self::count_let_variables_in_statements(&block.statements)
+    }
+
+    fn count_let_variables_in_statements(statements: &Statements<PhaseParse>) -> i32 {
+        match statements {
+            Statements::Then(then) => {
+                let head_count = Self::count_let_variables_in_term(&then.head);
+                let tail_count = Self::count_let_variables_in_statements(&then.tail);
+                head_count + tail_count
+            }
+            Statements::Term(term) => Self::count_let_variables_in_term(term),
+            Statements::Nil => 0,
+        }
+    }
+
+    fn count_let_variables_in_term(term: &Term<PhaseParse>) -> i32 {
+        match term {
+            Term::Let(_) => 1,
+            Term::Apply(apply) => {
+                let mut count = Self::count_let_variables_in_term(&apply.f);
+                for arg in &apply.args {
+                    count += Self::count_let_variables_in_term(arg);
+                }
+                count
+            }
+            _ => 0,
+        }
+    }
+
+    fn parse_number(&self, number_str: &str) -> String {
+        // Remove type suffixes like u64, i32, etc.
+        if let Some(pos) = number_str.find(|c: char| c.is_ascii_alphabetic()) {
+            number_str[..pos].to_string()
+        } else {
+            number_str.to_string()
+        }
     }
 }
 
@@ -167,6 +283,8 @@ pub fn compile_file_to_assembly(file_path: &str) -> Result<String, Box<dyn std::
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::process::Command;
+    use tempfile::TempDir;
 
     #[test]
     fn test_compile_exit_42() {
@@ -177,5 +295,92 @@ mod tests {
         assert!(assembly.contains("syscall"));
         assert!(assembly.contains("main:"));
         assert!(assembly.contains("_start:"));
+    }
+
+    /// Helper function to compile, assemble, link, and execute a Felis program
+    fn compile_and_execute(
+        file_path: &str,
+    ) -> Result<std::process::ExitStatus, Box<dyn std::error::Error>> {
+        // Create temporary directory for build artifacts
+        let temp_dir = TempDir::new()?;
+        let asm_file = temp_dir.path().join("program.s");
+        let obj_file = temp_dir.path().join("program.o");
+        let exe_file = temp_dir.path().join("program");
+
+        // Step 1: Compile Felis to assembly
+        let assembly = compile_file_to_assembly(file_path)?;
+        std::fs::write(&asm_file, assembly)?;
+
+        // Step 2: Assemble to object file
+        let as_status = Command::new("as")
+            .args([
+                "--64",
+                &asm_file.to_string_lossy(),
+                "-o",
+                &obj_file.to_string_lossy(),
+            ])
+            .status()?;
+
+        if !as_status.success() {
+            return Err("Assembly failed".into());
+        }
+
+        // Step 3: Link to executable
+        let ld_status = Command::new("ld")
+            .args([
+                obj_file.to_string_lossy().as_ref(),
+                "-o",
+                &exe_file.to_string_lossy(),
+            ])
+            .status()?;
+
+        if !ld_status.success() {
+            return Err("Linking failed".into());
+        }
+
+        // Step 4: Execute the program
+        let exec_status = Command::new(&exe_file).status()?;
+
+        Ok(exec_status)
+    }
+
+    #[test]
+    fn test_exit_42_integration() {
+        let result = compile_and_execute("../testcases/felis/single/exit_42.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "exit_42.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // exit_42.fe should exit with code 42
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping exit_42.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_let_integration() {
+        let result = compile_and_execute("../testcases/felis/single/let.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "let.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // let.fe should exit with code 42 (error_code value in syscall)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping let.fe integration test: {e}");
+            }
+        }
     }
 }

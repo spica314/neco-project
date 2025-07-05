@@ -1,6 +1,6 @@
 use neco_felis_syn::{
     File, Item, ItemDefinition, ItemInductive, ItemInductiveBranch, ItemTheorem, Pattern,
-    PhaseParse, Term, TermApply, TermArrowDep, TermArrowNodep, TermMatch, TermMatchBranch,
+    PhaseParse, Term, TermApply, TermArrowDep, TermArrowNodep, TermLet, TermMatch, TermMatchBranch,
     TermNumber, TermParen, TermUnit, TermVariable,
 };
 use neco_scope::ScopeStack;
@@ -239,6 +239,25 @@ fn rename_term(context: &mut RenameContext, term: &Term<PhaseParse>) -> Term<Pha
             number: number.number.clone(),
             ext: (),
         }),
+        Term::Let(let_term) => {
+            // For let expressions, we need to:
+            // 1. Rename the value expression
+            // 2. Bind the variable in the current scope
+            // 3. Create the renamed let expression
+
+            let renamed_value = rename_term(context, let_term.value.as_ref());
+
+            // Bind the variable for future use
+            context.bind_variable(let_term.variable_name());
+
+            Term::Let(TermLet {
+                let_keyword: let_term.let_keyword.clone(),
+                variable: let_term.variable.clone(),
+                equals: let_term.equals.clone(),
+                value: Box::new(renamed_value),
+                ext: (),
+            })
+        }
     }
 }
 

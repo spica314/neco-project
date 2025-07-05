@@ -1,6 +1,6 @@
 use crate::{
-    Parse, ParseError, Phase, PhaseParse, TermApply, TermArrowDep, TermArrowNodep, TermMatch,
-    TermNumber, TermParen, TermUnit, TermVariable, token::Token,
+    Parse, ParseError, Phase, PhaseParse, TermApply, TermArrowDep, TermArrowNodep, TermLet,
+    TermMatch, TermNumber, TermParen, TermUnit, TermVariable, token::Token,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -13,10 +13,15 @@ pub enum Term<P: Phase> {
     Match(TermMatch<P>),
     Unit(TermUnit<P>),
     Number(TermNumber<P>),
+    Let(TermLet<P>),
 }
 
 impl Parse for Term<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Some(term_let) = TermLet::parse(tokens, i)? {
+            return Ok(Some(Term::Let(term_let)));
+        }
+
         if let Some(term_match) = TermMatch::parse(tokens, i)? {
             return Ok(Some(Term::Match(term_match)));
         }

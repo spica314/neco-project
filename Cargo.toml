@@ -7,6 +7,7 @@ members = [
 
 [workspace.dependencies]
 insta = "1.43.1"
+tempfile = "3.20.0"
 
 neco-felis-syn = { path = "./neco-felis-syn" }
 neco-scope = { path = "./neco-scope" }

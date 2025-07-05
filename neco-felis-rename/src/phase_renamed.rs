@@ -27,4 +27,5 @@ impl Phase for PhaseRenamed {
     type ItemProcExt = ();
     type TermUnitExt = ();
     type TermNumberExt = ();
+    type TermLetExt = ();
 }

@@ -3,7 +3,7 @@
 #use_builtin "syscall" #as __syscall;
 
 #proc main : () -> () {
-    let syscall_id = 231u64;
-    let error_code = 42u64;
+    #let syscall_id = 231u64;
+    #let error_code = 42u64;
     __syscall syscall_id error_code 0 0 0 0;
 }

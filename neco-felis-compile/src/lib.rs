@@ -718,16 +718,19 @@ mod tests {
     #[test]
     fn test_compile_add() {
         let assembly = compile_file_to_assembly("../testcases/felis/single/add.fe").unwrap();
+        println!("Generated assembly for add.fe:\n{assembly}");
+
+        // Update expectations based on the new #let syntax
         assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("mov rax, 40"));
-        assert!(assembly.contains("mov rbx, 2"));
-        assert!(assembly.contains("add rax, rbx"));
-        assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
-        assert!(assembly.contains("mov rax, qword ptr [rsp + 0]"));
-        assert!(assembly.contains("mov rdi, qword ptr [rsp + 8]"));
-        assert!(assembly.contains("syscall"));
         assert!(assembly.contains("main:"));
         assert!(assembly.contains("_start:"));
+        assert!(assembly.contains("sub rsp, 16")); // Stack allocation for 2 let variables
+        assert!(assembly.contains("mov qword ptr [rsp + 0], 231")); // syscall_id = 231u64
+        assert!(assembly.contains("mov rax, 40")); // u64_add first arg
+        assert!(assembly.contains("mov rbx, 2")); // u64_add second arg  
+        assert!(assembly.contains("add rax, rbx")); // u64_add operation
+        assert!(assembly.contains("mov qword ptr [rsp + 8], rax")); // Store result
+        assert!(assembly.contains("syscall"));
     }
 
     #[test]

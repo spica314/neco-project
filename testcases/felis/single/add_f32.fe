@@ -5,8 +5,8 @@
 #use_builtin "f32_to_u64" #as __f32_to_u64;
 
 #proc main : () -> () {
-    let syscall_id = 231u64;
-    let result = __f32_add 40.0f32 2.0f32;
-    let error_code = __f32_to_u64 result;
+    #let syscall_id = 231u64;
+    #let result = __f32_add 40.0f32 2.0f32;
+    #let error_code = __f32_to_u64 result;
     __syscall syscall_id error_code 0 0 0 0;
 }

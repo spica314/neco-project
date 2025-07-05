@@ -4,7 +4,7 @@
 #use_builtin "u64_div" #as __u64_div;
 
 #proc main : () -> () {
-    let syscall_id = 231u64;
-    let error_code = __u64_div 84u64 2u64;
+    #let syscall_id = 231u64;
+    #let error_code = __u64_div 84u64 2u64;
     __syscall syscall_id error_code 0 0 0 0;
 }

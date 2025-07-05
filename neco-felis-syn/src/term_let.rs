@@ -1,11 +1,11 @@
 use crate::{
     Parse, ParseError, Phase, PhaseParse, Term,
-    token::{Token, TokenOperator, TokenVariable},
+    token::{Token, TokenKeyword, TokenOperator, TokenVariable},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TermLet<P: Phase> {
-    pub let_keyword: TokenVariable,
+    pub let_keyword: TokenKeyword,
     pub variable: TokenVariable,
     pub equals: TokenOperator,
     pub value: Box<Term<P>>,
@@ -17,17 +17,9 @@ impl Parse for TermLet<PhaseParse> {
         let mut k = *i;
 
         // Parse "let" keyword
-        if k >= tokens.len() {
-            return Ok(None);
-        }
-
-        let Some(let_keyword) = TokenVariable::parse(tokens, &mut k)? else {
+        let Some(let_keyword) = TokenKeyword::parse_keyword(tokens, &mut k, "let")? else {
             return Ok(None);
         };
-
-        if let_keyword.s() != "let" {
-            return Ok(None);
-        }
 
         // Parse variable name
         let Some(variable) = TokenVariable::parse(tokens, &mut k)? else {

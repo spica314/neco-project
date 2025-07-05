@@ -202,29 +202,119 @@ impl AssemblyCompiler {
     fn compile_let(&mut self, let_expr: &TermLet<PhaseParse>) -> Result<(), CompileError> {
         let var_name = let_expr.variable_name();
 
-        // For now, only support let expressions with number values
-        if let Term::Number(num) = &*let_expr.value {
-            // Allocate stack space for this variable
-            self.stack_offset += 8; // 8 bytes for 64-bit value
-            let offset = self.stack_offset;
+        // Allocate stack space for this variable
+        self.stack_offset += 8; // 8 bytes for 64-bit value
+        let offset = self.stack_offset;
 
-            // Store the variable's stack offset
-            self.variables.insert(var_name.to_string(), offset);
+        // Store the variable's stack offset
+        self.variables.insert(var_name.to_string(), offset);
 
-            // Move the value to the stack location
-            let number_value = self.parse_number(num.number.s());
-            self.output.push_str(&format!(
-                "    mov qword ptr [rsp + {}], {}\n",
-                offset - 8,
-                number_value
-            ));
-
-            Ok(())
-        } else {
-            Err(CompileError::UnsupportedConstruct(format!(
+        match &*let_expr.value {
+            Term::Number(num) => {
+                // Move the value to the stack location
+                let number_value = self.parse_number(num.number.s());
+                self.output.push_str(&format!(
+                    "    mov qword ptr [rsp + {}], {}\n",
+                    offset - 8,
+                    number_value
+                ));
+                Ok(())
+            }
+            Term::Apply(apply) => {
+                // Handle function application in let expression
+                if let Term::Variable(var) = &*apply.f
+                    && let Some(builtin) = self.builtins.get(var.variable.s())
+                    && builtin == "u64_add"
+                {
+                    return self.compile_u64_add_let(apply, offset);
+                }
+                Err(CompileError::UnsupportedConstruct(format!(
+                    "let with unsupported function application: {apply:?}"
+                )))
+            }
+            _ => Err(CompileError::UnsupportedConstruct(format!(
                 "let with non-number value: {let_expr:?}"
-            )))
+            ))),
         }
+    }
+
+    fn compile_u64_add_let(
+        &mut self,
+        apply: &TermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        // u64_add expects exactly 2 arguments
+        if apply.args.len() != 2 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "u64_add expects 2 arguments, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg1 = &apply.args[0];
+        let arg2 = &apply.args[1];
+
+        // Load first argument into rax
+        match arg1 {
+            Term::Number(num) => {
+                let number_value = self.parse_number(num.number.s());
+                self.output
+                    .push_str(&format!("    mov rax, {number_value}\n"));
+            }
+            Term::Variable(var) => {
+                let var_name = var.variable.s();
+                if let Some(&var_offset) = self.variables.get(var_name) {
+                    self.output.push_str(&format!(
+                        "    mov rax, qword ptr [rsp + {}]\n",
+                        var_offset - 8
+                    ));
+                } else {
+                    return Err(CompileError::UnsupportedConstruct(format!(
+                        "Unknown variable: {var_name}"
+                    )));
+                }
+            }
+            _ => {
+                return Err(CompileError::UnsupportedConstruct(format!(
+                    "Unsupported argument type for u64_add: {arg1:?}"
+                )));
+            }
+        }
+
+        // Load second argument into rbx and add to rax
+        match arg2 {
+            Term::Number(num) => {
+                let number_value = self.parse_number(num.number.s());
+                self.output
+                    .push_str(&format!("    mov rbx, {number_value}\n"));
+                self.output.push_str("    add rax, rbx\n");
+            }
+            Term::Variable(var) => {
+                let var_name = var.variable.s();
+                if let Some(&var_offset) = self.variables.get(var_name) {
+                    self.output.push_str(&format!(
+                        "    mov rbx, qword ptr [rsp + {}]\n",
+                        var_offset - 8
+                    ));
+                    self.output.push_str("    add rax, rbx\n");
+                } else {
+                    return Err(CompileError::UnsupportedConstruct(format!(
+                        "Unknown variable: {var_name}"
+                    )));
+                }
+            }
+            _ => {
+                return Err(CompileError::UnsupportedConstruct(format!(
+                    "Unsupported argument type for u64_add: {arg2:?}"
+                )));
+            }
+        }
+
+        // Store result from rax to the variable's stack location
+        self.output
+            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+
+        Ok(())
     }
 
     fn count_let_variables_in_proc_block(&self, block: &ItemProcBlock<PhaseParse>) -> i32 {
@@ -292,6 +382,21 @@ mod tests {
         assert!(assembly.contains(".intel_syntax noprefix"));
         assert!(assembly.contains("mov rax, 231"));
         assert!(assembly.contains("mov rdi, 42"));
+        assert!(assembly.contains("syscall"));
+        assert!(assembly.contains("main:"));
+        assert!(assembly.contains("_start:"));
+    }
+
+    #[test]
+    fn test_compile_add() {
+        let assembly = compile_file_to_assembly("../testcases/felis/single/add.fe").unwrap();
+        assert!(assembly.contains(".intel_syntax noprefix"));
+        assert!(assembly.contains("mov rax, 40"));
+        assert!(assembly.contains("mov rbx, 2"));
+        assert!(assembly.contains("add rax, rbx"));
+        assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
+        assert!(assembly.contains("mov rax, qword ptr [rsp + 0]"));
+        assert!(assembly.contains("mov rdi, qword ptr [rsp + 8]"));
         assert!(assembly.contains("syscall"));
         assert!(assembly.contains("main:"));
         assert!(assembly.contains("_start:"));
@@ -380,6 +485,26 @@ mod tests {
             Err(e) => {
                 // Skip test if assembler/linker not available
                 println!("Skipping let.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_add_integration() {
+        let result = compile_and_execute("../testcases/felis/single/add.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "add.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // add.fe should exit with code 42 (40 + 2 = 42)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping add.fe integration test: {e}");
             }
         }
     }

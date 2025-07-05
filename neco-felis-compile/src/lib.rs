@@ -224,9 +224,15 @@ impl AssemblyCompiler {
                 // Handle function application in let expression
                 if let Term::Variable(var) = &*apply.f
                     && let Some(builtin) = self.builtins.get(var.variable.s())
-                    && builtin == "u64_add"
                 {
-                    return self.compile_u64_add_let(apply, offset);
+                    match builtin.as_str() {
+                        "u64_add" => return self.compile_u64_add_let(apply, offset),
+                        "u64_sub" => return self.compile_u64_sub_let(apply, offset),
+                        "u64_mul" => return self.compile_u64_mul_let(apply, offset),
+                        "u64_div" => return self.compile_u64_div_let(apply, offset),
+                        "u64_mod" => return self.compile_u64_mod_let(apply, offset),
+                        _ => {}
+                    }
                 }
                 Err(CompileError::UnsupportedConstruct(format!(
                     "let with unsupported function application: {apply:?}"
@@ -255,65 +261,177 @@ impl AssemblyCompiler {
         let arg2 = &apply.args[1];
 
         // Load first argument into rax
-        match arg1 {
-            Term::Number(num) => {
-                let number_value = self.parse_number(num.number.s());
-                self.output
-                    .push_str(&format!("    mov rax, {number_value}\n"));
-            }
-            Term::Variable(var) => {
-                let var_name = var.variable.s();
-                if let Some(&var_offset) = self.variables.get(var_name) {
-                    self.output.push_str(&format!(
-                        "    mov rax, qword ptr [rsp + {}]\n",
-                        var_offset - 8
-                    ));
-                } else {
-                    return Err(CompileError::UnsupportedConstruct(format!(
-                        "Unknown variable: {var_name}"
-                    )));
-                }
-            }
-            _ => {
-                return Err(CompileError::UnsupportedConstruct(format!(
-                    "Unsupported argument type for u64_add: {arg1:?}"
-                )));
-            }
-        }
+        self.load_argument_into_register(arg1, "rax")?;
 
         // Load second argument into rbx and add to rax
-        match arg2 {
-            Term::Number(num) => {
-                let number_value = self.parse_number(num.number.s());
-                self.output
-                    .push_str(&format!("    mov rbx, {number_value}\n"));
-                self.output.push_str("    add rax, rbx\n");
-            }
-            Term::Variable(var) => {
-                let var_name = var.variable.s();
-                if let Some(&var_offset) = self.variables.get(var_name) {
-                    self.output.push_str(&format!(
-                        "    mov rbx, qword ptr [rsp + {}]\n",
-                        var_offset - 8
-                    ));
-                    self.output.push_str("    add rax, rbx\n");
-                } else {
-                    return Err(CompileError::UnsupportedConstruct(format!(
-                        "Unknown variable: {var_name}"
-                    )));
-                }
-            }
-            _ => {
-                return Err(CompileError::UnsupportedConstruct(format!(
-                    "Unsupported argument type for u64_add: {arg2:?}"
-                )));
-            }
-        }
+        self.load_argument_into_register(arg2, "rbx")?;
+        self.output.push_str("    add rax, rbx\n");
 
         // Store result from rax to the variable's stack location
         self.output
             .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
 
+        Ok(())
+    }
+
+    fn compile_u64_sub_let(
+        &mut self,
+        apply: &TermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        // u64_sub expects exactly 2 arguments
+        if apply.args.len() != 2 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "u64_sub expects 2 arguments, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg1 = &apply.args[0];
+        let arg2 = &apply.args[1];
+
+        // Load first argument into rax
+        self.load_argument_into_register(arg1, "rax")?;
+
+        // Load second argument into rbx and subtract from rax
+        self.load_argument_into_register(arg2, "rbx")?;
+        self.output.push_str("    sub rax, rbx\n");
+
+        // Store result from rax to the variable's stack location
+        self.output
+            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+
+        Ok(())
+    }
+
+    fn compile_u64_mul_let(
+        &mut self,
+        apply: &TermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        // u64_mul expects exactly 2 arguments
+        if apply.args.len() != 2 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "u64_mul expects 2 arguments, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg1 = &apply.args[0];
+        let arg2 = &apply.args[1];
+
+        // Load first argument into rax
+        self.load_argument_into_register(arg1, "rax")?;
+
+        // Load second argument into rbx and multiply with rax
+        self.load_argument_into_register(arg2, "rbx")?;
+        self.output.push_str("    imul rax, rbx\n");
+
+        // Store result from rax to the variable's stack location
+        self.output
+            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+
+        Ok(())
+    }
+
+    fn compile_u64_div_let(
+        &mut self,
+        apply: &TermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        // u64_div expects exactly 2 arguments
+        if apply.args.len() != 2 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "u64_div expects 2 arguments, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg1 = &apply.args[0];
+        let arg2 = &apply.args[1];
+
+        // Load first argument into rax
+        self.load_argument_into_register(arg1, "rax")?;
+
+        // Load second argument into rbx
+        self.load_argument_into_register(arg2, "rbx")?;
+
+        // Clear rdx for division
+        self.output.push_str("    xor rdx, rdx\n");
+        // Divide rax by rbx, result in rax
+        self.output.push_str("    div rbx\n");
+
+        // Store result from rax to the variable's stack location
+        self.output
+            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+
+        Ok(())
+    }
+
+    fn compile_u64_mod_let(
+        &mut self,
+        apply: &TermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        // u64_mod expects exactly 2 arguments
+        if apply.args.len() != 2 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "u64_mod expects 2 arguments, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg1 = &apply.args[0];
+        let arg2 = &apply.args[1];
+
+        // Load first argument into rax
+        self.load_argument_into_register(arg1, "rax")?;
+
+        // Load second argument into rbx
+        self.load_argument_into_register(arg2, "rbx")?;
+
+        // Clear rdx for division
+        self.output.push_str("    xor rdx, rdx\n");
+        // Divide rax by rbx, remainder in rdx
+        self.output.push_str("    div rbx\n");
+
+        // Store remainder from rdx to the variable's stack location
+        self.output
+            .push_str(&format!("    mov qword ptr [rsp + {}], rdx\n", offset - 8));
+
+        Ok(())
+    }
+
+    fn load_argument_into_register(
+        &mut self,
+        arg: &Term<PhaseParse>,
+        register: &str,
+    ) -> Result<(), CompileError> {
+        match arg {
+            Term::Number(num) => {
+                let number_value = self.parse_number(num.number.s());
+                self.output
+                    .push_str(&format!("    mov {register}, {number_value}\n"));
+            }
+            Term::Variable(var) => {
+                let var_name = var.variable.s();
+                if let Some(&var_offset) = self.variables.get(var_name) {
+                    self.output.push_str(&format!(
+                        "    mov {register}, qword ptr [rsp + {}]\n",
+                        var_offset - 8
+                    ));
+                } else {
+                    return Err(CompileError::UnsupportedConstruct(format!(
+                        "Unknown variable: {var_name}"
+                    )));
+                }
+            }
+            _ => {
+                return Err(CompileError::UnsupportedConstruct(format!(
+                    "Unsupported argument type: {arg:?}"
+                )));
+            }
+        }
         Ok(())
     }
 
@@ -397,6 +515,60 @@ mod tests {
         assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
         assert!(assembly.contains("mov rax, qword ptr [rsp + 0]"));
         assert!(assembly.contains("mov rdi, qword ptr [rsp + 8]"));
+        assert!(assembly.contains("syscall"));
+        assert!(assembly.contains("main:"));
+        assert!(assembly.contains("_start:"));
+    }
+
+    #[test]
+    fn test_compile_sub() {
+        let assembly = compile_file_to_assembly("../testcases/felis/single/sub.fe").unwrap();
+        assert!(assembly.contains(".intel_syntax noprefix"));
+        assert!(assembly.contains("mov rax, 50"));
+        assert!(assembly.contains("mov rbx, 8"));
+        assert!(assembly.contains("sub rax, rbx"));
+        assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
+        assert!(assembly.contains("syscall"));
+        assert!(assembly.contains("main:"));
+        assert!(assembly.contains("_start:"));
+    }
+
+    #[test]
+    fn test_compile_mul() {
+        let assembly = compile_file_to_assembly("../testcases/felis/single/mul.fe").unwrap();
+        assert!(assembly.contains(".intel_syntax noprefix"));
+        assert!(assembly.contains("mov rax, 6"));
+        assert!(assembly.contains("mov rbx, 7"));
+        assert!(assembly.contains("imul rax, rbx"));
+        assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
+        assert!(assembly.contains("syscall"));
+        assert!(assembly.contains("main:"));
+        assert!(assembly.contains("_start:"));
+    }
+
+    #[test]
+    fn test_compile_div() {
+        let assembly = compile_file_to_assembly("../testcases/felis/single/div.fe").unwrap();
+        assert!(assembly.contains(".intel_syntax noprefix"));
+        assert!(assembly.contains("mov rax, 84"));
+        assert!(assembly.contains("mov rbx, 2"));
+        assert!(assembly.contains("xor rdx, rdx"));
+        assert!(assembly.contains("div rbx"));
+        assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
+        assert!(assembly.contains("syscall"));
+        assert!(assembly.contains("main:"));
+        assert!(assembly.contains("_start:"));
+    }
+
+    #[test]
+    fn test_compile_mod() {
+        let assembly = compile_file_to_assembly("../testcases/felis/single/mod.fe").unwrap();
+        assert!(assembly.contains(".intel_syntax noprefix"));
+        assert!(assembly.contains("mov rax, 142"));
+        assert!(assembly.contains("mov rbx, 100"));
+        assert!(assembly.contains("xor rdx, rdx"));
+        assert!(assembly.contains("div rbx"));
+        assert!(assembly.contains("mov qword ptr [rsp + 8], rdx"));
         assert!(assembly.contains("syscall"));
         assert!(assembly.contains("main:"));
         assert!(assembly.contains("_start:"));
@@ -505,6 +677,86 @@ mod tests {
             Err(e) => {
                 // Skip test if assembler/linker not available
                 println!("Skipping add.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_sub_integration() {
+        let result = compile_and_execute("../testcases/felis/single/sub.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "sub.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // sub.fe should exit with code 42 (50 - 8 = 42)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping sub.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_mul_integration() {
+        let result = compile_and_execute("../testcases/felis/single/mul.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "mul.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // mul.fe should exit with code 42 (6 * 7 = 42)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping mul.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_div_integration() {
+        let result = compile_and_execute("../testcases/felis/single/div.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "div.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // div.fe should exit with code 42 (84 / 2 = 42)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping div.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_mod_integration() {
+        let result = compile_and_execute("../testcases/felis/single/mod.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "mod.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // mod.fe should exit with code 42 (142 % 100 = 42)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping mod.fe integration test: {e}");
             }
         }
     }

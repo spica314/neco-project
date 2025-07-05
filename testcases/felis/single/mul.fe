@@ -1,0 +1,10 @@
+#entrypoint main;
+
+#use_builtin "syscall" #as __syscall;
+#use_builtin "u64_mul" #as __u64_mul;
+
+#proc main : () -> () {
+    let syscall_id = 231u64;
+    let error_code = __u64_mul 6u64 7u64;
+    __syscall syscall_id error_code 0 0 0 0;
+}

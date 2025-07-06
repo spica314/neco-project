@@ -240,6 +240,16 @@ impl TypeChecker {
                 // They should be handled at the compilation level
                 Err("Let expressions are not supported in type checker yet".to_string())
             }
+            FTerm::LetMut(_term_let_mut) => {
+                // For now, mutable let expressions are not supported in the type checker
+                // They should be handled at the compilation level
+                Err("Mutable let expressions are not supported in type checker yet".to_string())
+            }
+            FTerm::Assign(_term_assign) => {
+                // For now, assignment expressions are not supported in the type checker
+                // They should be handled at the compilation level
+                Err("Assignment expressions are not supported in type checker yet".to_string())
+            }
         }
     }
 

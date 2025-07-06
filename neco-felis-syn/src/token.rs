@@ -263,6 +263,10 @@ fn is_operator_char(c: char) -> bool {
     ['+', '-', '*', '/', '%', '=', '<', '>'].contains(&c)
 }
 
+fn is_reserved_keyword(s: &str) -> bool {
+    matches!(s, "mut")
+}
+
 impl Token {
     pub fn lex(s: &str, file_id: FileId) -> Vec<Token> {
         let cs: Vec<_> = s.chars().collect();
@@ -501,7 +505,7 @@ impl Token {
                 continue;
             }
 
-            // TokenVariable
+            // TokenVariable or reserved keyword
             if cs[i].is_ascii_alphabetic() || cs[i] == '_' {
                 let token_line = line;
                 let token_column = column;
@@ -514,16 +518,23 @@ impl Token {
                     column += 1;
                 }
 
-                let token = Token::Variable(TokenVariable {
-                    pos: Pos::new(file_id, token_line, token_column),
-                    s: buf,
-                });
+                let token = if is_reserved_keyword(&buf) {
+                    Token::Keyword(TokenKeyword {
+                        pos: Pos::new(file_id, token_line, token_column),
+                        s: buf,
+                    })
+                } else {
+                    Token::Variable(TokenVariable {
+                        pos: Pos::new(file_id, token_line, token_column),
+                        s: buf,
+                    })
+                };
 
                 tokens.push(token);
                 continue;
             }
 
-            // TokenVariable
+            // TokenOperator
             if is_operator_char(cs[i]) {
                 let token_line = line;
                 let token_column = column;
@@ -575,5 +586,21 @@ mod test {
         let tokens = Token::lex(&s, file_id);
 
         assert_debug_snapshot!(tokens);
+    }
+
+    #[test]
+    fn test_mut_keyword() {
+        let mut file_id_generator = FileIdGenerator::new();
+        let file_id = file_id_generator.generate_file_id();
+        let s = "mut";
+        let tokens = Token::lex(s, file_id);
+
+        assert_eq!(tokens.len(), 1);
+        match &tokens[0] {
+            Token::Keyword(keyword) => {
+                assert_eq!(keyword.s, "mut");
+            }
+            _ => panic!("Expected mut to be tokenized as a keyword"),
+        }
     }
 }

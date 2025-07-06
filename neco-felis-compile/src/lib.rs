@@ -146,6 +146,8 @@ impl AssemblyCompiler {
         match term {
             Term::Apply(apply) => self.compile_apply(apply),
             Term::Let(let_expr) => self.compile_let(let_expr),
+            Term::LetMut(let_mut_expr) => self.compile_let_mut(let_mut_expr),
+            Term::Assign(assign_expr) => self.compile_assign(assign_expr),
             _ => Err(CompileError::UnsupportedConstruct(format!("{term:?}"))),
         }
     }
@@ -197,6 +199,107 @@ impl AssemblyCompiler {
 
         self.output.push_str("    syscall\n");
         Ok(())
+    }
+
+    fn compile_let_mut(
+        &mut self,
+        let_mut_expr: &TermLetMut<PhaseParse>,
+    ) -> Result<(), CompileError> {
+        let var_name = let_mut_expr.variable_name();
+
+        // Allocate stack space for this variable
+        self.stack_offset += 8; // 8 bytes for 64-bit value
+        let offset = self.stack_offset;
+
+        // Store the variable's stack offset
+        self.variables.insert(var_name.to_string(), offset);
+
+        match &*let_mut_expr.value {
+            Term::Number(num) => {
+                // Move the value to the stack location
+                let number_value = self.parse_number(num.number.s());
+                self.output.push_str(&format!(
+                    "    mov qword ptr [rsp + {}], {}\n",
+                    offset - 8,
+                    number_value
+                ));
+                Ok(())
+            }
+            Term::Apply(apply) => {
+                // Handle function application in let mut expression
+                if let Term::Variable(var) = &*apply.f
+                    && let Some(builtin) = self.builtins.get(var.variable.s())
+                {
+                    match builtin.as_str() {
+                        "u64_add" => return self.compile_u64_add_let(apply, offset),
+                        "u64_sub" => return self.compile_u64_sub_let(apply, offset),
+                        "u64_mul" => return self.compile_u64_mul_let(apply, offset),
+                        "u64_div" => return self.compile_u64_div_let(apply, offset),
+                        "u64_mod" => return self.compile_u64_mod_let(apply, offset),
+                        "f32_add" => return self.compile_f32_add_let(apply, offset),
+                        "f32_sub" => return self.compile_f32_sub_let(apply, offset),
+                        "f32_mul" => return self.compile_f32_mul_let(apply, offset),
+                        "f32_div" => return self.compile_f32_div_let(apply, offset),
+                        "f32_to_u64" => return self.compile_f32_to_u64_let(apply, offset),
+                        _ => {}
+                    }
+                }
+                Err(CompileError::UnsupportedConstruct(format!(
+                    "let mut with unsupported function application: {apply:?}"
+                )))
+            }
+            _ => Err(CompileError::UnsupportedConstruct(format!(
+                "let mut with non-number value: {let_mut_expr:?}"
+            ))),
+        }
+    }
+
+    fn compile_assign(&mut self, assign_expr: &TermAssign<PhaseParse>) -> Result<(), CompileError> {
+        let var_name = assign_expr.variable_name();
+
+        // Check if the variable exists
+        let offset = *self.variables.get(var_name).ok_or_else(|| {
+            CompileError::UnsupportedConstruct(format!("Unknown variable: {var_name}"))
+        })?;
+
+        match &*assign_expr.value {
+            Term::Number(num) => {
+                // Move the value to the stack location
+                let number_value = self.parse_number(num.number.s());
+                self.output.push_str(&format!(
+                    "    mov qword ptr [rsp + {}], {}\n",
+                    offset - 8,
+                    number_value
+                ));
+                Ok(())
+            }
+            Term::Apply(apply) => {
+                // Handle function application in assignment
+                if let Term::Variable(var) = &*apply.f
+                    && let Some(builtin) = self.builtins.get(var.variable.s())
+                {
+                    match builtin.as_str() {
+                        "u64_add" => return self.compile_u64_add_let(apply, offset),
+                        "u64_sub" => return self.compile_u64_sub_let(apply, offset),
+                        "u64_mul" => return self.compile_u64_mul_let(apply, offset),
+                        "u64_div" => return self.compile_u64_div_let(apply, offset),
+                        "u64_mod" => return self.compile_u64_mod_let(apply, offset),
+                        "f32_add" => return self.compile_f32_add_let(apply, offset),
+                        "f32_sub" => return self.compile_f32_sub_let(apply, offset),
+                        "f32_mul" => return self.compile_f32_mul_let(apply, offset),
+                        "f32_div" => return self.compile_f32_div_let(apply, offset),
+                        "f32_to_u64" => return self.compile_f32_to_u64_let(apply, offset),
+                        _ => {}
+                    }
+                }
+                Err(CompileError::UnsupportedConstruct(format!(
+                    "assignment with unsupported function application: {apply:?}"
+                )))
+            }
+            _ => Err(CompileError::UnsupportedConstruct(format!(
+                "assignment with non-number value: {assign_expr:?}"
+            ))),
+        }
     }
 
     fn compile_let(&mut self, let_expr: &TermLet<PhaseParse>) -> Result<(), CompileError> {
@@ -664,6 +767,7 @@ impl AssemblyCompiler {
     fn count_let_variables_in_term(term: &Term<PhaseParse>) -> i32 {
         match term {
             Term::Let(_) => 1,
+            Term::LetMut(_) => 1,
             Term::Apply(apply) => {
                 let mut count = Self::count_let_variables_in_term(&apply.f);
                 for arg in &apply.args {
@@ -1114,6 +1218,41 @@ mod tests {
             Err(e) => {
                 // Skip test if assembler/linker not available
                 println!("Skipping div_f32.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_compile_let_mut() {
+        let assembly = compile_file_to_assembly("../testcases/felis/single/let_mut.fe").unwrap();
+        println!("Generated assembly for let_mut.fe:\n{assembly}");
+
+        assert!(assembly.contains(".intel_syntax noprefix"));
+        assert!(assembly.contains("main:"));
+        assert!(assembly.contains("_start:"));
+        assert!(assembly.contains("sub rsp, 16")); // Stack allocation for 2 variables
+        assert!(assembly.contains("mov qword ptr [rsp + 0], 231")); // syscall_id = 231u64
+        assert!(assembly.contains("mov qword ptr [rsp + 8], 0")); // let mut error_code = 0u64
+        assert!(assembly.contains("mov qword ptr [rsp + 8], 42")); // error_code = 42u64
+        assert!(assembly.contains("syscall"));
+    }
+
+    #[test]
+    fn test_let_mut_integration() {
+        let result = compile_and_execute("../testcases/felis/single/let_mut.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "let_mut.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // let_mut.fe should exit with code 42 (assigned error_code value in syscall)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping let_mut.fe integration test: {e}");
             }
         }
     }

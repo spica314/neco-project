@@ -1,6 +1,6 @@
 use crate::{
-    ItemDefinition, ItemEntrypoint, ItemInductive, ItemProc, ItemTheorem, ItemUseBuiltin, Parse,
-    ParseError, Phase, PhaseParse, token::Token,
+    ItemArray, ItemDefinition, ItemEntrypoint, ItemInductive, ItemProc, ItemStruct, ItemTheorem,
+    ItemUseBuiltin, Parse, ParseError, Phase, PhaseParse, token::Token,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -11,6 +11,8 @@ pub enum Item<P: Phase> {
     Entrypoint(ItemEntrypoint<P>),
     UseBuiltin(ItemUseBuiltin<P>),
     Proc(ItemProc<P>),
+    Array(ItemArray<P>),
+    Struct(ItemStruct<P>),
 }
 
 impl Parse for Item<PhaseParse> {
@@ -27,6 +29,10 @@ impl Parse for Item<PhaseParse> {
             Ok(Some(Item::Theorem(theorem)))
         } else if let Some(proc) = ItemProc::parse(tokens, i)? {
             Ok(Some(Item::Proc(proc)))
+        } else if let Some(array) = ItemArray::parse(tokens, i)? {
+            Ok(Some(Item::Array(array)))
+        } else if let Some(struct_) = ItemStruct::parse(tokens, i)? {
+            Ok(Some(Item::Struct(struct_)))
         } else {
             Ok(None)
         }

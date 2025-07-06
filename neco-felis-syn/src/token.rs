@@ -260,7 +260,7 @@ pub enum Token {
 }
 
 fn is_operator_char(c: char) -> bool {
-    ['+', '-', '*', '/', '%', '=', '<', '>'].contains(&c)
+    ['+', '-', '*', '/', '%', '=', '<', '>', '.', ':'].contains(&c)
 }
 
 fn is_reserved_keyword(s: &str) -> bool {
@@ -431,19 +431,35 @@ impl Token {
                 continue;
             }
 
-            // TokenColon
+            // TokenColon and Operator "::"
             if cs[i] == ':' {
                 let token_line = line;
                 let token_column = column;
-                i += 1;
-                column += 1;
 
-                let token = Token::Colon(TokenColon {
-                    pos: Pos::new(file_id, token_line, token_column),
-                });
+                // Check if it's "::" operator
+                if i + 1 < cs.len() && cs[i + 1] == ':' {
+                    i += 2;
+                    column += 2;
 
-                tokens.push(token);
-                continue;
+                    let token = Token::Operator(TokenOperator {
+                        pos: Pos::new(file_id, token_line, token_column),
+                        s: "::".to_string(),
+                    });
+
+                    tokens.push(token);
+                    continue;
+                } else {
+                    // Single colon
+                    i += 1;
+                    column += 1;
+
+                    let token = Token::Colon(TokenColon {
+                        pos: Pos::new(file_id, token_line, token_column),
+                    });
+
+                    tokens.push(token);
+                    continue;
+                }
             }
 
             // TokenSemicolon
@@ -510,9 +526,7 @@ impl Token {
                 let token_line = line;
                 let token_column = column;
                 let mut buf = String::new();
-                while i < cs.len()
-                    && (cs[i].is_ascii_alphanumeric() || cs[i] == '.' || cs[i] == '_')
-                {
+                while i < cs.len() && (cs[i].is_ascii_alphanumeric() || cs[i] == '_') {
                     buf.push(cs[i]);
                     i += 1;
                     column += 1;

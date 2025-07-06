@@ -131,6 +131,14 @@ fn rename_item(context: &mut RenameContext, item: &Item<PhaseParse>) -> Item<Pha
             // For now, just return the item unchanged since we don't handle builtins in renaming
             unreachable!("Proc items are not yet supported in renaming")
         }
+        Item::Array(_) => {
+            // For now, just return the item unchanged since we don't handle arrays in renaming
+            unreachable!("Array items are not yet supported in renaming")
+        }
+        Item::Struct(_) => {
+            // For now, just return the item unchanged since we don't handle structs in renaming
+            unreachable!("Struct items are not yet supported in renaming")
+        }
     }
 }
 
@@ -284,6 +292,22 @@ fn rename_term(context: &mut RenameContext, term: &Term<PhaseParse>) -> Term<Pha
                 value: Box::new(renamed_value),
                 ext: (),
             })
+        }
+        Term::FieldAccess(_) => {
+            // For now, field access is not supported in renaming
+            unreachable!("Field access terms are not yet supported in renaming")
+        }
+        Term::FieldAssign(_) => {
+            // For now, field assign is not supported in renaming
+            unreachable!("Field assign terms are not yet supported in renaming")
+        }
+        Term::ConstructorCall(_) => {
+            // For now, constructor calls are not supported in renaming
+            unreachable!("Constructor call terms are not yet supported in renaming")
+        }
+        Term::Struct(_) => {
+            // For now, struct expressions are not supported in renaming
+            unreachable!("Struct terms are not yet supported in renaming")
         }
     }
 }

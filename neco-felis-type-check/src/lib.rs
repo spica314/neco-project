@@ -62,6 +62,14 @@ impl TypeChecker {
                 Ok(())
             }
             Item::Proc(_item_proc) => Ok(()),
+            Item::Array(_item_array) => {
+                // TODO: Implement array type checking
+                Ok(())
+            }
+            Item::Struct(_item_struct) => {
+                // TODO: Implement struct type checking
+                Ok(())
+            }
         }
     }
 
@@ -249,6 +257,29 @@ impl TypeChecker {
                 // For now, assignment expressions are not supported in the type checker
                 // They should be handled at the compilation level
                 Err("Assignment expressions are not supported in type checker yet".to_string())
+            }
+            FTerm::FieldAccess(_term_field_access) => {
+                // For now, field access expressions are not supported in the type checker
+                // They should be handled at the compilation level
+                Err("Field access expressions are not supported in type checker yet".to_string())
+            }
+            FTerm::FieldAssign(_term_field_assign) => {
+                // For now, field assign expressions are not supported in the type checker
+                // They should be handled at the compilation level
+                Err("Field assign expressions are not supported in type checker yet".to_string())
+            }
+            FTerm::ConstructorCall(_term_constructor_call) => {
+                // For now, constructor call expressions are not supported in the type checker
+                // They should be handled at the compilation level
+                Err(
+                    "Constructor call expressions are not supported in type checker yet"
+                        .to_string(),
+                )
+            }
+            FTerm::Struct(_item_struct) => {
+                // For now, struct expressions are not supported in the type checker
+                // They should be handled at the compilation level
+                Err("Struct expressions are not supported in type checker yet".to_string())
             }
         }
     }

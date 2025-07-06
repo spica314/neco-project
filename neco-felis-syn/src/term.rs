@@ -1,6 +1,7 @@
 use crate::{
-    Parse, ParseError, Phase, PhaseParse, TermApply, TermArrowDep, TermArrowNodep, TermAssign,
-    TermLet, TermLetMut, TermMatch, TermNumber, TermParen, TermUnit, TermVariable, token::Token,
+    ItemStruct, Parse, ParseError, Phase, PhaseParse, TermApply, TermArrowDep, TermArrowNodep,
+    TermAssign, TermConstructorCall, TermFieldAccess, TermFieldAssign, TermLet, TermLetMut,
+    TermMatch, TermNumber, TermParen, TermUnit, TermVariable, token::Token,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -16,6 +17,10 @@ pub enum Term<P: Phase> {
     Let(TermLet<P>),
     LetMut(TermLetMut<P>),
     Assign(TermAssign<P>),
+    FieldAccess(TermFieldAccess<P>),
+    FieldAssign(TermFieldAssign<P>),
+    ConstructorCall(TermConstructorCall<P>),
+    Struct(ItemStruct<P>),
 }
 
 impl Parse for Term<PhaseParse> {
@@ -26,6 +31,10 @@ impl Parse for Term<PhaseParse> {
 
         if let Some(term_let) = TermLet::parse(tokens, i)? {
             return Ok(Some(Term::Let(term_let)));
+        }
+
+        if let Some(term_field_assign) = TermFieldAssign::parse(tokens, i)? {
+            return Ok(Some(Term::FieldAssign(term_field_assign)));
         }
 
         if let Some(term_assign) = TermAssign::parse(tokens, i)? {
@@ -44,8 +53,20 @@ impl Parse for Term<PhaseParse> {
             return Ok(Some(Term::ArrowNodep(term_arrow_nodep)));
         }
 
+        if let Some(term_constructor_call) = TermConstructorCall::parse(tokens, i)? {
+            return Ok(Some(Term::ConstructorCall(term_constructor_call)));
+        }
+
+        if let Some(term_field_access) = TermFieldAccess::parse(tokens, i)? {
+            return Ok(Some(Term::FieldAccess(term_field_access)));
+        }
+
         if let Some(term_apply) = TermApply::parse(tokens, i)? {
             return Ok(Some(Term::Apply(term_apply)));
+        }
+
+        if let Some(item_struct) = ItemStruct::parse(tokens, i)? {
+            return Ok(Some(Term::Struct(item_struct)));
         }
 
         if let Some(term_variable) = TermVariable::parse(tokens, i)? {

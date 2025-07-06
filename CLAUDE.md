@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Workspace Architecture
 
-This is a Rust workspace with 6 crates forming a compiler pipeline:
+This is a Rust workspace (edition 2024) with 6 crates forming a compiler pipeline:
 
 1. **neco-cic** - Core CIC kernel with type theory, reduction, and type checking
 2. **neco-felis-syn** - Frontend parser and syntax for Felis language
@@ -45,6 +45,12 @@ cargo test -p neco-felis-syn
 ```bash
 # Complete check (format, lint, test)
 tools/check.sh
+
+# Generate coverage report
+tools/generate-coverage-report.sh
+
+# Check newlines at end of files
+tools/check-newlines.sh
 ```
 
 ## Architecture Notes
@@ -60,8 +66,10 @@ Felis source → `neco-felis-syn` (parsing) → `neco-felis-rename` (scope resol
 
 ### Testing Strategy
 - **Unit tests**: Place tests at end of implementation files, one assertion per test function
-- **Integration tests**: Use testcases in `/testcases/felis/single/` with both positive and negative cases
+- **Integration tests**: Use testcases in `/testcases/felis/single/` with both positive and negative cases (21 test files)
 - **Snapshot testing**: `neco-felis-syn` uses `insta` for parser output validation
+- **Coverage reporting**: Use `tools/generate-coverage-report.sh` to generate coverage reports with `cargo llvm-cov`
+- **Test categories**: Basic CIC features, arithmetic operations (add, sub, mul, div, mod), floating-point arithmetic, correctness variants, and failure cases
 
 ## File Structure
 
@@ -84,8 +92,18 @@ neco-felis-syn/src/
 ├── file_id.rs           # File identification
 ├── pos.rs               # Position tracking
 ├── item*.rs             # Top-level items (phase-parameterized)
+│   ├── item_entrypoint.rs    # Entry point definitions
+│   ├── item_use_builtin.rs   # Built-in imports
+│   ├── item_proc.rs          # Procedure definitions
+│   └── item_proc_block.rs    # Procedure block syntax
 ├── term*.rs             # Term-level syntax (phase-parameterized)
+│   ├── term_let_mut.rs       # Mutable let bindings
+│   ├── term_assign.rs        # Assignment operations
+│   ├── term_unit.rs          # Unit type/value
+│   ├── term_number.rs        # Numeric literals
+│   └── term_arrow_nodep.rs   # Non-dependent arrow types
 └── statements*.rs       # Statement parsing
+    └── statements_then.rs    # Statement sequencing
 
 neco-felis-rename/src/
 ├── lib.rs               # Variable renaming logic
@@ -93,7 +111,9 @@ neco-felis-rename/src/
 
 neco-felis-compile/src/
 ├── lib.rs               # Compilation logic
-└── main.rs              # Main compiler binary
+├── main.rs              # Legacy main (deprecated)
+└── bin/
+    └── neco-felis-compile.rs  # Main compiler binary
 
 neco-felis-type-check/src/
 └── lib.rs               # Type checking bridge
@@ -101,7 +121,9 @@ neco-felis-type-check/src/
 neco-scope/src/
 └── lib.rs               # Scope management utilities
 
-testcases/felis/single/  # Test cases for language features (9 test files)
+testcases/felis/single/  # Test cases for language features (21 test files)
+docs/                    # Documentation directory
+└── design-principles.md # Design principles and architecture notes
 ```
 
 ## Language Features (Felis)
@@ -112,6 +134,15 @@ Felis supports dependent types with syntax for:
 - Theorems: `#theorem name : type { proof }`
 - Pattern matching: `#match expr { pattern => body }`
 - Dependent function types: `(A : Type) -> (x : A) -> ...`
+- Entry points: `#entrypoint main;`
+- Built-in imports: `#use_builtin "syscall" #as __syscall;`
+- Procedures: `#proc name : type { body }`
+- Mutable let bindings: `#let mut x = value;`
+- Assignment operations: `x = value;`
+- Numeric literals: `42u64`, `3.14f32`
+- Non-dependent arrows: `A -> B` (in addition to dependent `(x : A) -> B`)
+- Arrays and structs: `#array`, `#struct`
+- Statement sequencing with `#then`
 
 ## Development Guidelines
 

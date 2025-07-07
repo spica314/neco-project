@@ -7,6 +7,10 @@ pub struct TokenKeyword {
 }
 
 impl TokenKeyword {
+    pub fn s(&self) -> &str {
+        &self.s
+    }
+
     pub fn parse_keyword(
         tokens: &[Token],
         i: &mut usize,

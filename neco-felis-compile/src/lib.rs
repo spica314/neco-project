@@ -799,8 +799,7 @@ impl AssemblyCompiler {
                                                 var_offset - 8
                                             ));
                                             self.output.push_str(&format!(
-                                                "    mov rcx, {}\n",
-                                                element_size
+                                                "    mov rcx, {element_size}\n"
                                             ));
                                             self.output.push_str("    imul rbx, rcx\n");
                                             self.output.push_str("    add rax, rbx\n");
@@ -808,8 +807,7 @@ impl AssemblyCompiler {
                                     }
                                     _ => {
                                         return Err(CompileError::UnsupportedConstruct(format!(
-                                            "Unsupported index type: {:?}",
-                                            index_term
+                                            "Unsupported index type: {index_term:?}"
                                         )));
                                     }
                                 }
@@ -819,20 +817,17 @@ impl AssemblyCompiler {
                                     .push_str(&format!("    movss {register}, dword ptr [rax]\n"));
                             } else {
                                 return Err(CompileError::UnsupportedConstruct(format!(
-                                    "Unknown array field pointer: {}",
-                                    ptr_var_name
+                                    "Unknown array field pointer: {ptr_var_name}"
                                 )));
                             }
                         } else {
                             return Err(CompileError::UnsupportedConstruct(format!(
-                                "Array field access missing index: {}.{}",
-                                obj_name, field_name
+                                "Array field access missing index: {obj_name}.{field_name}"
                             )));
                         }
                     } else {
                         return Err(CompileError::UnsupportedConstruct(format!(
-                            "Unknown array: {}",
-                            obj_name
+                            "Unknown array: {obj_name}"
                         )));
                     }
                 }
@@ -919,8 +914,7 @@ impl AssemblyCompiler {
                                                 var_offset - 8
                                             ));
                                             self.output.push_str(&format!(
-                                                "    mov rcx, {}\n",
-                                                element_size
+                                                "    mov rcx, {element_size}\n"
                                             ));
                                             self.output.push_str("    imul rbx, rcx\n");
                                             self.output.push_str("    add rax, rbx\n");
@@ -928,8 +922,7 @@ impl AssemblyCompiler {
                                     }
                                     _ => {
                                         return Err(CompileError::UnsupportedConstruct(format!(
-                                            "Unsupported index type: {:?}",
-                                            index_term
+                                            "Unsupported index type: {index_term:?}"
                                         )));
                                     }
                                 }
@@ -939,20 +932,17 @@ impl AssemblyCompiler {
                                     .push_str(&format!("    mov {register}, qword ptr [rax]\n"));
                             } else {
                                 return Err(CompileError::UnsupportedConstruct(format!(
-                                    "Unknown array field pointer: {}",
-                                    ptr_var_name
+                                    "Unknown array field pointer: {ptr_var_name}"
                                 )));
                             }
                         } else {
                             return Err(CompileError::UnsupportedConstruct(format!(
-                                "Array field access missing index: {}.{}",
-                                obj_name, field_name
+                                "Array field access missing index: {obj_name}.{field_name}"
                             )));
                         }
                     } else {
                         return Err(CompileError::UnsupportedConstruct(format!(
-                            "Unknown array: {}",
-                            obj_name
+                            "Unknown array: {obj_name}"
                         )));
                     }
                 }
@@ -1108,50 +1098,47 @@ impl AssemblyCompiler {
         let type_name = constructor.type_name();
         let method_name = constructor.method_name();
 
-        if method_name == "new_with_size" {
-            if let Some(array_info) = self.arrays.get(type_name).cloned() {
-                if constructor.args.len() != 1 {
-                    return Err(CompileError::UnsupportedConstruct(format!(
-                        "new_with_size expects 1 argument, got {}",
-                        constructor.args.len()
-                    )));
-                }
+        if method_name == "new_with_size"
+            && let Some(array_info) = self.arrays.get(type_name).cloned()
+        {
+            if constructor.args.len() != 1 {
+                return Err(CompileError::UnsupportedConstruct(format!(
+                    "new_with_size expects 1 argument, got {}",
+                    constructor.args.len()
+                )));
+            }
 
-                // Get the size from the argument
-                let size_value = match &constructor.args[0] {
-                    Term::Number(num) => self.parse_number(num.number.s()),
-                    Term::Variable(var) => {
-                        if let Some(&offset) = self.variables.get(var.variable.s()) {
-                            // Load size from variable
-                            self.output.push_str(&format!(
-                                "    mov rsi, qword ptr [rsp + {}]\n",
-                                offset - 8
-                            ));
-                            "rsi".to_string()
-                        } else {
-                            return Err(CompileError::UnsupportedConstruct(format!(
-                                "Unknown variable: {}",
-                                var.variable.s()
-                            )));
-                        }
-                    }
-                    _ => {
+            // Get the size from the argument
+            let size_value = match &constructor.args[0] {
+                Term::Number(num) => self.parse_number(num.number.s()),
+                Term::Variable(var) => {
+                    if let Some(&offset) = self.variables.get(var.variable.s()) {
+                        // Load size from variable
+                        self.output
+                            .push_str(&format!("    mov rsi, qword ptr [rsp + {}]\n", offset - 8));
+                        "rsi".to_string()
+                    } else {
                         return Err(CompileError::UnsupportedConstruct(format!(
-                            "Unsupported size argument: {:?}",
-                            constructor.args[0]
+                            "Unknown variable: {}",
+                            var.variable.s()
                         )));
                     }
-                };
+                }
+                _ => {
+                    return Err(CompileError::UnsupportedConstruct(format!(
+                        "Unsupported size argument: {:?}",
+                        constructor.args[0]
+                    )));
+                }
+            };
 
-                // Generate SOA allocation code using mmap
-                self.generate_soa_allocation(type_name, &array_info, &size_value)?;
-                return Ok(());
-            }
+            // Generate SOA allocation code using mmap
+            self.generate_soa_allocation(type_name, &array_info, &size_value)?;
+            return Ok(());
         }
 
         Err(CompileError::UnsupportedConstruct(format!(
-            "Unknown constructor call: {}::{}",
-            type_name, method_name
+            "Unknown constructor call: {type_name}::{method_name}"
         )))
     }
 
@@ -1163,50 +1150,47 @@ impl AssemblyCompiler {
         let type_name = constructor.type_name();
         let method_name = constructor.method_name();
 
-        if method_name == "new_with_size" {
-            if let Some(array_info) = self.arrays.get(type_name).cloned() {
-                if constructor.args.len() != 1 {
-                    return Err(CompileError::UnsupportedConstruct(format!(
-                        "new_with_size expects 1 argument, got {}",
-                        constructor.args.len()
-                    )));
-                }
+        if method_name == "new_with_size"
+            && let Some(array_info) = self.arrays.get(type_name).cloned()
+        {
+            if constructor.args.len() != 1 {
+                return Err(CompileError::UnsupportedConstruct(format!(
+                    "new_with_size expects 1 argument, got {}",
+                    constructor.args.len()
+                )));
+            }
 
-                // Get the size from the argument
-                let size_value = match &constructor.args[0] {
-                    Term::Number(num) => self.parse_number(num.number.s()),
-                    Term::Variable(var) => {
-                        if let Some(&offset) = self.variables.get(var.variable.s()) {
-                            // Load size from variable
-                            self.output.push_str(&format!(
-                                "    mov rsi, qword ptr [rsp + {}]\n",
-                                offset - 8
-                            ));
-                            "rsi".to_string()
-                        } else {
-                            return Err(CompileError::UnsupportedConstruct(format!(
-                                "Unknown variable: {}",
-                                var.variable.s()
-                            )));
-                        }
-                    }
-                    _ => {
+            // Get the size from the argument
+            let size_value = match &constructor.args[0] {
+                Term::Number(num) => self.parse_number(num.number.s()),
+                Term::Variable(var) => {
+                    if let Some(&offset) = self.variables.get(var.variable.s()) {
+                        // Load size from variable
+                        self.output
+                            .push_str(&format!("    mov rsi, qword ptr [rsp + {}]\n", offset - 8));
+                        "rsi".to_string()
+                    } else {
                         return Err(CompileError::UnsupportedConstruct(format!(
-                            "Unsupported size argument: {:?}",
-                            constructor.args[0]
+                            "Unknown variable: {}",
+                            var.variable.s()
                         )));
                     }
-                };
+                }
+                _ => {
+                    return Err(CompileError::UnsupportedConstruct(format!(
+                        "Unsupported size argument: {:?}",
+                        constructor.args[0]
+                    )));
+                }
+            };
 
-                // Generate SOA allocation code using mmap with variable name
-                self.generate_soa_allocation_with_var(var_name, &array_info, &size_value)?;
-                return Ok(());
-            }
+            // Generate SOA allocation code using mmap with variable name
+            self.generate_soa_allocation_with_var(var_name, &array_info, &size_value)?;
+            return Ok(());
         }
 
         Err(CompileError::UnsupportedConstruct(format!(
-            "Unknown constructor call: {}::{}",
-            type_name, method_name
+            "Unknown constructor call: {type_name}::{method_name}"
         )))
     }
 
@@ -1235,10 +1219,10 @@ impl AssemblyCompiler {
 
             // Calculate total size = element_size * array_length
             if size != "rsi" {
-                self.output.push_str(&format!("    mov rsi, {}\n", size));
+                self.output.push_str(&format!("    mov rsi, {size}\n"));
             }
             self.output
-                .push_str(&format!("    mov rax, {}\n", element_size));
+                .push_str(&format!("    mov rax, {element_size}\n"));
             self.output.push_str("    mul rsi\n"); // rax = element_size * array_length
             self.output.push_str("    mov rsi, rax\n"); // rsi = total_size
 
@@ -1254,7 +1238,7 @@ impl AssemblyCompiler {
 
             // Store the returned pointer for this field
             // We'll use a simple naming convention: arrayname_fieldname_ptr
-            let ptr_var_name = format!("{}_{}_ptr", array_name, field_name);
+            let ptr_var_name = format!("{array_name}_{field_name}_ptr");
             self.stack_offset += 8;
             let ptr_offset = self.stack_offset;
             self.variables.insert(ptr_var_name, ptr_offset);
@@ -1298,10 +1282,10 @@ impl AssemblyCompiler {
 
             // Calculate total size = element_size * array_length
             if size != "rsi" {
-                self.output.push_str(&format!("    mov rsi, {}\n", size));
+                self.output.push_str(&format!("    mov rsi, {size}\n"));
             }
             self.output
-                .push_str(&format!("    mov rax, {}\n", element_size));
+                .push_str(&format!("    mov rax, {element_size}\n"));
             self.output.push_str("    mul rsi\n"); // rax = element_size * array_length
             self.output.push_str("    mov rsi, rax\n"); // rsi = total_size
 
@@ -1317,7 +1301,7 @@ impl AssemblyCompiler {
 
             // Store the returned pointer for this field
             // Use variable name instead of type name for the pointer variable
-            let ptr_var_name = format!("{}_{}_ptr", var_name, field_name);
+            let ptr_var_name = format!("{var_name}_{field_name}_ptr");
             self.stack_offset += 8;
             let ptr_offset = self.stack_offset;
             self.variables.insert(ptr_var_name, ptr_offset);
@@ -1341,61 +1325,58 @@ impl AssemblyCompiler {
         let field_name = field_access.field_name();
 
         // Look up the array type from variable name
-        if let Some(array_type_name) = self.variable_arrays.get(obj_name) {
-            if let Some(array_info) = self.arrays.get(array_type_name).cloned() {
-                if let Some(index_term) = &field_access.index {
-                    // Get the pointer for this field
-                    let ptr_var_name = format!("{obj_name}_{field_name}_ptr");
-                    if let Some(&ptr_offset) = self.variables.get(&ptr_var_name) {
-                        // Load the base pointer
-                        self.output.push_str(&format!(
-                            "    mov rax, qword ptr [rsp + {}]\n",
-                            ptr_offset - 8
-                        ));
+        if let Some(array_type_name) = self.variable_arrays.get(obj_name)
+            && let Some(array_info) = self.arrays.get(array_type_name).cloned()
+            && let Some(index_term) = &field_access.index
+        {
+            // Get the pointer for this field
+            let ptr_var_name = format!("{obj_name}_{field_name}_ptr");
+            if let Some(&ptr_offset) = self.variables.get(&ptr_var_name) {
+                // Load the base pointer
+                self.output.push_str(&format!(
+                    "    mov rax, qword ptr [rsp + {}]\n",
+                    ptr_offset - 8
+                ));
 
-                        // Calculate offset based on index
-                        let element_size = self.get_element_size(
-                            &array_info.field_types,
-                            &array_info.field_names,
-                            field_name,
-                        )?;
+                // Calculate offset based on index
+                let element_size = self.get_element_size(
+                    &array_info.field_types,
+                    &array_info.field_names,
+                    field_name,
+                )?;
 
-                        match &**index_term {
-                            Term::Number(num) => {
-                                let index = self.parse_number(num.number.s());
-                                let offset = index.parse::<usize>().unwrap_or(0) * element_size;
-                                self.output.push_str(&format!("    add rax, {offset}\n"));
-                            }
-                            Term::Variable(var) => {
-                                if let Some(&var_offset) = self.variables.get(var.variable.s()) {
-                                    self.output.push_str(&format!(
-                                        "    mov rbx, qword ptr [rsp + {}]\n",
-                                        var_offset - 8
-                                    ));
-                                    self.output
-                                        .push_str(&format!("    mov rcx, {element_size}\n"));
-                                    self.output.push_str("    mul rbx, rcx\n");
-                                    self.output.push_str("    add rax, rbx\n");
-                                }
-                            }
-                            _ => {
-                                return Err(CompileError::UnsupportedConstruct(format!(
-                                    "Unsupported index type: {:?}",
-                                    index_term
-                                )));
-                            }
+                match &**index_term {
+                    Term::Number(num) => {
+                        let index = self.parse_number(num.number.s());
+                        let offset = index.parse::<usize>().unwrap_or(0) * element_size;
+                        self.output.push_str(&format!("    add rax, {offset}\n"));
+                    }
+                    Term::Variable(var) => {
+                        if let Some(&var_offset) = self.variables.get(var.variable.s()) {
+                            self.output.push_str(&format!(
+                                "    mov rbx, qword ptr [rsp + {}]\n",
+                                var_offset - 8
+                            ));
+                            self.output
+                                .push_str(&format!("    mov rcx, {element_size}\n"));
+                            self.output.push_str("    mul rbx, rcx\n");
+                            self.output.push_str("    add rax, rbx\n");
                         }
-
-                        // Result address is in rax - caller can use this
-                        return Ok(());
+                    }
+                    _ => {
+                        return Err(CompileError::UnsupportedConstruct(format!(
+                            "Unsupported index type: {index_term:?}"
+                        )));
                     }
                 }
+
+                // Result address is in rax - caller can use this
+                return Ok(());
             }
         }
 
         Err(CompileError::UnsupportedConstruct(format!(
-            "Unknown field access: {}.{}",
-            obj_name, field_name
+            "Unknown field access: {obj_name}.{field_name}"
         )))
     }
 
@@ -1408,107 +1389,102 @@ impl AssemblyCompiler {
         let field_name = field_assign.field_access.field_name();
 
         // Look up the array type from variable name
-        if let Some(array_type_name) = self.variable_arrays.get(obj_name) {
-            if let Some(array_info) = self.arrays.get(array_type_name).cloned() {
-                if let Some(index_term) = &field_assign.field_access.index {
-                    // Get the pointer for this field
-                    let ptr_var_name = format!("{obj_name}_{field_name}_ptr");
-                    if let Some(&ptr_offset) = self.variables.get(&ptr_var_name) {
-                        // Load the base pointer
-                        self.output.push_str(&format!(
-                            "    mov rax, qword ptr [rsp + {}]\n",
-                            ptr_offset - 8
-                        ));
+        if let Some(array_type_name) = self.variable_arrays.get(obj_name)
+            && let Some(array_info) = self.arrays.get(array_type_name).cloned()
+            && let Some(index_term) = &field_assign.field_access.index
+        {
+            // Get the pointer for this field
+            let ptr_var_name = format!("{obj_name}_{field_name}_ptr");
+            if let Some(&ptr_offset) = self.variables.get(&ptr_var_name) {
+                // Load the base pointer
+                self.output.push_str(&format!(
+                    "    mov rax, qword ptr [rsp + {}]\n",
+                    ptr_offset - 8
+                ));
 
-                        // Calculate offset based on index
-                        let element_size = self.get_element_size(
+                // Calculate offset based on index
+                let element_size = self.get_element_size(
+                    &array_info.field_types,
+                    &array_info.field_names,
+                    field_name,
+                )?;
+
+                match &**index_term {
+                    Term::Number(num) => {
+                        let index = self.parse_number(num.number.s());
+                        let offset = index.parse::<usize>().unwrap_or(0) * element_size;
+                        self.output.push_str(&format!("    add rax, {offset}\n"));
+                    }
+                    Term::Variable(var) => {
+                        if let Some(&var_offset) = self.variables.get(var.variable.s()) {
+                            self.output.push_str(&format!(
+                                "    mov rbx, qword ptr [rsp + {}]\n",
+                                var_offset - 8
+                            ));
+                            self.output
+                                .push_str(&format!("    mov rcx, {element_size}\n"));
+                            self.output.push_str("    mul rbx, rcx\n");
+                            self.output.push_str("    add rax, rbx\n");
+                        }
+                    }
+                    _ => {
+                        return Err(CompileError::UnsupportedConstruct(format!(
+                            "Unsupported index type: {index_term:?}"
+                        )));
+                    }
+                }
+
+                // Now store the value to the calculated address
+                match &*field_assign.value {
+                    Term::Number(num) => {
+                        let field_type = self.get_field_type(
                             &array_info.field_types,
                             &array_info.field_names,
                             field_name,
                         )?;
-
-                        match &**index_term {
-                            Term::Number(num) => {
-                                let index = self.parse_number(num.number.s());
-                                let offset = index.parse::<usize>().unwrap_or(0) * element_size;
-                                self.output.push_str(&format!("    add rax, {offset}\n"));
-                            }
-                            Term::Variable(var) => {
-                                if let Some(&var_offset) = self.variables.get(var.variable.s()) {
+                        match field_type.as_str() {
+                            "f32" => {
+                                let number_str = num.number.s();
+                                if let Some(float_value) = number_str.strip_suffix("f32") {
+                                    let float_val = float_value.parse::<f32>().unwrap_or(0.0);
                                     self.output.push_str(&format!(
-                                        "    mov rbx, qword ptr [rsp + {}]\n",
-                                        var_offset - 8
+                                        "    mov ebx, {}\n",
+                                        Self::float_to_hex(float_val)
                                     ));
-                                    self.output
-                                        .push_str(&format!("    mov rcx, {element_size}\n"));
-                                    self.output.push_str("    mul rbx, rcx\n");
-                                    self.output.push_str("    add rax, rbx\n");
+                                    self.output.push_str("    mov dword ptr [rax], ebx\n");
                                 }
                             }
                             _ => {
-                                return Err(CompileError::UnsupportedConstruct(format!(
-                                    "Unsupported index type: {:?}",
-                                    index_term
-                                )));
+                                let number_value = self.parse_number(num.number.s());
+                                self.output.push_str(&format!(
+                                    "    mov qword ptr [rax], {number_value}\n"
+                                ));
                             }
                         }
-
-                        // Now store the value to the calculated address
-                        match &*field_assign.value {
-                            Term::Number(num) => {
-                                let field_type = self.get_field_type(
-                                    &array_info.field_types,
-                                    &array_info.field_names,
-                                    field_name,
-                                )?;
-                                match field_type.as_str() {
-                                    "f32" => {
-                                        let number_str = num.number.s();
-                                        if let Some(float_value) = number_str.strip_suffix("f32") {
-                                            let float_val =
-                                                float_value.parse::<f32>().unwrap_or(0.0);
-                                            self.output.push_str(&format!(
-                                                "    mov ebx, {}\n",
-                                                Self::float_to_hex(float_val)
-                                            ));
-                                            self.output.push_str("    mov dword ptr [rax], ebx\n");
-                                        }
-                                    }
-                                    _ => {
-                                        let number_value = self.parse_number(num.number.s());
-                                        self.output.push_str(&format!(
-                                            "    mov qword ptr [rax], {}\n",
-                                            number_value
-                                        ));
-                                    }
-                                }
-                            }
-                            Term::Variable(var) => {
-                                if let Some(&var_offset) = self.variables.get(var.variable.s()) {
-                                    self.output.push_str(&format!(
-                                        "    mov rbx, qword ptr [rsp + {}]\n",
-                                        var_offset - 8
-                                    ));
-                                    self.output.push_str("    mov qword ptr [rax], rbx\n");
-                                }
-                            }
-                            _ => {
-                                return Err(CompileError::UnsupportedConstruct(format!(
-                                    "Unsupported assignment value: {:?}",
-                                    field_assign.value
-                                )));
-                            }
+                    }
+                    Term::Variable(var) => {
+                        if let Some(&var_offset) = self.variables.get(var.variable.s()) {
+                            self.output.push_str(&format!(
+                                "    mov rbx, qword ptr [rsp + {}]\n",
+                                var_offset - 8
+                            ));
+                            self.output.push_str("    mov qword ptr [rax], rbx\n");
                         }
-
-                        return Ok(());
+                    }
+                    _ => {
+                        return Err(CompileError::UnsupportedConstruct(format!(
+                            "Unsupported assignment value: {:?}",
+                            field_assign.value
+                        )));
                     }
                 }
+
+                return Ok(());
             }
         }
 
         Err(CompileError::UnsupportedConstruct(format!(
-            "Unknown field assignment: {}.{}",
-            obj_name, field_name
+            "Unknown field assignment: {obj_name}.{field_name}"
         )))
     }
 
@@ -1529,8 +1505,7 @@ impl AssemblyCompiler {
             })
         } else {
             Err(CompileError::UnsupportedConstruct(format!(
-                "Unknown field: {}",
-                field_name
+                "Unknown field: {field_name}"
             )))
         }
     }
@@ -1545,8 +1520,7 @@ impl AssemblyCompiler {
             Ok(field_types[pos].clone())
         } else {
             Err(CompileError::UnsupportedConstruct(format!(
-                "Unknown field: {}",
-                field_name
+                "Unknown field: {field_name}"
             )))
         }
     }

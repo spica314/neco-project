@@ -33,7 +33,6 @@ impl Parse for StatementsThen<PhaseParse> {
             tail: Box::new(tail),
             ext: (),
         };
-
         *i = k;
         Ok(Some(statements_then))
     }

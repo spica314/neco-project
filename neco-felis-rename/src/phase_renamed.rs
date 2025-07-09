@@ -35,4 +35,5 @@ impl Phase for PhaseRenamed {
     type TermFieldAccessExt = ();
     type TermConstructorCallExt = ();
     type TermFieldAssignExt = ();
+    type TermIfExt = ();
 }

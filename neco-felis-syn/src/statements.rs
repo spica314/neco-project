@@ -16,7 +16,6 @@ impl Parse for Statements<PhaseParse> {
         if let Some(term) = Term::parse(tokens, i)? {
             return Ok(Some(Statements::Term(term)));
         }
-
         Ok(Some(Statements::Nil))
     }
 }

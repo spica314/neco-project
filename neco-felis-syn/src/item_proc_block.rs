@@ -33,7 +33,6 @@ impl Parse for ItemProcBlock<PhaseParse> {
             brace_r,
             ext: (),
         };
-
         *i = k;
         Ok(Some(item_proc_block))
     }

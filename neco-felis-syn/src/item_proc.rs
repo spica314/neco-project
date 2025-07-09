@@ -45,7 +45,6 @@ impl Parse for ItemProc<PhaseParse> {
             proc_block,
             ext: (),
         };
-
         *i = k;
         Ok(Some(item_proc))
     }

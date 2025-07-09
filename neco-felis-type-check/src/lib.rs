@@ -281,6 +281,7 @@ impl TypeChecker {
                 // They should be handled at the compilation level
                 Err("Struct expressions are not supported in type checker yet".to_string())
             }
+            FTerm::If(_) => Err("If expressions are not supported in type checker yet".to_string()),
         }
     }
 

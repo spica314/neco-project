@@ -42,7 +42,6 @@ impl Parse for TermApply<PhaseParse> {
             args,
             ext: (),
         };
-
         *i = k;
         Ok(Some(term_apply))
     }

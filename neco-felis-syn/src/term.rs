@@ -1,6 +1,6 @@
 use crate::{
     ItemStruct, Parse, ParseError, Phase, PhaseParse, TermApply, TermArrowDep, TermArrowNodep,
-    TermAssign, TermConstructorCall, TermFieldAccess, TermFieldAssign, TermLet, TermLetMut,
+    TermAssign, TermConstructorCall, TermFieldAccess, TermFieldAssign, TermIf, TermLet, TermLetMut,
     TermMatch, TermNumber, TermParen, TermUnit, TermVariable, token::Token,
 };
 
@@ -21,6 +21,7 @@ pub enum Term<P: Phase> {
     FieldAssign(TermFieldAssign<P>),
     ConstructorCall(TermConstructorCall<P>),
     Struct(ItemStruct<P>),
+    If(TermIf<P>),
 }
 
 impl Parse for Term<PhaseParse> {
@@ -39,6 +40,10 @@ impl Parse for Term<PhaseParse> {
 
         if let Some(term_assign) = TermAssign::parse(tokens, i)? {
             return Ok(Some(Term::Assign(term_assign)));
+        }
+
+        if let Some(term_if) = TermIf::parse(tokens, i)? {
+            return Ok(Some(Term::If(term_if)));
         }
 
         if let Some(term_match) = TermMatch::parse(tokens, i)? {
@@ -84,7 +89,6 @@ impl Parse for Term<PhaseParse> {
         if let Some(term_paren) = TermParen::parse(tokens, i)? {
             return Ok(Some(Term::Paren(term_paren)));
         }
-
         Ok(None)
     }
 }

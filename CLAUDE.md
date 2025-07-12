@@ -66,10 +66,10 @@ Felis source → `neco-felis-syn` (parsing) → `neco-felis-rename` (scope resol
 
 ### Testing Strategy
 - **Unit tests**: Place tests at end of implementation files, one assertion per test function
-- **Integration tests**: Use testcases in `/testcases/felis/single/` with both positive and negative cases (21 test files)
+- **Integration tests**: Use testcases in `/testcases/felis/single/` with both positive and negative cases (24 test files)
 - **Snapshot testing**: `neco-felis-syn` uses `insta` for parser output validation
 - **Coverage reporting**: Use `tools/generate-coverage-report.sh` to generate coverage reports with `cargo llvm-cov`
-- **Test categories**: Basic CIC features, arithmetic operations (add, sub, mul, div, mod), floating-point arithmetic, correctness variants, and failure cases
+- **Test categories**: Basic CIC features, arithmetic operations (add, sub, mul, div, mod), floating-point arithmetic, arrays, structs, conditionals, let bindings, correctness variants, and failure cases
 
 ## File Structure
 
@@ -92,18 +92,40 @@ neco-felis-syn/src/
 ├── file_id.rs           # File identification
 ├── pos.rs               # Position tracking
 ├── item*.rs             # Top-level items (phase-parameterized)
+│   ├── item.rs               # Main item types enum
+│   ├── item_array.rs         # Array type definitions
+│   ├── item_definition.rs    # Function definitions
 │   ├── item_entrypoint.rs    # Entry point definitions
-│   ├── item_use_builtin.rs   # Built-in imports
+│   ├── item_inductive.rs     # Inductive type definitions
+│   ├── item_inductive_branch.rs # Inductive constructor branches
 │   ├── item_proc.rs          # Procedure definitions
-│   └── item_proc_block.rs    # Procedure block syntax
+│   ├── item_proc_block.rs    # Procedure block syntax
+│   ├── item_struct.rs        # Struct type definitions
+│   ├── item_theorem.rs       # Theorem definitions
+│   └── item_use_builtin.rs   # Built-in imports
 ├── term*.rs             # Term-level syntax (phase-parameterized)
-│   ├── term_let_mut.rs       # Mutable let bindings
+│   ├── term.rs               # Main term types enum
+│   ├── term_apply.rs         # Function application
+│   ├── term_arrow_dep.rs     # Dependent arrow types
+│   ├── term_arrow_nodep.rs   # Non-dependent arrow types
 │   ├── term_assign.rs        # Assignment operations
-│   ├── term_unit.rs          # Unit type/value
+│   ├── term_constructor_call.rs # Constructor invocation
+│   ├── term_field_access.rs  # Struct field access
+│   ├── term_field_assign.rs  # Struct field assignment
+│   ├── term_if.rs            # Conditional expressions
+│   ├── term_let.rs           # Let bindings
+│   ├── term_let_mut.rs       # Mutable let bindings
+│   ├── term_match.rs         # Pattern matching
+│   ├── term_match_branch.rs  # Match branches
 │   ├── term_number.rs        # Numeric literals
-│   └── term_arrow_nodep.rs   # Non-dependent arrow types
-└── statements*.rs       # Statement parsing
-    └── statements_then.rs    # Statement sequencing
+│   ├── term_paren.rs         # Parenthesized expressions
+│   ├── term_unit.rs          # Unit type/value
+│   └── term_variable.rs      # Variable references
+├── statements.rs        # Main statement parsing
+├── statements_then.rs    # Statement sequencing
+└── snapshots/           # Snapshot test files
+    ├── neco_felis_syn__file__test__parse_*.snap
+    └── neco_felis_syn__token__test__lex_*.snap
 
 neco-felis-rename/src/
 ├── lib.rs               # Variable renaming logic
@@ -121,7 +143,7 @@ neco-felis-type-check/src/
 neco-scope/src/
 └── lib.rs               # Scope management utilities
 
-testcases/felis/single/  # Test cases for language features (21 test files)
+testcases/felis/single/  # Test cases for language features (24 test files)
 docs/                    # Documentation directory
 └── design-principles.md # Design principles and architecture notes
 ```
@@ -142,6 +164,12 @@ Felis supports dependent types with syntax for:
 - Numeric literals: `42u64`, `3.14f32`
 - Non-dependent arrows: `A -> B` (in addition to dependent `(x : A) -> B`)
 - Arrays and structs: `#array`, `#struct`
+- Conditional expressions: `#if condition { ... } #else { ... }`
+- Let bindings: `#let x = value;`
+- Field access: `struct.field`
+- Field assignment: `struct.field = value;`
+- Constructor calls: `Constructor(args)`
+- Parenthesized expressions: `(expr)`
 - Statement sequencing with `#then`
 
 ## Development Guidelines

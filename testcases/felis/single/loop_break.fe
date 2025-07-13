@@ -1,0 +1,23 @@
+#entrypoint main;
+
+#use_builtin "syscall" #as __syscall;
+#use_builtin "u64_eq" #as __u64_eq;
+#use_builtin "u64_add" #as __u64_add;
+
+#proc main : () -> () {
+    #let syscall_id = 231u64;
+    #let mut error_code = 6u64;
+    #let mut d = 1;
+
+    #loop {
+        #if __u64_eq d 9u64 {
+            #break;
+        };
+
+        error_code = __u64_add error_code d;
+
+        d = __u64_add d 1u64;
+    };
+
+    __syscall syscall_id error_code 0 0 0 0;
+}

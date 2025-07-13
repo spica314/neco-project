@@ -33,6 +33,7 @@ struct AssemblyCompiler {
     stack_offset: i32,               // Current stack offset
     arrays: HashMap<String, ArrayInfo>, // Track array information
     variable_arrays: HashMap<String, String>, // Maps variable names to array type names
+    loop_stack: Vec<String>,         // Stack of loop end labels for break statements
 }
 
 #[derive(Debug, Clone)]
@@ -56,6 +57,7 @@ impl AssemblyCompiler {
             stack_offset: 0,
             arrays: HashMap::new(),
             variable_arrays: HashMap::new(),
+            loop_stack: Vec::new(),
         }
     }
 
@@ -151,10 +153,8 @@ impl AssemblyCompiler {
                     _ => self.compile_statements(&then.tail),
                 }
             }
+            Statements::Statement(statement) => self.compile_statement(statement),
             Statements::Nil => Ok(()),
-            _ => Err(CompileError::UnsupportedConstruct(format!(
-                "{statements:?}"
-            ))),
         }
     }
 
@@ -178,6 +178,8 @@ impl AssemblyCompiler {
             Statement::FieldAssign(field_assign_stmt) => {
                 self.compile_field_assign(field_assign_stmt)
             }
+            Statement::Loop(loop_stmt) => self.compile_loop(loop_stmt),
+            Statement::Break(break_stmt) => self.compile_break(break_stmt),
             Statement::Expr(term) => self.compile_term(term),
             Statement::Ext(_) => unreachable!("Ext statements not supported in PhaseParse"),
         }
@@ -997,6 +999,8 @@ impl AssemblyCompiler {
             Statement::LetMut(_) => 1,
             Statement::Assign(_) => 0,
             Statement::FieldAssign(_) => 0,
+            Statement::Loop(loop_stmt) => Self::count_let_variables_in_statements(&loop_stmt.body),
+            Statement::Break(_) => 0,
             Statement::Expr(term) => Self::count_let_variables_in_term(term),
             Statement::Ext(_) => unreachable!("Ext statements not supported in PhaseParse"),
         }
@@ -1043,6 +1047,8 @@ impl AssemblyCompiler {
             }
             Statement::Assign(_) => 0,
             Statement::FieldAssign(_) => 0,
+            Statement::Loop(loop_stmt) => Self::count_array_pointers_in_statements(&loop_stmt.body),
+            Statement::Break(_) => 0,
             Statement::Expr(term) => Self::count_array_pointers_in_term(term),
             Statement::Ext(_) => unreachable!("Ext statements not supported in PhaseParse"),
         }
@@ -1648,6 +1654,53 @@ impl AssemblyCompiler {
         self.output.push_str(&format!("{end_label}:\n"));
 
         Ok(())
+    }
+
+    fn compile_loop(&mut self, loop_stmt: &StatementLoop<PhaseParse>) -> Result<(), CompileError> {
+        static mut LOOP_COUNTER: u32 = 0;
+        let loop_id = unsafe {
+            LOOP_COUNTER += 1;
+            LOOP_COUNTER
+        };
+
+        let loop_start_label = format!("loop_start_{loop_id}");
+        let loop_end_label = format!("loop_end_{loop_id}");
+
+        // Push the end label onto the loop stack for break statements
+        self.loop_stack.push(loop_end_label.clone());
+
+        // Loop start label
+        self.output.push_str(&format!("{loop_start_label}:\n"));
+
+        // Compile loop body
+        self.compile_statements(&loop_stmt.body)?;
+
+        // Jump back to start of loop
+        self.output
+            .push_str(&format!("    jmp {loop_start_label}\n"));
+
+        // Loop end label (for break statements)
+        self.output.push_str(&format!("{loop_end_label}:\n"));
+
+        // Pop the loop from the stack
+        self.loop_stack.pop();
+
+        Ok(())
+    }
+
+    fn compile_break(
+        &mut self,
+        _break_stmt: &StatementBreak<PhaseParse>,
+    ) -> Result<(), CompileError> {
+        // Get the innermost loop's end label
+        if let Some(loop_end_label) = self.loop_stack.last() {
+            self.output.push_str(&format!("    jmp {loop_end_label}\n"));
+            Ok(())
+        } else {
+            Err(CompileError::UnsupportedConstruct(
+                "break statement outside of loop".to_string(),
+            ))
+        }
     }
 }
 
@@ -2271,6 +2324,25 @@ mod tests {
             Err(e) => {
                 // Skip test if assembler/linker not available
                 println!("Skipping array.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_loop_break() {
+        let result = compile_and_execute("../testcases/felis/single/loop_break.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "loop_break.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping loop_break.fe integration test: {e}");
             }
         }
     }

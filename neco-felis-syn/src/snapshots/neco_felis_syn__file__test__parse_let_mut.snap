@@ -229,7 +229,7 @@ File {
                                         s: "=",
                                     },
                                     value: Number(
-                                        TermNumber {
+                                        ProcTermNumber {
                                             number: TokenNumber {
                                                 pos: Pos {
                                                     file_id: FileId(
@@ -300,7 +300,7 @@ File {
                                                 s: "=",
                                             },
                                             value: Number(
-                                                TermNumber {
+                                                ProcTermNumber {
                                                     number: TokenNumber {
                                                         pos: Pos {
                                                             file_id: FileId(
@@ -351,7 +351,7 @@ File {
                                                         s: "=",
                                                     },
                                                     value: Number(
-                                                        TermNumber {
+                                                        ProcTermNumber {
                                                             number: TokenNumber {
                                                                 pos: Pos {
                                                                     file_id: FileId(
@@ -381,9 +381,9 @@ File {
                                                 StatementsThen {
                                                     head: Expr(
                                                         Apply(
-                                                            TermApply {
+                                                            ProcTermApply {
                                                                 f: Variable(
-                                                                    TermVariable {
+                                                                    ProcTermVariable {
                                                                         variable: TokenVariable {
                                                                             pos: Pos {
                                                                                 file_id: FileId(
@@ -399,7 +399,7 @@ File {
                                                                 ),
                                                                 args: [
                                                                     Variable(
-                                                                        TermVariable {
+                                                                        ProcTermVariable {
                                                                             variable: TokenVariable {
                                                                                 pos: Pos {
                                                                                     file_id: FileId(
@@ -414,7 +414,7 @@ File {
                                                                         },
                                                                     ),
                                                                     Variable(
-                                                                        TermVariable {
+                                                                        ProcTermVariable {
                                                                             variable: TokenVariable {
                                                                                 pos: Pos {
                                                                                     file_id: FileId(
@@ -429,7 +429,7 @@ File {
                                                                         },
                                                                     ),
                                                                     Number(
-                                                                        TermNumber {
+                                                                        ProcTermNumber {
                                                                             number: TokenNumber {
                                                                                 pos: Pos {
                                                                                     file_id: FileId(
@@ -444,7 +444,7 @@ File {
                                                                         },
                                                                     ),
                                                                     Number(
-                                                                        TermNumber {
+                                                                        ProcTermNumber {
                                                                             number: TokenNumber {
                                                                                 pos: Pos {
                                                                                     file_id: FileId(
@@ -459,7 +459,7 @@ File {
                                                                         },
                                                                     ),
                                                                     Number(
-                                                                        TermNumber {
+                                                                        ProcTermNumber {
                                                                             number: TokenNumber {
                                                                                 pos: Pos {
                                                                                     file_id: FileId(
@@ -474,7 +474,7 @@ File {
                                                                         },
                                                                     ),
                                                                     Number(
-                                                                        TermNumber {
+                                                                        ProcTermNumber {
                                                                             number: TokenNumber {
                                                                                 pos: Pos {
                                                                                     file_id: FileId(

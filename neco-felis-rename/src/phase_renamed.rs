@@ -39,4 +39,13 @@ impl Phase for PhaseRenamed {
     type StatementFieldAssignExt = ();
     type StatementLetExt = ();
     type StatementLetMutExt = ();
+    type ProcTermExt = ();
+    type ProcTermApplyExt = ();
+    type ProcTermVariableExt = VariableId;
+    type ProcTermParenExt = ();
+    type ProcTermUnitExt = ();
+    type ProcTermNumberExt = ();
+    type ProcTermFieldAccessExt = ();
+    type ProcTermConstructorCallExt = ();
+    type ProcTermIfExt = ();
 }

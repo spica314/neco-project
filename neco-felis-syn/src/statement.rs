@@ -1,6 +1,6 @@
 use crate::{
-    Parse, ParseError, Phase, PhaseParse, StatementAssign, StatementBreak, StatementFieldAssign,
-    StatementLet, StatementLetMut, StatementLoop, Term, token::Token,
+    Parse, ParseError, Phase, PhaseParse, ProcTerm, StatementAssign, StatementBreak,
+    StatementFieldAssign, StatementLet, StatementLetMut, StatementLoop, token::Token,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -11,7 +11,7 @@ pub enum Statement<P: Phase> {
     FieldAssign(StatementFieldAssign<P>),
     Loop(StatementLoop<P>),
     Break(StatementBreak<P>),
-    Expr(Term<P>),
+    Expr(ProcTerm<P>),
     Ext(P::StatementExt),
 }
 
@@ -41,8 +41,8 @@ impl Parse for Statement<PhaseParse> {
             return Ok(Some(Statement::Break(statement_break)));
         }
 
-        if let Some(term) = Term::parse(tokens, i)? {
-            return Ok(Some(Statement::Expr(term)));
+        if let Some(proc_term) = ProcTerm::parse(tokens, i)? {
+            return Ok(Some(Statement::Expr(proc_term)));
         }
 
         Ok(None)

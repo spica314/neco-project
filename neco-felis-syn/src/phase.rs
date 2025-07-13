@@ -176,6 +176,63 @@ pub trait Phase {
         + PartialOrd
         + Ord
         + std::hash::Hash;
+    type ProcTermExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
+    type ProcTermApplyExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type ProcTermVariableExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type ProcTermParenExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type ProcTermUnitExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type ProcTermNumberExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type ProcTermFieldAccessExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type ProcTermConstructorCallExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type ProcTermIfExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -215,4 +272,13 @@ impl Phase for PhaseParse {
     type StatementFieldAssignExt = ();
     type StatementLetExt = ();
     type StatementLetMutExt = ();
+    type ProcTermExt = ();
+    type ProcTermApplyExt = ();
+    type ProcTermVariableExt = ();
+    type ProcTermParenExt = ();
+    type ProcTermUnitExt = ();
+    type ProcTermNumberExt = ();
+    type ProcTermFieldAccessExt = ();
+    type ProcTermConstructorCallExt = ();
+    type ProcTermIfExt = ();
 }

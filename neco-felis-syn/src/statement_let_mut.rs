@@ -1,5 +1,5 @@
 use crate::{
-    Parse, ParseError, Phase, PhaseParse, Term,
+    Parse, ParseError, Phase, PhaseParse, ProcTerm,
     token::{Token, TokenKeyword, TokenOperator, TokenVariable},
 };
 
@@ -9,7 +9,7 @@ pub struct StatementLetMut<P: Phase> {
     pub mut_keyword: TokenKeyword,
     pub variable: TokenVariable,
     pub equals: TokenOperator,
-    pub value: Box<Term<P>>,
+    pub value: Box<ProcTerm<P>>,
     pub ext: P::StatementLetMutExt,
 }
 
@@ -38,7 +38,7 @@ impl Parse for StatementLetMut<PhaseParse> {
         };
 
         // Parse value expression
-        let Some(value) = Term::parse(tokens, &mut k)? else {
+        let Some(value) = ProcTerm::parse(tokens, &mut k)? else {
             return Err(ParseError::Unknown("expected: value expression after '='"));
         };
 

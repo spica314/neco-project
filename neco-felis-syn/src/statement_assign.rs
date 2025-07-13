@@ -1,5 +1,5 @@
 use crate::{
-    Parse, ParseError, Phase, PhaseParse, Term,
+    Parse, ParseError, Phase, PhaseParse, ProcTerm,
     token::{Token, TokenOperator, TokenVariable},
 };
 
@@ -7,7 +7,7 @@ use crate::{
 pub struct StatementAssign<P: Phase> {
     pub variable: TokenVariable,
     pub equals: TokenOperator,
-    pub value: Box<Term<P>>,
+    pub value: Box<ProcTerm<P>>,
     pub ext: P::StatementAssignExt,
 }
 
@@ -26,7 +26,7 @@ impl Parse for StatementAssign<PhaseParse> {
         };
 
         // Parse value expression
-        let Some(value) = Term::parse(tokens, &mut k)? else {
+        let Some(value) = ProcTerm::parse(tokens, &mut k)? else {
             return Err(ParseError::Unknown("expected: value expression after '='"));
         };
 

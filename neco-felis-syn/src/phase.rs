@@ -155,6 +155,35 @@ pub trait Phase {
         + Ord
         + std::hash::Hash;
     type TermIfExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
+    type StatementExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
+    type StatementAssignExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type StatementFieldAssignExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type StatementLetExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
+    type StatementLetMutExt: std::fmt::Debug
+        + Clone
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + std::hash::Hash;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -191,4 +220,9 @@ impl Phase for PhaseParse {
     type TermConstructorCallExt = ();
     type TermFieldAssignExt = ();
     type TermIfExt = ();
+    type StatementExt = ();
+    type StatementAssignExt = ();
+    type StatementFieldAssignExt = ();
+    type StatementLetExt = ();
+    type StatementLetMutExt = ();
 }

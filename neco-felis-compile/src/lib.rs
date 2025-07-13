@@ -145,7 +145,7 @@ impl AssemblyCompiler {
     ) -> Result<(), CompileError> {
         match statements {
             Statements::Then(then) => {
-                self.compile_term(&then.head)?;
+                self.compile_statement(&then.head)?;
                 match &*then.tail {
                     Statements::Nil => Ok(()),
                     _ => self.compile_statements(&then.tail),
@@ -161,16 +161,25 @@ impl AssemblyCompiler {
     fn compile_term(&mut self, term: &Term<PhaseParse>) -> Result<(), CompileError> {
         match term {
             Term::Apply(apply) => self.compile_apply(apply),
-            Term::Let(let_expr) => self.compile_let(let_expr),
-            Term::LetMut(let_mut_expr) => self.compile_let_mut(let_mut_expr),
-            Term::Assign(assign_expr) => self.compile_assign(assign_expr),
             Term::FieldAccess(field_access) => self.compile_field_access(field_access),
-            Term::FieldAssign(field_assign) => self.compile_field_assign(field_assign),
             Term::ConstructorCall(constructor_call) => {
                 self.compile_constructor_call(constructor_call)
             }
             Term::If(if_expr) => self.compile_if(if_expr),
             _ => Err(CompileError::UnsupportedConstruct(format!("{term:?}"))),
+        }
+    }
+
+    fn compile_statement(&mut self, statement: &Statement<PhaseParse>) -> Result<(), CompileError> {
+        match statement {
+            Statement::Let(let_stmt) => self.compile_let(let_stmt),
+            Statement::LetMut(let_mut_stmt) => self.compile_let_mut(let_mut_stmt),
+            Statement::Assign(assign_stmt) => self.compile_assign(assign_stmt),
+            Statement::FieldAssign(field_assign_stmt) => {
+                self.compile_field_assign(field_assign_stmt)
+            }
+            Statement::Expr(term) => self.compile_term(term),
+            Statement::Ext(_) => unreachable!("Ext statements not supported in PhaseParse"),
         }
     }
 
@@ -225,7 +234,7 @@ impl AssemblyCompiler {
 
     fn compile_let_mut(
         &mut self,
-        let_mut_expr: &TermLetMut<PhaseParse>,
+        let_mut_expr: &StatementLetMut<PhaseParse>,
     ) -> Result<(), CompileError> {
         let var_name = let_mut_expr.variable_name();
 
@@ -291,7 +300,10 @@ impl AssemblyCompiler {
         }
     }
 
-    fn compile_assign(&mut self, assign_expr: &TermAssign<PhaseParse>) -> Result<(), CompileError> {
+    fn compile_assign(
+        &mut self,
+        assign_expr: &StatementAssign<PhaseParse>,
+    ) -> Result<(), CompileError> {
         let var_name = assign_expr.variable_name();
 
         // Check if the variable exists
@@ -344,7 +356,7 @@ impl AssemblyCompiler {
         }
     }
 
-    fn compile_let(&mut self, let_expr: &TermLet<PhaseParse>) -> Result<(), CompileError> {
+    fn compile_let(&mut self, let_expr: &StatementLet<PhaseParse>) -> Result<(), CompileError> {
         let var_name = let_expr.variable_name();
 
         // Allocate stack space for this variable
@@ -970,19 +982,28 @@ impl AssemblyCompiler {
     fn count_let_variables_in_statements(statements: &Statements<PhaseParse>) -> i32 {
         match statements {
             Statements::Then(then) => {
-                let head_count = Self::count_let_variables_in_term(&then.head);
+                let head_count = Self::count_let_variables_in_statement(&then.head);
                 let tail_count = Self::count_let_variables_in_statements(&then.tail);
                 head_count + tail_count
             }
-            Statements::Term(term) => Self::count_let_variables_in_term(term),
+            Statements::Statement(statement) => Self::count_let_variables_in_statement(statement),
             Statements::Nil => 0,
+        }
+    }
+
+    fn count_let_variables_in_statement(statement: &Statement<PhaseParse>) -> i32 {
+        match statement {
+            Statement::Let(_) => 1,
+            Statement::LetMut(_) => 1,
+            Statement::Assign(_) => 0,
+            Statement::FieldAssign(_) => 0,
+            Statement::Expr(term) => Self::count_let_variables_in_term(term),
+            Statement::Ext(_) => unreachable!("Ext statements not supported in PhaseParse"),
         }
     }
 
     fn count_let_variables_in_term(term: &Term<PhaseParse>) -> i32 {
         match term {
-            Term::Let(_) => 1,
-            Term::LetMut(_) => 1,
             Term::Apply(apply) => {
                 let mut count = Self::count_let_variables_in_term(&apply.f);
                 for arg in &apply.args {
@@ -1005,12 +1026,25 @@ impl AssemblyCompiler {
     fn count_array_pointers_in_statements(statements: &Statements<PhaseParse>) -> i32 {
         match statements {
             Statements::Then(then) => {
-                let head_count = Self::count_array_pointers_in_term(&then.head);
+                let head_count = Self::count_array_pointers_in_statement(&then.head);
                 let tail_count = Self::count_array_pointers_in_statements(&then.tail);
                 head_count + tail_count
             }
-            Statements::Term(term) => Self::count_array_pointers_in_term(term),
+            Statements::Statement(statement) => Self::count_array_pointers_in_statement(statement),
             Statements::Nil => 0,
+        }
+    }
+
+    fn count_array_pointers_in_statement(statement: &Statement<PhaseParse>) -> i32 {
+        match statement {
+            Statement::Let(let_stmt) => Self::count_array_pointers_in_term(&let_stmt.value),
+            Statement::LetMut(let_mut_stmt) => {
+                Self::count_array_pointers_in_term(&let_mut_stmt.value)
+            }
+            Statement::Assign(_) => 0,
+            Statement::FieldAssign(_) => 0,
+            Statement::Expr(term) => Self::count_array_pointers_in_term(term),
+            Statement::Ext(_) => unreachable!("Ext statements not supported in PhaseParse"),
         }
     }
 
@@ -1026,8 +1060,6 @@ impl AssemblyCompiler {
                     0
                 }
             }
-            Term::Let(let_expr) => Self::count_array_pointers_in_term(&let_expr.value),
-            Term::LetMut(let_mut_expr) => Self::count_array_pointers_in_term(&let_mut_expr.value),
             Term::Apply(apply) => {
                 let mut count = Self::count_array_pointers_in_term(&apply.f);
                 for arg in &apply.args {
@@ -1399,7 +1431,7 @@ impl AssemblyCompiler {
 
     fn compile_field_assign(
         &mut self,
-        field_assign: &TermFieldAssign<PhaseParse>,
+        field_assign: &StatementFieldAssign<PhaseParse>,
     ) -> Result<(), CompileError> {
         // This is used for writing array elements like "points.x 0 = 10.0f32"
         let obj_name = field_assign.field_access.object_name();
@@ -1554,7 +1586,7 @@ impl AssemblyCompiler {
 
         // Compile condition
         match &*if_expr.condition {
-            Statements::Term(Term::Apply(apply)) => {
+            Statements::Statement(Statement::Expr(Term::Apply(apply))) => {
                 // Handle builtin equality checks like __u64_eq
                 if let Term::Variable(var) = &*apply.f
                     && let Some(builtin) = self.builtins.get(var.variable.s())

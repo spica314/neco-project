@@ -1,8 +1,8 @@
-use crate::{Parse, ParseError, Phase, PhaseParse, StatementsThen, Term, token::Token};
+use crate::{Parse, ParseError, Phase, PhaseParse, Statement, StatementsThen, token::Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Statements<P: Phase> {
-    Term(Term<P>),
+    Statement(Statement<P>),
     Then(StatementsThen<P>),
     Nil,
 }
@@ -13,8 +13,8 @@ impl Parse for Statements<PhaseParse> {
             return Ok(Some(Statements::Then(statements_then)));
         }
 
-        if let Some(term) = Term::parse(tokens, i)? {
-            return Ok(Some(Statements::Term(term)));
+        if let Some(statement) = Statement::parse(tokens, i)? {
+            return Ok(Some(Statements::Statement(statement)));
         }
         Ok(Some(Statements::Nil))
     }

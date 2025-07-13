@@ -1,7 +1,7 @@
 use neco_felis_syn::{
     File, Item, ItemDefinition, ItemInductive, ItemInductiveBranch, ItemTheorem, Pattern,
-    PhaseParse, Term, TermApply, TermArrowDep, TermArrowNodep, TermAssign, TermLet, TermLetMut,
-    TermMatch, TermMatchBranch, TermNumber, TermParen, TermUnit, TermVariable,
+    PhaseParse, Term, TermApply, TermArrowDep, TermArrowNodep, TermMatch, TermMatchBranch,
+    TermNumber, TermParen, TermUnit, TermVariable,
 };
 use neco_scope::ScopeStack;
 
@@ -247,59 +247,9 @@ fn rename_term(context: &mut RenameContext, term: &Term<PhaseParse>) -> Term<Pha
             number: number.number.clone(),
             ext: (),
         }),
-        Term::Let(let_term) => {
-            // For let expressions, we need to:
-            // 1. Rename the value expression
-            // 2. Bind the variable in the current scope
-            // 3. Create the renamed let expression
-
-            let renamed_value = rename_term(context, let_term.value.as_ref());
-
-            // Bind the variable for future use
-            context.bind_variable(let_term.variable_name());
-
-            Term::Let(TermLet {
-                let_keyword: let_term.let_keyword.clone(),
-                variable: let_term.variable.clone(),
-                equals: let_term.equals.clone(),
-                value: Box::new(renamed_value),
-                ext: (),
-            })
-        }
-        Term::LetMut(let_mut_term) => {
-            // Rename the value expression first
-            let renamed_value = rename_term(context, &let_mut_term.value);
-
-            // Bind the variable for future use
-            context.bind_variable(let_mut_term.variable_name());
-
-            Term::LetMut(TermLetMut {
-                let_keyword: let_mut_term.let_keyword.clone(),
-                mut_keyword: let_mut_term.mut_keyword.clone(),
-                variable: let_mut_term.variable.clone(),
-                equals: let_mut_term.equals.clone(),
-                value: Box::new(renamed_value),
-                ext: (),
-            })
-        }
-        Term::Assign(assign_term) => {
-            // Rename the value expression
-            let renamed_value = rename_term(context, &assign_term.value);
-
-            Term::Assign(TermAssign {
-                variable: assign_term.variable.clone(),
-                equals: assign_term.equals.clone(),
-                value: Box::new(renamed_value),
-                ext: (),
-            })
-        }
         Term::FieldAccess(_) => {
             // For now, field access is not supported in renaming
             unreachable!("Field access terms are not yet supported in renaming")
-        }
-        Term::FieldAssign(_) => {
-            // For now, field assign is not supported in renaming
-            unreachable!("Field assign terms are not yet supported in renaming")
         }
         Term::ConstructorCall(_) => {
             // For now, constructor calls are not supported in renaming

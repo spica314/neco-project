@@ -243,30 +243,10 @@ impl TypeChecker {
             FTerm::Match(match_expr) => self.convert_match(match_expr),
             FTerm::Unit(_term_unit) => todo!(),
             FTerm::Number(_term_number) => todo!(),
-            FTerm::Let(_term_let) => {
-                // For now, let expressions are not supported in the type checker
-                // They should be handled at the compilation level
-                Err("Let expressions are not supported in type checker yet".to_string())
-            }
-            FTerm::LetMut(_term_let_mut) => {
-                // For now, mutable let expressions are not supported in the type checker
-                // They should be handled at the compilation level
-                Err("Mutable let expressions are not supported in type checker yet".to_string())
-            }
-            FTerm::Assign(_term_assign) => {
-                // For now, assignment expressions are not supported in the type checker
-                // They should be handled at the compilation level
-                Err("Assignment expressions are not supported in type checker yet".to_string())
-            }
             FTerm::FieldAccess(_term_field_access) => {
                 // For now, field access expressions are not supported in the type checker
                 // They should be handled at the compilation level
                 Err("Field access expressions are not supported in type checker yet".to_string())
-            }
-            FTerm::FieldAssign(_term_field_assign) => {
-                // For now, field assign expressions are not supported in the type checker
-                // They should be handled at the compilation level
-                Err("Field assign expressions are not supported in type checker yet".to_string())
             }
             FTerm::ConstructorCall(_term_constructor_call) => {
                 // For now, constructor call expressions are not supported in the type checker

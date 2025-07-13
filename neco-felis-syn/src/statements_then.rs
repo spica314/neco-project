@@ -1,11 +1,11 @@
 use crate::{
-    Parse, ParseError, Phase, PhaseParse, Statements, Term,
+    Parse, ParseError, Phase, PhaseParse, Statement, Statements,
     token::{Token, TokenSemicolon},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct StatementsThen<P: Phase> {
-    pub head: Box<Term<P>>,
+    pub head: Box<Statement<P>>,
     pub semicolon: TokenSemicolon,
     pub tail: Box<Statements<P>>,
     pub ext: P::StatementsThenExt,
@@ -15,7 +15,7 @@ impl Parse for StatementsThen<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;
 
-        let Some(head) = Term::parse(tokens, &mut k)? else {
+        let Some(head) = Statement::parse(tokens, &mut k)? else {
             return Ok(None);
         };
 

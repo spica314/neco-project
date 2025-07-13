@@ -1,7 +1,7 @@
 use crate::{
     ItemStruct, Parse, ParseError, Phase, PhaseParse, TermApply, TermArrowDep, TermArrowNodep,
-    TermAssign, TermConstructorCall, TermFieldAccess, TermFieldAssign, TermIf, TermLet, TermLetMut,
-    TermMatch, TermNumber, TermParen, TermUnit, TermVariable, token::Token,
+    TermConstructorCall, TermFieldAccess, TermIf, TermMatch, TermNumber, TermParen, TermUnit,
+    TermVariable, token::Token,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -14,11 +14,7 @@ pub enum Term<P: Phase> {
     Match(TermMatch<P>),
     Unit(TermUnit<P>),
     Number(TermNumber<P>),
-    Let(TermLet<P>),
-    LetMut(TermLetMut<P>),
-    Assign(TermAssign<P>),
     FieldAccess(TermFieldAccess<P>),
-    FieldAssign(TermFieldAssign<P>),
     ConstructorCall(TermConstructorCall<P>),
     Struct(ItemStruct<P>),
     If(TermIf<P>),
@@ -26,22 +22,6 @@ pub enum Term<P: Phase> {
 
 impl Parse for Term<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
-        if let Some(term_let_mut) = TermLetMut::parse(tokens, i)? {
-            return Ok(Some(Term::LetMut(term_let_mut)));
-        }
-
-        if let Some(term_let) = TermLet::parse(tokens, i)? {
-            return Ok(Some(Term::Let(term_let)));
-        }
-
-        if let Some(term_field_assign) = TermFieldAssign::parse(tokens, i)? {
-            return Ok(Some(Term::FieldAssign(term_field_assign)));
-        }
-
-        if let Some(term_assign) = TermAssign::parse(tokens, i)? {
-            return Ok(Some(Term::Assign(term_assign)));
-        }
-
         if let Some(term_if) = TermIf::parse(tokens, i)? {
             return Ok(Some(Term::If(term_if)));
         }

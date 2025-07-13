@@ -652,7 +652,7 @@ File {
                     statements: Then(
                         StatementsThen {
                             head: Let(
-                                TermLet {
+                                StatementLet {
                                     let_keyword: TokenKeyword {
                                         pos: Pos {
                                             file_id: FileId(
@@ -750,7 +750,7 @@ File {
                             tail: Then(
                                 StatementsThen {
                                     head: FieldAssign(
-                                        TermFieldAssign {
+                                        StatementFieldAssign {
                                             field_access: TermFieldAccess {
                                                 object: TokenVariable {
                                                     pos: Pos {
@@ -841,7 +841,7 @@ File {
                                     tail: Then(
                                         StatementsThen {
                                             head: FieldAssign(
-                                                TermFieldAssign {
+                                                StatementFieldAssign {
                                                     field_access: TermFieldAccess {
                                                         object: TokenVariable {
                                                             pos: Pos {
@@ -932,7 +932,7 @@ File {
                                             tail: Then(
                                                 StatementsThen {
                                                     head: FieldAssign(
-                                                        TermFieldAssign {
+                                                        StatementFieldAssign {
                                                             field_access: TermFieldAccess {
                                                                 object: TokenVariable {
                                                                     pos: Pos {
@@ -1023,7 +1023,7 @@ File {
                                                     tail: Then(
                                                         StatementsThen {
                                                             head: Let(
-                                                                TermLet {
+                                                                StatementLet {
                                                                     let_keyword: TokenKeyword {
                                                                         pos: Pos {
                                                                             file_id: FileId(
@@ -1241,7 +1241,7 @@ File {
                                                             tail: Then(
                                                                 StatementsThen {
                                                                     head: Let(
-                                                                        TermLet {
+                                                                        StatementLet {
                                                                             let_keyword: TokenKeyword {
                                                                                 pos: Pos {
                                                                                     file_id: FileId(
@@ -1399,7 +1399,7 @@ File {
                                                                     tail: Then(
                                                                         StatementsThen {
                                                                             head: Let(
-                                                                                TermLet {
+                                                                                StatementLet {
                                                                                     let_keyword: TokenKeyword {
                                                                                         pos: Pos {
                                                                                             file_id: FileId(
@@ -1460,7 +1460,7 @@ File {
                                                                             tail: Then(
                                                                                 StatementsThen {
                                                                                     head: Let(
-                                                                                        TermLet {
+                                                                                        StatementLet {
                                                                                             let_keyword: TokenKeyword {
                                                                                                 pos: Pos {
                                                                                                     file_id: FileId(
@@ -1542,25 +1542,10 @@ File {
                                                                                     },
                                                                                     tail: Then(
                                                                                         StatementsThen {
-                                                                                            head: Apply(
-                                                                                                TermApply {
-                                                                                                    f: Variable(
-                                                                                                        TermVariable {
-                                                                                                            variable: TokenVariable {
-                                                                                                                pos: Pos {
-                                                                                                                    file_id: FileId(
-                                                                                                                        0,
-                                                                                                                    ),
-                                                                                                                    line: 28,
-                                                                                                                    column: 5,
-                                                                                                                },
-                                                                                                                s: "__syscall",
-                                                                                                            },
-                                                                                                            ext: (),
-                                                                                                        },
-                                                                                                    ),
-                                                                                                    args: [
-                                                                                                        Variable(
+                                                                                            head: Expr(
+                                                                                                Apply(
+                                                                                                    TermApply {
+                                                                                                        f: Variable(
                                                                                                             TermVariable {
                                                                                                                 variable: TokenVariable {
                                                                                                                     pos: Pos {
@@ -1568,91 +1553,108 @@ File {
                                                                                                                             0,
                                                                                                                         ),
                                                                                                                         line: 28,
-                                                                                                                        column: 15,
+                                                                                                                        column: 5,
                                                                                                                     },
-                                                                                                                    s: "syscall_id",
+                                                                                                                    s: "__syscall",
                                                                                                                 },
                                                                                                                 ext: (),
                                                                                                             },
                                                                                                         ),
-                                                                                                        Variable(
-                                                                                                            TermVariable {
-                                                                                                                variable: TokenVariable {
-                                                                                                                    pos: Pos {
-                                                                                                                        file_id: FileId(
-                                                                                                                            0,
-                                                                                                                        ),
-                                                                                                                        line: 28,
-                                                                                                                        column: 26,
+                                                                                                        args: [
+                                                                                                            Variable(
+                                                                                                                TermVariable {
+                                                                                                                    variable: TokenVariable {
+                                                                                                                        pos: Pos {
+                                                                                                                            file_id: FileId(
+                                                                                                                                0,
+                                                                                                                            ),
+                                                                                                                            line: 28,
+                                                                                                                            column: 15,
+                                                                                                                        },
+                                                                                                                        s: "syscall_id",
                                                                                                                     },
-                                                                                                                    s: "error_code",
+                                                                                                                    ext: (),
                                                                                                                 },
-                                                                                                                ext: (),
-                                                                                                            },
-                                                                                                        ),
-                                                                                                        Number(
-                                                                                                            TermNumber {
-                                                                                                                number: TokenNumber {
-                                                                                                                    pos: Pos {
-                                                                                                                        file_id: FileId(
-                                                                                                                            0,
-                                                                                                                        ),
-                                                                                                                        line: 28,
-                                                                                                                        column: 37,
+                                                                                                            ),
+                                                                                                            Variable(
+                                                                                                                TermVariable {
+                                                                                                                    variable: TokenVariable {
+                                                                                                                        pos: Pos {
+                                                                                                                            file_id: FileId(
+                                                                                                                                0,
+                                                                                                                            ),
+                                                                                                                            line: 28,
+                                                                                                                            column: 26,
+                                                                                                                        },
+                                                                                                                        s: "error_code",
                                                                                                                     },
-                                                                                                                    s: "0",
+                                                                                                                    ext: (),
                                                                                                                 },
-                                                                                                                ext: (),
-                                                                                                            },
-                                                                                                        ),
-                                                                                                        Number(
-                                                                                                            TermNumber {
-                                                                                                                number: TokenNumber {
-                                                                                                                    pos: Pos {
-                                                                                                                        file_id: FileId(
-                                                                                                                            0,
-                                                                                                                        ),
-                                                                                                                        line: 28,
-                                                                                                                        column: 39,
+                                                                                                            ),
+                                                                                                            Number(
+                                                                                                                TermNumber {
+                                                                                                                    number: TokenNumber {
+                                                                                                                        pos: Pos {
+                                                                                                                            file_id: FileId(
+                                                                                                                                0,
+                                                                                                                            ),
+                                                                                                                            line: 28,
+                                                                                                                            column: 37,
+                                                                                                                        },
+                                                                                                                        s: "0",
                                                                                                                     },
-                                                                                                                    s: "0",
+                                                                                                                    ext: (),
                                                                                                                 },
-                                                                                                                ext: (),
-                                                                                                            },
-                                                                                                        ),
-                                                                                                        Number(
-                                                                                                            TermNumber {
-                                                                                                                number: TokenNumber {
-                                                                                                                    pos: Pos {
-                                                                                                                        file_id: FileId(
-                                                                                                                            0,
-                                                                                                                        ),
-                                                                                                                        line: 28,
-                                                                                                                        column: 41,
+                                                                                                            ),
+                                                                                                            Number(
+                                                                                                                TermNumber {
+                                                                                                                    number: TokenNumber {
+                                                                                                                        pos: Pos {
+                                                                                                                            file_id: FileId(
+                                                                                                                                0,
+                                                                                                                            ),
+                                                                                                                            line: 28,
+                                                                                                                            column: 39,
+                                                                                                                        },
+                                                                                                                        s: "0",
                                                                                                                     },
-                                                                                                                    s: "0",
+                                                                                                                    ext: (),
                                                                                                                 },
-                                                                                                                ext: (),
-                                                                                                            },
-                                                                                                        ),
-                                                                                                        Number(
-                                                                                                            TermNumber {
-                                                                                                                number: TokenNumber {
-                                                                                                                    pos: Pos {
-                                                                                                                        file_id: FileId(
-                                                                                                                            0,
-                                                                                                                        ),
-                                                                                                                        line: 28,
-                                                                                                                        column: 43,
+                                                                                                            ),
+                                                                                                            Number(
+                                                                                                                TermNumber {
+                                                                                                                    number: TokenNumber {
+                                                                                                                        pos: Pos {
+                                                                                                                            file_id: FileId(
+                                                                                                                                0,
+                                                                                                                            ),
+                                                                                                                            line: 28,
+                                                                                                                            column: 41,
+                                                                                                                        },
+                                                                                                                        s: "0",
                                                                                                                     },
-                                                                                                                    s: "0",
+                                                                                                                    ext: (),
                                                                                                                 },
-                                                                                                                ext: (),
-                                                                                                            },
-                                                                                                        ),
-                                                                                                    ],
-                                                                                                    ext: (),
-                                                                                                },
+                                                                                                            ),
+                                                                                                            Number(
+                                                                                                                TermNumber {
+                                                                                                                    number: TokenNumber {
+                                                                                                                        pos: Pos {
+                                                                                                                            file_id: FileId(
+                                                                                                                                0,
+                                                                                                                            ),
+                                                                                                                            line: 28,
+                                                                                                                            column: 43,
+                                                                                                                        },
+                                                                                                                        s: "0",
+                                                                                                                    },
+                                                                                                                    ext: (),
+                                                                                                                },
+                                                                                                            ),
+                                                                                                        ],
+                                                                                                        ext: (),
+                                                                                                    },
+                                                                                                ),
                                                                                             ),
                                                                                             semicolon: TokenSemicolon {
                                                                                                 pos: Pos {

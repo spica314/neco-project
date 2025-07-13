@@ -27,14 +27,10 @@ impl Phase for PhaseRenamed {
     type ItemProcExt = ();
     type TermUnitExt = ();
     type TermNumberExt = ();
-    type TermLetExt = ();
-    type TermLetMutExt = ();
-    type TermAssignExt = ();
     type ItemArrayExt = ();
     type ItemStructExt = ();
     type TermFieldAccessExt = ();
     type TermConstructorCallExt = ();
-    type TermFieldAssignExt = ();
     type TermIfExt = ();
     type StatementExt = ();
     type StatementAssignExt = ();

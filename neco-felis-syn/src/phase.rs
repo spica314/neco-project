@@ -110,21 +110,6 @@ pub trait Phase {
         + PartialOrd
         + Ord
         + std::hash::Hash;
-    type TermLetExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
-    type TermLetMutExt: std::fmt::Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + PartialOrd
-        + Ord
-        + std::hash::Hash;
-    type TermAssignExt: std::fmt::Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + PartialOrd
-        + Ord
-        + std::hash::Hash;
     type ItemArrayExt: std::fmt::Debug + Clone + PartialEq + Eq + PartialOrd + Ord + std::hash::Hash;
     type ItemStructExt: std::fmt::Debug
         + Clone
@@ -141,13 +126,6 @@ pub trait Phase {
         + Ord
         + std::hash::Hash;
     type TermConstructorCallExt: std::fmt::Debug
-        + Clone
-        + PartialEq
-        + Eq
-        + PartialOrd
-        + Ord
-        + std::hash::Hash;
-    type TermFieldAssignExt: std::fmt::Debug
         + Clone
         + PartialEq
         + Eq
@@ -211,14 +189,10 @@ impl Phase for PhaseParse {
     type ItemProcExt = ();
     type TermUnitExt = ();
     type TermNumberExt = ();
-    type TermLetExt = ();
-    type TermLetMutExt = ();
-    type TermAssignExt = ();
     type ItemArrayExt = ();
     type ItemStructExt = ();
     type TermFieldAccessExt = ();
     type TermConstructorCallExt = ();
-    type TermFieldAssignExt = ();
     type TermIfExt = ();
     type StatementExt = ();
     type StatementAssignExt = ();

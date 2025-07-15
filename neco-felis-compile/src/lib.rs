@@ -167,7 +167,6 @@ impl AssemblyCompiler {
             Term::ConstructorCall(constructor_call) => {
                 self.compile_constructor_call(constructor_call)
             }
-            Term::If(if_expr) => self.compile_if(if_expr),
             _ => Err(CompileError::UnsupportedConstruct(format!("{term:?}"))),
         }
     }
@@ -1224,14 +1223,6 @@ impl AssemblyCompiler {
                 }
                 count
             }
-            Term::If(if_expr) => {
-                let mut count = Self::count_let_variables_in_statements(&if_expr.condition);
-                count += Self::count_let_variables_in_statements(&if_expr.then_body);
-                if let Some(else_clause) = &if_expr.else_clause {
-                    count += Self::count_let_variables_in_statements(&else_clause.else_body);
-                }
-                count
-            }
             _ => 0,
         }
     }
@@ -1284,14 +1275,6 @@ impl AssemblyCompiler {
                 let mut count = Self::count_array_pointers_in_term(&apply.f);
                 for arg in &apply.args {
                     count += Self::count_array_pointers_in_term(arg);
-                }
-                count
-            }
-            Term::If(if_expr) => {
-                let mut count = Self::count_array_pointers_in_statements(&if_expr.condition);
-                count += Self::count_array_pointers_in_statements(&if_expr.then_body);
-                if let Some(else_clause) = &if_expr.else_clause {
-                    count += Self::count_array_pointers_in_statements(&else_clause.else_body);
                 }
                 count
             }
@@ -1835,82 +1818,6 @@ impl AssemblyCompiler {
                 "Unknown field: {field_name}"
             )))
         }
-    }
-
-    fn compile_if(&mut self, if_expr: &TermIf<PhaseParse>) -> Result<(), CompileError> {
-        static mut LABEL_COUNTER: u32 = 0;
-        let label_id = unsafe {
-            LABEL_COUNTER += 1;
-            LABEL_COUNTER
-        };
-
-        let end_label = format!("if_end_{label_id}");
-        let else_label = format!("if_else_{label_id}");
-
-        // Compile condition
-        match &*if_expr.condition {
-            Statements::Statement(Statement::Expr(ProcTerm::Apply(apply))) => {
-                // Handle builtin equality checks like __u64_eq
-                if let ProcTerm::Variable(var) = &*apply.f
-                    && let Some(builtin) = self.builtins.get(var.variable.s())
-                    && builtin == "u64_eq"
-                {
-                    if apply.args.len() != 2 {
-                        return Err(CompileError::UnsupportedConstruct(format!(
-                            "u64_eq expects 2 arguments, got {}",
-                            apply.args.len()
-                        )));
-                    }
-
-                    // Load first argument into rax
-                    self.load_proc_argument_into_register(&apply.args[0], "rax")?;
-                    // Load second argument into rbx
-                    self.load_proc_argument_into_register(&apply.args[1], "rbx")?;
-
-                    // Compare the values
-                    self.output.push_str("    cmp rax, rbx\n");
-
-                    // Jump to else label if not equal (condition is false)
-                    if if_expr.else_clause.is_some() {
-                        self.output.push_str(&format!("    jne {else_label}\n"));
-                    } else {
-                        self.output.push_str(&format!("    jne {end_label}\n"));
-                    }
-                } else {
-                    return Err(CompileError::UnsupportedConstruct(format!(
-                        "Unsupported condition in if: {:?}",
-                        if_expr.condition
-                    )));
-                }
-            }
-            _ => {
-                return Err(CompileError::UnsupportedConstruct(format!(
-                    "Unsupported condition type in if: {:?}",
-                    if_expr.condition
-                )));
-            }
-        }
-
-        // Compile then body
-        self.compile_statements(&if_expr.then_body)?;
-
-        // If there's an else clause, jump to end after then body
-        if if_expr.else_clause.is_some() {
-            self.output.push_str(&format!("    jmp {end_label}\n"));
-
-            // Else label
-            self.output.push_str(&format!("{else_label}:\n"));
-
-            // Compile else body
-            if let Some(else_clause) = &if_expr.else_clause {
-                self.compile_statements(&else_clause.else_body)?;
-            }
-        }
-
-        // End label
-        self.output.push_str(&format!("{end_label}:\n"));
-
-        Ok(())
     }
 
     fn compile_loop(&mut self, loop_stmt: &StatementLoop<PhaseParse>) -> Result<(), CompileError> {
@@ -2984,71 +2891,6 @@ mod tests {
                 println!("Skipping let_mut.fe integration test: {e}");
             }
         }
-    }
-
-    #[test]
-    fn test_compile_if_1() {
-        let result = compile_file_to_assembly("../testcases/felis/single/if_1.fe");
-        let assembly = match result {
-            Ok(assembly) => {
-                println!("Generated assembly for if_1.fe:\n{assembly}");
-                assembly
-            }
-            Err(e) => {
-                panic!("Compilation failed: {e}");
-            }
-        };
-
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-
-        // Check for comparison setup
-        assert!(assembly.contains("mov rax, 0")); // First arg of u64_eq: 0u64
-        assert!(assembly.contains("mov rbx, 0")); // Second arg of u64_eq: 0u64
-        assert!(assembly.contains("cmp rax, rbx")); // Compare operation
-
-        // Check for conditional jump
-        assert!(assembly.contains("jne if_end_")); // Jump if not equal
-
-        // Check for assignment in then body
-        assert!(assembly.contains("mov qword ptr [rsp + 8], 42")); // error_code = 42u64
-
-        // Check for if end label
-        assert!(assembly.contains("if_end_"));
-
-        assert!(assembly.contains("syscall"));
-    }
-
-    #[test]
-    fn test_compile_if_2() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/if_2.fe").unwrap();
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-
-        // Check for comparison setup
-        assert!(assembly.contains("mov rax, 0")); // First arg of u64_eq: 0u64
-        assert!(assembly.contains("mov rbx, 1")); // Second arg of u64_eq: 1u64
-        assert!(assembly.contains("cmp rax, rbx")); // Compare operation
-
-        // Check for conditional jump to else
-        assert!(assembly.contains("jne if_else_")); // Jump to else if not equal
-
-        // Check for then body assignment
-        assert!(assembly.contains("mov qword ptr [rsp + 8], 1")); // error_code = 1u64
-
-        // Check for jump to end after then
-        assert!(assembly.contains("jmp if_end_")); // Jump to end after then
-
-        // Check for else label and else body
-        assert!(assembly.contains("if_else_"));
-        assert!(assembly.contains("mov qword ptr [rsp + 8], 42")); // error_code = 42u64 in else
-
-        // Check for if end label
-        assert!(assembly.contains("if_end_"));
-
-        assert!(assembly.contains("syscall"));
     }
 
     #[test]

@@ -259,10 +259,6 @@ fn rename_term(context: &mut RenameContext, term: &Term<PhaseParse>) -> Term<Pha
             // For now, struct expressions are not supported in renaming
             unreachable!("Struct terms are not yet supported in renaming")
         }
-        Term::If(_) => {
-            // For now, if expressions are not supported in renaming
-            unreachable!("If terms are not yet supported in renaming")
-        }
     }
 }
 

@@ -39,6 +39,12 @@ cargo test -p neco-scope
 
 # Test with snapshots (neco-felis-syn uses insta)
 cargo test -p neco-felis-syn
+
+# Snapshot testing with insta
+cargo insta accept          # Accept all pending snapshots (non-interactive)
+cargo insta review          # Interactive review (will hang waiting for input)
+yes "s" | cargo insta review  # Skip all snapshots in review (non-interactive)
+yes "a" | cargo insta review  # Accept all snapshots in review (non-interactive)
 ```
 
 ### Development

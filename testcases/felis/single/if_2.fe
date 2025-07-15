@@ -5,7 +5,7 @@
 
 #proc main : () -> () {
     #let syscall_id = 231u64;
-    #let mut error_code = 0u64;
+    #let #mut error_code = 0u64;
 
     #if __u64_eq 0u64 1u64 {
         error_code = 1u64;

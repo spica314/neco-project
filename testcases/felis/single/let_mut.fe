@@ -4,7 +4,7 @@
 
 #proc main : () -> () {
     #let syscall_id = 231u64;
-    #let mut error_code = 0u64;
+    #let #mut error_code = 0u64;
     error_code = 42u64;
     __syscall syscall_id error_code 0 0 0 0;
 }

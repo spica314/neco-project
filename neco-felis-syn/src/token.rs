@@ -267,8 +267,8 @@ fn is_operator_char(c: char) -> bool {
     ['+', '-', '*', '/', '%', '=', '<', '>', '.', ':'].contains(&c)
 }
 
-fn is_reserved_keyword(s: &str) -> bool {
-    matches!(s, "mut")
+fn is_reserved_keyword(_s: &str) -> bool {
+    false // No reserved keywords - all keywords use # prefix
 }
 
 impl Token {
@@ -610,7 +610,7 @@ mod test {
     fn test_mut_keyword() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = "mut";
+        let s = "#mut";
         let tokens = Token::lex(s, file_id);
 
         assert_eq!(tokens.len(), 1);
@@ -618,7 +618,7 @@ mod test {
             Token::Keyword(keyword) => {
                 assert_eq!(keyword.s, "mut");
             }
-            _ => panic!("Expected mut to be tokenized as a keyword"),
+            _ => panic!("Expected #mut to be tokenized as a keyword"),
         }
     }
 }

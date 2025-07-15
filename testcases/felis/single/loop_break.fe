@@ -6,8 +6,8 @@
 
 #proc main : () -> () {
     #let syscall_id = 231u64;
-    #let mut error_code = 6u64;
-    #let mut d = 1;
+    #let #mut error_code = 6u64;
+    #let #mut d = 1;
 
     #loop {
         #if __u64_eq d 9u64 {

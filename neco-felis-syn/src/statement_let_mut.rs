@@ -22,7 +22,7 @@ impl Parse for StatementLetMut<PhaseParse> {
             return Ok(None);
         };
 
-        // Parse "mut" keyword
+        // Parse "#mut" keyword
         let Some(mut_keyword) = TokenKeyword::parse_keyword(tokens, &mut k, "mut")? else {
             return Ok(None);
         };

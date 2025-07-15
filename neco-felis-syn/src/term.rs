@@ -1,7 +1,6 @@
 use crate::{
     ItemStruct, Parse, ParseError, Phase, PhaseParse, TermApply, TermArrowDep, TermArrowNodep,
-    TermConstructorCall, TermFieldAccess, TermMatch, TermNumber, TermParen, TermUnit, TermVariable,
-    token::Token,
+    TermMatch, TermNumber, TermParen, TermUnit, TermVariable, token::Token,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -14,8 +13,6 @@ pub enum Term<P: Phase> {
     Match(TermMatch<P>),
     Unit(TermUnit<P>),
     Number(TermNumber<P>),
-    FieldAccess(TermFieldAccess<P>),
-    ConstructorCall(TermConstructorCall<P>),
     Struct(ItemStruct<P>),
 }
 
@@ -31,14 +28,6 @@ impl Parse for Term<PhaseParse> {
 
         if let Some(term_arrow_nodep) = TermArrowNodep::parse(tokens, i)? {
             return Ok(Some(Term::ArrowNodep(term_arrow_nodep)));
-        }
-
-        if let Some(term_constructor_call) = TermConstructorCall::parse(tokens, i)? {
-            return Ok(Some(Term::ConstructorCall(term_constructor_call)));
-        }
-
-        if let Some(term_field_access) = TermFieldAccess::parse(tokens, i)? {
-            return Ok(Some(Term::FieldAccess(term_field_access)));
         }
 
         if let Some(term_apply) = TermApply::parse(tokens, i)? {

@@ -243,19 +243,6 @@ impl TypeChecker {
             FTerm::Match(match_expr) => self.convert_match(match_expr),
             FTerm::Unit(_term_unit) => todo!(),
             FTerm::Number(_term_number) => todo!(),
-            FTerm::FieldAccess(_term_field_access) => {
-                // For now, field access expressions are not supported in the type checker
-                // They should be handled at the compilation level
-                Err("Field access expressions are not supported in type checker yet".to_string())
-            }
-            FTerm::ConstructorCall(_term_constructor_call) => {
-                // For now, constructor call expressions are not supported in the type checker
-                // They should be handled at the compilation level
-                Err(
-                    "Constructor call expressions are not supported in type checker yet"
-                        .to_string(),
-                )
-            }
             FTerm::Struct(_item_struct) => {
                 // For now, struct expressions are not supported in the type checker
                 // They should be handled at the compilation level

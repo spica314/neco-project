@@ -247,14 +247,6 @@ fn rename_term(context: &mut RenameContext, term: &Term<PhaseParse>) -> Term<Pha
             number: number.number.clone(),
             ext: (),
         }),
-        Term::FieldAccess(_) => {
-            // For now, field access is not supported in renaming
-            unreachable!("Field access terms are not yet supported in renaming")
-        }
-        Term::ConstructorCall(_) => {
-            // For now, constructor calls are not supported in renaming
-            unreachable!("Constructor call terms are not yet supported in renaming")
-        }
         Term::Struct(_) => {
             // For now, struct expressions are not supported in renaming
             unreachable!("Struct terms are not yet supported in renaming")

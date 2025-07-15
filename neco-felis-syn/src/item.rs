@@ -10,7 +10,7 @@ pub enum Item<P: Phase> {
     Theorem(ItemTheorem<P>),
     Entrypoint(ItemEntrypoint<P>),
     UseBuiltin(ItemUseBuiltin<P>),
-    Proc(ItemProc<P>),
+    Proc(Box<ItemProc<P>>),
     Array(ItemArray<P>),
     Struct(ItemStruct<P>),
 }
@@ -28,7 +28,7 @@ impl Parse for Item<PhaseParse> {
         } else if let Some(theorem) = ItemTheorem::parse(tokens, i)? {
             Ok(Some(Item::Theorem(theorem)))
         } else if let Some(proc) = ItemProc::parse(tokens, i)? {
-            Ok(Some(Item::Proc(proc)))
+            Ok(Some(Item::Proc(Box::new(proc))))
         } else if let Some(array) = ItemArray::parse(tokens, i)? {
             Ok(Some(Item::Array(array)))
         } else if let Some(struct_) = ItemStruct::parse(tokens, i)? {

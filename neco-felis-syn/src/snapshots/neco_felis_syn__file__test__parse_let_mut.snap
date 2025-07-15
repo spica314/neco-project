@@ -289,13 +289,33 @@ File {
                                                 },
                                                 s: "error_code",
                                             },
-                                            equals: TokenOperator {
+                                            at_operator: TokenOperator {
                                                 pos: Pos {
                                                     file_id: FileId(
                                                         0,
                                                     ),
                                                     line: 7,
                                                     column: 26,
+                                                },
+                                                s: "@",
+                                            },
+                                            reference_variable: TokenVariable {
+                                                pos: Pos {
+                                                    file_id: FileId(
+                                                        0,
+                                                    ),
+                                                    line: 7,
+                                                    column: 28,
+                                                },
+                                                s: "error_code_ref",
+                                            },
+                                            equals: TokenOperator {
+                                                pos: Pos {
+                                                    file_id: FileId(
+                                                        0,
+                                                    ),
+                                                    line: 7,
+                                                    column: 43,
                                                 },
                                                 s: "=",
                                             },
@@ -307,7 +327,7 @@ File {
                                                                 0,
                                                             ),
                                                             line: 7,
-                                                            column: 28,
+                                                            column: 45,
                                                         },
                                                         s: "0u64",
                                                     },
@@ -323,7 +343,7 @@ File {
                                                 0,
                                             ),
                                             line: 7,
-                                            column: 32,
+                                            column: 49,
                                         },
                                     },
                                     tail: Then(
@@ -338,7 +358,7 @@ File {
                                                             line: 8,
                                                             column: 5,
                                                         },
-                                                        s: "error_code",
+                                                        s: "error_code_ref",
                                                     },
                                                     equals: TokenOperator {
                                                         pos: Pos {
@@ -346,9 +366,9 @@ File {
                                                                 0,
                                                             ),
                                                             line: 8,
-                                                            column: 16,
+                                                            column: 20,
                                                         },
-                                                        s: "=",
+                                                        s: "<-",
                                                     },
                                                     value: Number(
                                                         ProcTermNumber {
@@ -358,7 +378,7 @@ File {
                                                                         0,
                                                                     ),
                                                                     line: 8,
-                                                                    column: 18,
+                                                                    column: 23,
                                                                 },
                                                                 s: "42u64",
                                                             },
@@ -374,7 +394,7 @@ File {
                                                         0,
                                                     ),
                                                     line: 8,
-                                                    column: 23,
+                                                    column: 28,
                                                 },
                                             },
                                             tail: Then(

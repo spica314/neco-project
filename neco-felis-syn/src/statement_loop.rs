@@ -66,7 +66,7 @@ mod tests {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
 
-        let source = "#loop { error_code = 42u64; }";
+        let source = "#loop { error_code_ref <- 42u64; }";
         let tokens = Token::lex(source, file_id);
 
         let mut i = 0;

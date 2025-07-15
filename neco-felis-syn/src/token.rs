@@ -264,7 +264,7 @@ pub enum Token {
 }
 
 fn is_operator_char(c: char) -> bool {
-    ['+', '-', '*', '/', '%', '=', '<', '>', '.', ':'].contains(&c)
+    ['+', '-', '*', '/', '%', '=', '<', '>', '.', ':', '@'].contains(&c)
 }
 
 fn is_reserved_keyword(_s: &str) -> bool {

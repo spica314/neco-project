@@ -20,14 +20,14 @@ impl Parse for StatementAssign<PhaseParse> {
             return Ok(None);
         };
 
-        // Parse "=" operator
-        let Some(equals) = TokenOperator::parse_operator(tokens, &mut k, "=")? else {
+        // Parse "<-" operator
+        let Some(equals) = TokenOperator::parse_operator(tokens, &mut k, "<-")? else {
             return Ok(None);
         };
 
         // Parse value expression
         let Some(value) = ProcTerm::parse(tokens, &mut k)? else {
-            return Err(ParseError::Unknown("expected: value expression after '='"));
+            return Err(ParseError::Unknown("expected: value expression after '<-'"));
         };
 
         let statement_assign = StatementAssign {

@@ -286,7 +286,12 @@ impl AssemblyCompiler {
 
         // Compile condition
         match &*if_expr.condition {
-            Statements::Statement(Statement::Expr(ProcTerm::Apply(apply))) => {
+            Statements::Statement(statement)
+                if matches!(**statement, Statement::Expr(ProcTerm::Apply(_))) =>
+            {
+                let Statement::Expr(ProcTerm::Apply(apply)) = &**statement else {
+                    unreachable!()
+                };
                 // Handle builtin equality checks like __u64_eq
                 if let ProcTerm::Variable(var) = &*apply.f
                     && let Some(builtin) = self.builtins.get(var.variable.s())
@@ -446,13 +451,16 @@ impl AssemblyCompiler {
         let_mut_expr: &StatementLetMut<PhaseParse>,
     ) -> Result<(), CompileError> {
         let var_name = let_mut_expr.variable_name();
+        let ref_var_name = let_mut_expr.reference_variable_name();
 
         // Allocate stack space for this variable
         self.stack_offset += 8; // 8 bytes for 64-bit value
         let offset = self.stack_offset;
 
-        // Store the variable's stack offset
+        // Store both the variable's and reference variable's stack offset
+        // Both point to the same memory location
         self.variables.insert(var_name.to_string(), offset);
+        self.variables.insert(ref_var_name.to_string(), offset);
 
         match &*let_mut_expr.value {
             ProcTerm::Number(num) => {

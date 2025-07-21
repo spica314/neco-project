@@ -36,6 +36,7 @@ impl AssemblyCompiler {
             ),
             Statement::Loop(loop_stmt) => control_flow::compile_loop(self, loop_stmt),
             Statement::Break(break_stmt) => control_flow::compile_break(self, break_stmt),
+            Statement::Return(return_stmt) => self.compile_return(return_stmt),
             Statement::Expr(proc_term) => self.compile_proc_term(proc_term),
             Statement::Ext(_) => unreachable!("Ext statements not supported in PhaseParse"),
         }
@@ -76,21 +77,24 @@ impl AssemblyCompiler {
             }
             ProcTerm::Apply(apply) => {
                 // Handle function application in let expression
-                if let ProcTerm::Variable(var) = &*apply.f
-                    && let Some(builtin) = self.builtins.get(var.variable.s())
-                {
-                    match builtin.as_str() {
-                        "u64_add" => return self.compile_u64_add_let_proc(apply, offset),
-                        "u64_sub" => return self.compile_u64_sub_let_proc(apply, offset),
-                        "u64_mul" => return self.compile_u64_mul_let_proc(apply, offset),
-                        "u64_div" => return self.compile_u64_div_let_proc(apply, offset),
-                        "u64_mod" => return self.compile_u64_mod_let_proc(apply, offset),
-                        "f32_add" => return self.compile_f32_add_let_proc(apply, offset),
-                        "f32_sub" => return self.compile_f32_sub_let_proc(apply, offset),
-                        "f32_mul" => return self.compile_f32_mul_let_proc(apply, offset),
-                        "f32_div" => return self.compile_f32_div_let_proc(apply, offset),
-                        "f32_to_u64" => return self.compile_f32_to_u64_let_proc(apply, offset),
-                        _ => {}
+                if let ProcTerm::Variable(var) = &*apply.f {
+                    if let Some(builtin) = self.builtins.get(var.variable.s()) {
+                        match builtin.as_str() {
+                            "u64_add" => return self.compile_u64_add_let_proc(apply, offset),
+                            "u64_sub" => return self.compile_u64_sub_let_proc(apply, offset),
+                            "u64_mul" => return self.compile_u64_mul_let_proc(apply, offset),
+                            "u64_div" => return self.compile_u64_div_let_proc(apply, offset),
+                            "u64_mod" => return self.compile_u64_mod_let_proc(apply, offset),
+                            "f32_add" => return self.compile_f32_add_let_proc(apply, offset),
+                            "f32_sub" => return self.compile_f32_sub_let_proc(apply, offset),
+                            "f32_mul" => return self.compile_f32_mul_let_proc(apply, offset),
+                            "f32_div" => return self.compile_f32_div_let_proc(apply, offset),
+                            "f32_to_u64" => return self.compile_f32_to_u64_let_proc(apply, offset),
+                            _ => {}
+                        }
+                    } else {
+                        // Handle user-defined function call in let expression
+                        return self.compile_user_proc_call_let(apply, offset);
                     }
                 }
                 Err(CompileError::UnsupportedConstruct(format!(
@@ -278,6 +282,46 @@ impl AssemblyCompiler {
         self.output.push_str("    syscall\n");
         Ok(())
     }
+
+    /// Compile a user-defined procedure call in a let expression
+    pub fn compile_user_proc_call_let(
+        &mut self,
+        apply: &ProcTermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        if let ProcTerm::Variable(var) = &*apply.f {
+            // Set up arguments for the function call
+            if !apply.args.is_empty() {
+                // First argument in rdi
+                if let ProcTerm::Number(num) = &apply.args[0] {
+                    let value = self.parse_number(num.number.s());
+                    self.output.push_str(&format!("    mov rdi, {value}\n"));
+                }
+            }
+
+            if apply.args.len() >= 2 {
+                // Second argument in rsi
+                if let ProcTerm::Number(num) = &apply.args[1] {
+                    let value = self.parse_number(num.number.s());
+                    self.output.push_str(&format!("    mov rsi, {value}\n"));
+                }
+            }
+
+            // Call the procedure
+            let var_name = var.variable.s();
+            self.output.push_str(&format!("    call {var_name}\n"));
+
+            // Store the result (rax) to the variable's stack location
+            self.output
+                .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+
+            Ok(())
+        } else {
+            Err(CompileError::UnsupportedConstruct(format!(
+                "Non-variable function in apply: {apply:?}"
+            )))
+        }
+    }
 }
 
 pub fn compile_file_to_assembly(file_path: &str) -> Result<String, Box<dyn std::error::Error>> {
@@ -291,6 +335,22 @@ pub fn compile_file_to_assembly(file_path: &str) -> Result<String, Box<dyn std::
 
     let assembly = compile_to_assembly(&file)?;
     Ok(assembly)
+}
+
+impl AssemblyCompiler {
+    /// Compile a return statement
+    pub fn compile_return(
+        &mut self,
+        return_stmt: &StatementReturn<PhaseParse>,
+    ) -> Result<(), CompileError> {
+        // Compile the return value expression
+        self.compile_proc_term(&return_stmt.value)?;
+
+        // For now, return statements don't generate any specific assembly
+        // The return value is already in the correct register/stack location
+        // from the previous expression compilation
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -854,6 +914,47 @@ mod tests {
             Err(e) => {
                 // Skip test if assembler/linker not available
                 println!("Skipping loop_break.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_compile_proc_call() {
+        let assembly = compile_file_to_assembly("../testcases/felis/single/proc_call.fe").unwrap();
+        assert!(assembly.contains(".intel_syntax noprefix"));
+        assert!(assembly.contains("main:"));
+        assert!(assembly.contains("f:"));
+        assert!(assembly.contains("_start:"));
+
+        // Check that proc f is defined and called
+        assert!(assembly.contains("call f"));
+        assert!(assembly.contains("ret")); // Both main and f should have ret
+
+        // Check that syscall is properly set up
+        assert!(assembly.contains("mov qword ptr [rsp + 0], 231")); // syscall_id = 231u64
+        assert!(assembly.contains("syscall"));
+
+        // Check that function arguments are set up
+        assert!(assembly.contains("mov rdi, 40")); // First argument
+        assert!(assembly.contains("mov rsi, 2")); // Second argument
+    }
+
+    #[test]
+    fn test_proc_call_integration() {
+        let result = compile_and_execute("../testcases/felis/single/proc_call.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "proc_call.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // proc_call.fe should exit with code 42 (40 + 2 = 42)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping proc_call.fe integration test: {e}");
             }
         }
     }

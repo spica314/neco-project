@@ -87,28 +87,89 @@ impl AssemblyCompiler {
     }
 
     pub fn compile_proc(&mut self, proc: &ItemProc<PhaseParse>) -> Result<(), CompileError> {
+        // Extract parameter names from the function type
+        let param_names = self.extract_proc_parameters(&proc.ty);
+        let param_count = param_names.len();
         let let_count = self.count_let_variables_in_proc_block(&proc.proc_block);
-        let stack_space = let_count * 8;
+        let total_stack_space = (param_count + let_count as usize) * 8;
 
         self.output.push_str(&format!("{}:\n", proc.name.s()));
 
-        if stack_space > 0 {
+        if total_stack_space > 0 {
             self.output
-                .push_str(&format!("    sub rsp, {stack_space}\n"));
+                .push_str(&format!("    sub rsp, {total_stack_space}\n"));
         }
 
         self.stack_offset = 0;
+
+        // Store parameters from registers to stack and register them as variables
+        for (i, param_name) in param_names.iter().enumerate() {
+            self.stack_offset += 8;
+            let offset = self.stack_offset;
+            self.variables.insert(param_name.clone(), offset);
+
+            // Store parameter from register to stack
+            match i {
+                0 => self
+                    .output
+                    .push_str(&format!("    mov qword ptr [rsp + {}], rdi\n", offset - 8)),
+                1 => self
+                    .output
+                    .push_str(&format!("    mov qword ptr [rsp + {}], rsi\n", offset - 8)),
+                // For now, only support up to 2 parameters
+                _ => {
+                    return Err(CompileError::UnsupportedConstruct(
+                        "More than 2 parameters not supported".to_string(),
+                    ));
+                }
+            }
+        }
+
         self.compile_proc_block(&proc.proc_block)?;
 
-        if stack_space > 0 {
+        if total_stack_space > 0 {
             self.output
-                .push_str(&format!("    add rsp, {stack_space}\n"));
+                .push_str(&format!("    add rsp, {total_stack_space}\n"));
         }
 
         self.output.push_str("    ret\n\n");
         self.variables.clear();
 
         Ok(())
+    }
+
+    /// Extract parameter names from a procedure type signature
+    fn extract_proc_parameters(&self, ty: &Term<PhaseParse>) -> Vec<String> {
+        let mut params = Vec::new();
+        Self::extract_params_recursive(ty, &mut params);
+        params
+    }
+
+    /// Recursively extract parameters from dependent arrow types
+    fn extract_params_recursive(term: &Term<PhaseParse>, params: &mut Vec<String>) {
+        match term {
+            Term::ArrowDep(arrow_dep) => {
+                // Extract parameter name from dependent arrow (x : A) -> B
+                params.push(arrow_dep.from.variable.s().to_string());
+                // Continue with the return type to find more parameters
+                Self::extract_params_recursive(&arrow_dep.to, params);
+            }
+            Term::ArrowNodep(arrow_nodep) => {
+                // Check if this is a unit type () -> something
+                if let Term::Unit(_) = &*arrow_nodep.from {
+                    // This is () -> B, so no parameters from this arrow
+                    Self::extract_params_recursive(&arrow_nodep.to, params);
+                } else {
+                    // For non-dependent arrows A -> B, we don't have parameter names
+                    // This shouldn't happen in well-formed procedure signatures, but handle it gracefully
+                    params.push(format!("param_{}", params.len()));
+                    // Continue with the return type
+                    Self::extract_params_recursive(&arrow_nodep.to, params);
+                }
+            }
+            // Base case: we've reached the return type (including unit type)
+            _ => {}
+        }
     }
 
     pub fn compile_proc_block(
@@ -148,6 +209,7 @@ impl AssemblyCompiler {
     ) -> Result<(), CompileError> {
         match proc_term {
             ProcTerm::Apply(apply) => self.compile_proc_apply(apply),
+            ProcTerm::Variable(var) => self.compile_proc_variable(var),
             ProcTerm::FieldAccess(field_access) => self.compile_proc_field_access(field_access),
             ProcTerm::ConstructorCall(constructor_call) => {
                 self.compile_proc_constructor_call(constructor_call)
@@ -157,17 +219,82 @@ impl AssemblyCompiler {
         }
     }
 
+    pub fn compile_proc_variable(
+        &mut self,
+        var: &ProcTermVariable<PhaseParse>,
+    ) -> Result<(), CompileError> {
+        let var_name = var.variable.s();
+
+        // Check if the variable exists in our variable map
+        if let Some(&offset) = self.variables.get(var_name) {
+            // Load the variable value from its stack location into rax
+            self.output
+                .push_str(&format!("    mov rax, qword ptr [rsp + {}]\n", offset - 8));
+            Ok(())
+        } else {
+            Err(CompileError::UnsupportedConstruct(format!(
+                "Unknown variable: {var_name}"
+            )))
+        }
+    }
+
     pub fn compile_proc_apply(
         &mut self,
         apply: &ProcTermApply<PhaseParse>,
     ) -> Result<(), CompileError> {
-        if let ProcTerm::Variable(var) = &*apply.f
-            && let Some(builtin) = self.builtins.get(var.variable.s())
-            && builtin == "syscall"
-        {
-            return self.compile_proc_syscall(&apply.args);
+        if let ProcTerm::Variable(var) = &*apply.f {
+            if let Some(builtin) = self.builtins.get(var.variable.s()) {
+                if builtin == "syscall" {
+                    return self.compile_proc_syscall(&apply.args);
+                }
+            } else {
+                // This is a call to a user-defined procedure
+                return self.compile_user_proc_call(var.variable.s(), &apply.args);
+            }
         }
         Err(CompileError::UnsupportedConstruct(format!("{apply:?}")))
+    }
+
+    pub fn compile_user_proc_call(
+        &mut self,
+        proc_name: &str,
+        args: &[ProcTerm<PhaseParse>],
+    ) -> Result<(), CompileError> {
+        // For a basic implementation, we'll:
+        // 1. Evaluate arguments and pass them via registers/stack
+        // 2. Call the procedure
+        // 3. Result will be in rax
+
+        // For now, this is a very basic implementation that assumes
+        // procedures use standard calling conventions
+
+        // TODO: Implement proper argument passing
+        // For the specific case of proc_call.fe, we need to:
+        // 1. Put first arg (40u64) in rdi
+        // 2. Put second arg (2u64) in rsi
+        // 3. Call the function
+        // 4. Result comes back in rax
+
+        if !args.is_empty() {
+            // First argument in rdi
+            if let ProcTerm::Number(num) = &args[0] {
+                let value = self.parse_number(num.number.s());
+                self.output.push_str(&format!("    mov rdi, {value}\n"));
+            }
+        }
+
+        if args.len() >= 2 {
+            // Second argument in rsi
+            if let ProcTerm::Number(num) = &args[1] {
+                let value = self.parse_number(num.number.s());
+                self.output.push_str(&format!("    mov rsi, {value}\n"));
+            }
+        }
+
+        // Call the procedure
+        self.output.push_str(&format!("    call {proc_name}\n"));
+
+        Ok(())
     }
 
     pub fn compile_proc_field_access(

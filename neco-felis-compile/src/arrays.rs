@@ -26,6 +26,7 @@ pub fn count_array_pointers_in_statement(statement: &Statement<PhaseParse>) -> i
         Statement::FieldAssign(_) => 0,
         Statement::Loop(loop_stmt) => count_array_pointers_in_statements(&loop_stmt.body),
         Statement::Break(_) => 0,
+        Statement::Return(return_stmt) => count_array_pointers_in_proc_term(&return_stmt.value),
         Statement::Expr(proc_term) => count_array_pointers_in_proc_term(proc_term),
         Statement::Ext(_) => unreachable!("Ext statements not supported in PhaseParse"),
     }

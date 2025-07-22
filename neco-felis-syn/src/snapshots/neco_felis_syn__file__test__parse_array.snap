@@ -809,7 +809,7 @@ File {
                                                     line: 19,
                                                     column: 16,
                                                 },
-                                                s: "=",
+                                                s: "<-",
                                             },
                                             value: Number(
                                                 ProcTermNumber {
@@ -819,7 +819,7 @@ File {
                                                                 0,
                                                             ),
                                                             line: 19,
-                                                            column: 18,
+                                                            column: 19,
                                                         },
                                                         s: "10.0f32",
                                                     },
@@ -835,7 +835,7 @@ File {
                                                 0,
                                             ),
                                             line: 19,
-                                            column: 25,
+                                            column: 26,
                                         },
                                     },
                                     tail: Then(
@@ -900,7 +900,7 @@ File {
                                                             line: 20,
                                                             column: 16,
                                                         },
-                                                        s: "=",
+                                                        s: "<-",
                                                     },
                                                     value: Number(
                                                         ProcTermNumber {
@@ -910,7 +910,7 @@ File {
                                                                         0,
                                                                     ),
                                                                     line: 20,
-                                                                    column: 18,
+                                                                    column: 19,
                                                                 },
                                                                 s: "14.0f32",
                                                             },
@@ -926,7 +926,7 @@ File {
                                                         0,
                                                     ),
                                                     line: 20,
-                                                    column: 25,
+                                                    column: 26,
                                                 },
                                             },
                                             tail: Then(
@@ -991,7 +991,7 @@ File {
                                                                     line: 21,
                                                                     column: 16,
                                                                 },
-                                                                s: "=",
+                                                                s: "<-",
                                                             },
                                                             value: Number(
                                                                 ProcTermNumber {
@@ -1001,7 +1001,7 @@ File {
                                                                                 0,
                                                                             ),
                                                                             line: 21,
-                                                                            column: 18,
+                                                                            column: 19,
                                                                         },
                                                                         s: "18.0f32",
                                                                     },
@@ -1017,7 +1017,7 @@ File {
                                                                 0,
                                                             ),
                                                             line: 21,
-                                                            column: 25,
+                                                            column: 26,
                                                         },
                                                     },
                                                     tail: Then(
@@ -1083,55 +1083,70 @@ File {
                                                                                                 column: 24,
                                                                                             },
                                                                                         },
-                                                                                        proc_term: FieldAccess(
-                                                                                            ProcTermFieldAccess {
-                                                                                                object: TokenVariable {
-                                                                                                    pos: Pos {
-                                                                                                        file_id: FileId(
-                                                                                                            0,
-                                                                                                        ),
-                                                                                                        line: 23,
-                                                                                                        column: 25,
-                                                                                                    },
-                                                                                                    s: "points",
-                                                                                                },
-                                                                                                dot: TokenOperator {
-                                                                                                    pos: Pos {
-                                                                                                        file_id: FileId(
-                                                                                                            0,
-                                                                                                        ),
-                                                                                                        line: 23,
-                                                                                                        column: 32,
-                                                                                                    },
-                                                                                                    s: ".",
-                                                                                                },
-                                                                                                field: TokenVariable {
-                                                                                                    pos: Pos {
-                                                                                                        file_id: FileId(
-                                                                                                            0,
-                                                                                                        ),
-                                                                                                        line: 23,
-                                                                                                        column: 33,
-                                                                                                    },
-                                                                                                    s: "x",
-                                                                                                },
-                                                                                                index: Some(
-                                                                                                    Number(
-                                                                                                        ProcTermNumber {
-                                                                                                            number: TokenNumber {
-                                                                                                                pos: Pos {
-                                                                                                                    file_id: FileId(
-                                                                                                                        0,
-                                                                                                                    ),
-                                                                                                                    line: 23,
-                                                                                                                    column: 35,
-                                                                                                                },
-                                                                                                                s: "0",
+                                                                                        proc_term: Dereference(
+                                                                                            ProcTermDereference {
+                                                                                                term: FieldAccess(
+                                                                                                    ProcTermFieldAccess {
+                                                                                                        object: TokenVariable {
+                                                                                                            pos: Pos {
+                                                                                                                file_id: FileId(
+                                                                                                                    0,
+                                                                                                                ),
+                                                                                                                line: 23,
+                                                                                                                column: 25,
                                                                                                             },
-                                                                                                            ext: (),
+                                                                                                            s: "points",
                                                                                                         },
-                                                                                                    ),
+                                                                                                        dot: TokenOperator {
+                                                                                                            pos: Pos {
+                                                                                                                file_id: FileId(
+                                                                                                                    0,
+                                                                                                                ),
+                                                                                                                line: 23,
+                                                                                                                column: 32,
+                                                                                                            },
+                                                                                                            s: ".",
+                                                                                                        },
+                                                                                                        field: TokenVariable {
+                                                                                                            pos: Pos {
+                                                                                                                file_id: FileId(
+                                                                                                                    0,
+                                                                                                                ),
+                                                                                                                line: 23,
+                                                                                                                column: 33,
+                                                                                                            },
+                                                                                                            s: "x",
+                                                                                                        },
+                                                                                                        index: Some(
+                                                                                                            Number(
+                                                                                                                ProcTermNumber {
+                                                                                                                    number: TokenNumber {
+                                                                                                                        pos: Pos {
+                                                                                                                            file_id: FileId(
+                                                                                                                                0,
+                                                                                                                            ),
+                                                                                                                            line: 23,
+                                                                                                                            column: 35,
+                                                                                                                        },
+                                                                                                                        s: "0",
+                                                                                                                    },
+                                                                                                                    ext: (),
+                                                                                                                },
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        ext: (),
+                                                                                                    },
                                                                                                 ),
+                                                                                                dot_star: TokenOperator {
+                                                                                                    pos: Pos {
+                                                                                                        file_id: FileId(
+                                                                                                            0,
+                                                                                                        ),
+                                                                                                        line: 23,
+                                                                                                        column: 37,
+                                                                                                    },
+                                                                                                    s: ".*",
+                                                                                                },
                                                                                                 ext: (),
                                                                                             },
                                                                                         ),
@@ -1141,7 +1156,7 @@ File {
                                                                                                     0,
                                                                                                 ),
                                                                                                 line: 23,
-                                                                                                column: 36,
+                                                                                                column: 39,
                                                                                             },
                                                                                         },
                                                                                         ext: (),
@@ -1155,58 +1170,73 @@ File {
                                                                                                     0,
                                                                                                 ),
                                                                                                 line: 23,
-                                                                                                column: 38,
+                                                                                                column: 41,
                                                                                             },
                                                                                         },
-                                                                                        proc_term: FieldAccess(
-                                                                                            ProcTermFieldAccess {
-                                                                                                object: TokenVariable {
-                                                                                                    pos: Pos {
-                                                                                                        file_id: FileId(
-                                                                                                            0,
-                                                                                                        ),
-                                                                                                        line: 23,
-                                                                                                        column: 39,
-                                                                                                    },
-                                                                                                    s: "points",
-                                                                                                },
-                                                                                                dot: TokenOperator {
-                                                                                                    pos: Pos {
-                                                                                                        file_id: FileId(
-                                                                                                            0,
-                                                                                                        ),
-                                                                                                        line: 23,
-                                                                                                        column: 46,
-                                                                                                    },
-                                                                                                    s: ".",
-                                                                                                },
-                                                                                                field: TokenVariable {
-                                                                                                    pos: Pos {
-                                                                                                        file_id: FileId(
-                                                                                                            0,
-                                                                                                        ),
-                                                                                                        line: 23,
-                                                                                                        column: 47,
-                                                                                                    },
-                                                                                                    s: "y",
-                                                                                                },
-                                                                                                index: Some(
-                                                                                                    Number(
-                                                                                                        ProcTermNumber {
-                                                                                                            number: TokenNumber {
-                                                                                                                pos: Pos {
-                                                                                                                    file_id: FileId(
-                                                                                                                        0,
-                                                                                                                    ),
-                                                                                                                    line: 23,
-                                                                                                                    column: 49,
-                                                                                                                },
-                                                                                                                s: "0",
+                                                                                        proc_term: Dereference(
+                                                                                            ProcTermDereference {
+                                                                                                term: FieldAccess(
+                                                                                                    ProcTermFieldAccess {
+                                                                                                        object: TokenVariable {
+                                                                                                            pos: Pos {
+                                                                                                                file_id: FileId(
+                                                                                                                    0,
+                                                                                                                ),
+                                                                                                                line: 23,
+                                                                                                                column: 42,
                                                                                                             },
-                                                                                                            ext: (),
+                                                                                                            s: "points",
                                                                                                         },
-                                                                                                    ),
+                                                                                                        dot: TokenOperator {
+                                                                                                            pos: Pos {
+                                                                                                                file_id: FileId(
+                                                                                                                    0,
+                                                                                                                ),
+                                                                                                                line: 23,
+                                                                                                                column: 49,
+                                                                                                            },
+                                                                                                            s: ".",
+                                                                                                        },
+                                                                                                        field: TokenVariable {
+                                                                                                            pos: Pos {
+                                                                                                                file_id: FileId(
+                                                                                                                    0,
+                                                                                                                ),
+                                                                                                                line: 23,
+                                                                                                                column: 50,
+                                                                                                            },
+                                                                                                            s: "y",
+                                                                                                        },
+                                                                                                        index: Some(
+                                                                                                            Number(
+                                                                                                                ProcTermNumber {
+                                                                                                                    number: TokenNumber {
+                                                                                                                        pos: Pos {
+                                                                                                                            file_id: FileId(
+                                                                                                                                0,
+                                                                                                                            ),
+                                                                                                                            line: 23,
+                                                                                                                            column: 52,
+                                                                                                                        },
+                                                                                                                        s: "0",
+                                                                                                                    },
+                                                                                                                    ext: (),
+                                                                                                                },
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        ext: (),
+                                                                                                    },
                                                                                                 ),
+                                                                                                dot_star: TokenOperator {
+                                                                                                    pos: Pos {
+                                                                                                        file_id: FileId(
+                                                                                                            0,
+                                                                                                        ),
+                                                                                                        line: 23,
+                                                                                                        column: 54,
+                                                                                                    },
+                                                                                                    s: ".*",
+                                                                                                },
                                                                                                 ext: (),
                                                                                             },
                                                                                         ),
@@ -1216,7 +1246,7 @@ File {
                                                                                                     0,
                                                                                                 ),
                                                                                                 line: 23,
-                                                                                                column: 50,
+                                                                                                column: 56,
                                                                                             },
                                                                                         },
                                                                                         ext: (),
@@ -1235,7 +1265,7 @@ File {
                                                                         0,
                                                                     ),
                                                                     line: 23,
-                                                                    column: 51,
+                                                                    column: 57,
                                                                 },
                                                             },
                                                             tail: Then(
@@ -1316,55 +1346,70 @@ File {
                                                                                                         column: 26,
                                                                                                     },
                                                                                                 },
-                                                                                                proc_term: FieldAccess(
-                                                                                                    ProcTermFieldAccess {
-                                                                                                        object: TokenVariable {
-                                                                                                            pos: Pos {
-                                                                                                                file_id: FileId(
-                                                                                                                    0,
-                                                                                                                ),
-                                                                                                                line: 24,
-                                                                                                                column: 27,
-                                                                                                            },
-                                                                                                            s: "points",
-                                                                                                        },
-                                                                                                        dot: TokenOperator {
-                                                                                                            pos: Pos {
-                                                                                                                file_id: FileId(
-                                                                                                                    0,
-                                                                                                                ),
-                                                                                                                line: 24,
-                                                                                                                column: 34,
-                                                                                                            },
-                                                                                                            s: ".",
-                                                                                                        },
-                                                                                                        field: TokenVariable {
-                                                                                                            pos: Pos {
-                                                                                                                file_id: FileId(
-                                                                                                                    0,
-                                                                                                                ),
-                                                                                                                line: 24,
-                                                                                                                column: 35,
-                                                                                                            },
-                                                                                                            s: "z",
-                                                                                                        },
-                                                                                                        index: Some(
-                                                                                                            Number(
-                                                                                                                ProcTermNumber {
-                                                                                                                    number: TokenNumber {
-                                                                                                                        pos: Pos {
-                                                                                                                            file_id: FileId(
-                                                                                                                                0,
-                                                                                                                            ),
-                                                                                                                            line: 24,
-                                                                                                                            column: 37,
-                                                                                                                        },
-                                                                                                                        s: "0",
+                                                                                                proc_term: Dereference(
+                                                                                                    ProcTermDereference {
+                                                                                                        term: FieldAccess(
+                                                                                                            ProcTermFieldAccess {
+                                                                                                                object: TokenVariable {
+                                                                                                                    pos: Pos {
+                                                                                                                        file_id: FileId(
+                                                                                                                            0,
+                                                                                                                        ),
+                                                                                                                        line: 24,
+                                                                                                                        column: 27,
                                                                                                                     },
-                                                                                                                    ext: (),
+                                                                                                                    s: "points",
                                                                                                                 },
-                                                                                                            ),
+                                                                                                                dot: TokenOperator {
+                                                                                                                    pos: Pos {
+                                                                                                                        file_id: FileId(
+                                                                                                                            0,
+                                                                                                                        ),
+                                                                                                                        line: 24,
+                                                                                                                        column: 34,
+                                                                                                                    },
+                                                                                                                    s: ".",
+                                                                                                                },
+                                                                                                                field: TokenVariable {
+                                                                                                                    pos: Pos {
+                                                                                                                        file_id: FileId(
+                                                                                                                            0,
+                                                                                                                        ),
+                                                                                                                        line: 24,
+                                                                                                                        column: 35,
+                                                                                                                    },
+                                                                                                                    s: "z",
+                                                                                                                },
+                                                                                                                index: Some(
+                                                                                                                    Number(
+                                                                                                                        ProcTermNumber {
+                                                                                                                            number: TokenNumber {
+                                                                                                                                pos: Pos {
+                                                                                                                                    file_id: FileId(
+                                                                                                                                        0,
+                                                                                                                                    ),
+                                                                                                                                    line: 24,
+                                                                                                                                    column: 37,
+                                                                                                                                },
+                                                                                                                                s: "0",
+                                                                                                                            },
+                                                                                                                            ext: (),
+                                                                                                                        },
+                                                                                                                    ),
+                                                                                                                ),
+                                                                                                                ext: (),
+                                                                                                            },
                                                                                                         ),
+                                                                                                        dot_star: TokenOperator {
+                                                                                                            pos: Pos {
+                                                                                                                file_id: FileId(
+                                                                                                                    0,
+                                                                                                                ),
+                                                                                                                line: 24,
+                                                                                                                column: 39,
+                                                                                                            },
+                                                                                                            s: ".*",
+                                                                                                        },
                                                                                                         ext: (),
                                                                                                     },
                                                                                                 ),
@@ -1374,7 +1419,7 @@ File {
                                                                                                             0,
                                                                                                         ),
                                                                                                         line: 24,
-                                                                                                        column: 38,
+                                                                                                        column: 41,
                                                                                                     },
                                                                                                 },
                                                                                                 ext: (),
@@ -1393,7 +1438,7 @@ File {
                                                                                 0,
                                                                             ),
                                                                             line: 24,
-                                                                            column: 39,
+                                                                            column: 42,
                                                                         },
                                                                     },
                                                                     tail: Then(

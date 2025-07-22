@@ -46,6 +46,7 @@ impl Phase for PhaseRenamed {
     type ProcTermNumberExt = ();
     type ProcTermFieldAccessExt = ();
     type ProcTermConstructorCallExt = ();
+    type ProcTermDereferenceExt = ();
     type ProcTermIfExt = ();
     type StatementReturnExt = ();
 }

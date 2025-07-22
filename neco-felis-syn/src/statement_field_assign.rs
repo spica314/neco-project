@@ -21,8 +21,8 @@ impl Parse for StatementFieldAssign<PhaseParse> {
             return Ok(None);
         };
 
-        // Parse "=" operator
-        let Some(equals) = TokenOperator::parse_operator(tokens, &mut k, "=")? else {
+        // Parse "<-" operator
+        let Some(equals) = TokenOperator::parse_operator(tokens, &mut k, "<-")? else {
             return Ok(None);
         };
 
@@ -32,7 +32,7 @@ impl Parse for StatementFieldAssign<PhaseParse> {
         } else if let Some(variable) = ProcTermVariable::parse(tokens, &mut k)? {
             ProcTerm::Variable(variable)
         } else {
-            return Err(ParseError::Unknown("expected value expression after '='"));
+            return Err(ParseError::Unknown("expected value expression after '<-'"));
         };
 
         let statement_field_assign = StatementFieldAssign {

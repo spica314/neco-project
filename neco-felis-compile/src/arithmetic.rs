@@ -1012,6 +1012,19 @@ impl AssemblyCompiler {
                     )))
                 }
             }
+            ProcTerm::Dereference(dereference) => {
+                // Handle dereference operation: expr.*
+                // First, get the address from the base term (should be a reference)
+                // This should compile to something that puts the address in a register
+                self.compile_proc_term(&dereference.term)?;
+
+                // At this point, rax should contain the address of the f32 value
+                // Load the f32 value from that address into the XMM register
+                self.output
+                    .push_str(&format!("    movss {register}, dword ptr [rax]\n"));
+
+                Ok(())
+            }
             _ => Err(CompileError::UnsupportedConstruct(format!(
                 "Unsupported f32 argument type in ProcTerm: {arg:?}"
             ))),

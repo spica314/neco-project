@@ -214,6 +214,7 @@ impl AssemblyCompiler {
             ProcTerm::ConstructorCall(constructor_call) => {
                 self.compile_proc_constructor_call(constructor_call)
             }
+            ProcTerm::Dereference(dereference) => self.compile_proc_dereference(dereference),
             ProcTerm::If(if_expr) => crate::control_flow::compile_proc_if(self, if_expr),
             _ => Err(CompileError::UnsupportedConstruct(format!("{proc_term:?}"))),
         }
@@ -301,6 +302,7 @@ impl AssemblyCompiler {
         &mut self,
         field_access: &ProcTermFieldAccess<PhaseParse>,
     ) -> Result<(), CompileError> {
+        // Field access now returns a reference to the field rather than the field value
         let struct_name = field_access.object.s();
         let field_name = field_access.field.s();
 
@@ -312,16 +314,18 @@ impl AssemblyCompiler {
                 _ => 0,
             };
 
+            // Load the base address of the struct into rax
             self.output.push_str(&format!(
                 "    mov rax, qword ptr [rsp + {}]\n",
                 var_offset - 8
             ));
-            if field_offset == 0 {
-                self.output.push_str("    mov eax, dword ptr [rax]\n");
-            } else {
+
+            // Add the field offset to get the address of the field
+            if field_offset > 0 {
                 self.output
-                    .push_str(&format!("    mov eax, dword ptr [rax + {field_offset}]\n"));
+                    .push_str(&format!("    add rax, {field_offset}\n"));
             }
+            // rax now contains the address of the field (a reference)
 
             Ok(())
         } else {
@@ -329,6 +333,19 @@ impl AssemblyCompiler {
                 "Unknown struct variable: {struct_name}"
             )))
         }
+    }
+
+    pub fn compile_proc_dereference(
+        &mut self,
+        dereference: &ProcTermDereference<PhaseParse>,
+    ) -> Result<(), CompileError> {
+        // First compile the term that produces a reference
+        self.compile_proc_term(&dereference.term)?;
+
+        // Then dereference it - rax contains the address, we need to load the value
+        self.output.push_str("    mov eax, dword ptr [rax]\n");
+
+        Ok(())
     }
 
     pub fn compile_proc_constructor_call(

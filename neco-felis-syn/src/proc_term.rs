@@ -1,7 +1,7 @@
 use crate::{
     ItemStruct, Parse, ParseError, Phase, PhaseParse, ProcTermApply, ProcTermConstructorCall,
-    ProcTermFieldAccess, ProcTermIf, ProcTermNumber, ProcTermParen, ProcTermUnit, ProcTermVariable,
-    token::Token,
+    ProcTermDereference, ProcTermFieldAccess, ProcTermIf, ProcTermNumber, ProcTermParen,
+    ProcTermUnit, ProcTermVariable, token::Token,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -15,45 +15,127 @@ pub enum ProcTerm<P: Phase> {
     ConstructorCall(ProcTermConstructorCall<P>),
     Struct(ItemStruct<P>),
     If(ProcTermIf<P>),
+    Dereference(ProcTermDereference<P>),
     Ext(P::ProcTermExt),
 }
 
 impl Parse for ProcTerm<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         if let Some(proc_term_if) = ProcTermIf::parse(tokens, i)? {
-            return Ok(Some(ProcTerm::If(proc_term_if)));
+            // Check for postfix dereference
+            if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
+                ProcTerm::If(proc_term_if.clone()),
+                tokens,
+                i,
+            )? {
+                return Ok(Some(deref_term));
+            } else {
+                return Ok(Some(ProcTerm::If(proc_term_if)));
+            }
         }
 
         if let Some(proc_term_constructor_call) = ProcTermConstructorCall::parse(tokens, i)? {
-            return Ok(Some(ProcTerm::ConstructorCall(proc_term_constructor_call)));
+            // Check for postfix dereference
+            if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
+                ProcTerm::ConstructorCall(proc_term_constructor_call.clone()),
+                tokens,
+                i,
+            )? {
+                return Ok(Some(deref_term));
+            } else {
+                return Ok(Some(ProcTerm::ConstructorCall(proc_term_constructor_call)));
+            }
         }
 
         if let Some(proc_term_field_access) = ProcTermFieldAccess::parse(tokens, i)? {
-            return Ok(Some(ProcTerm::FieldAccess(proc_term_field_access)));
+            // Check for postfix dereference
+            if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
+                ProcTerm::FieldAccess(proc_term_field_access.clone()),
+                tokens,
+                i,
+            )? {
+                return Ok(Some(deref_term));
+            } else {
+                return Ok(Some(ProcTerm::FieldAccess(proc_term_field_access)));
+            }
         }
 
         if let Some(proc_term_apply) = ProcTermApply::parse(tokens, i)? {
-            return Ok(Some(ProcTerm::Apply(proc_term_apply)));
+            // Check for postfix dereference
+            if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
+                ProcTerm::Apply(proc_term_apply.clone()),
+                tokens,
+                i,
+            )? {
+                return Ok(Some(deref_term));
+            } else {
+                return Ok(Some(ProcTerm::Apply(proc_term_apply)));
+            }
         }
 
         if let Some(item_struct) = ItemStruct::parse(tokens, i)? {
-            return Ok(Some(ProcTerm::Struct(item_struct)));
+            // Check for postfix dereference
+            if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
+                ProcTerm::Struct(item_struct.clone()),
+                tokens,
+                i,
+            )? {
+                return Ok(Some(deref_term));
+            } else {
+                return Ok(Some(ProcTerm::Struct(item_struct)));
+            }
         }
 
         if let Some(proc_term_variable) = ProcTermVariable::parse(tokens, i)? {
-            return Ok(Some(ProcTerm::Variable(proc_term_variable)));
+            // Check for postfix dereference
+            if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
+                ProcTerm::Variable(proc_term_variable.clone()),
+                tokens,
+                i,
+            )? {
+                return Ok(Some(deref_term));
+            } else {
+                return Ok(Some(ProcTerm::Variable(proc_term_variable)));
+            }
         }
 
         if let Some(proc_term_number) = ProcTermNumber::parse(tokens, i)? {
-            return Ok(Some(ProcTerm::Number(proc_term_number)));
+            // Check for postfix dereference
+            if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
+                ProcTerm::Number(proc_term_number.clone()),
+                tokens,
+                i,
+            )? {
+                return Ok(Some(deref_term));
+            } else {
+                return Ok(Some(ProcTerm::Number(proc_term_number)));
+            }
         }
 
         if let Some(proc_term_unit) = ProcTermUnit::parse(tokens, i)? {
-            return Ok(Some(ProcTerm::Unit(proc_term_unit)));
+            // Check for postfix dereference
+            if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
+                ProcTerm::Unit(proc_term_unit.clone()),
+                tokens,
+                i,
+            )? {
+                return Ok(Some(deref_term));
+            } else {
+                return Ok(Some(ProcTerm::Unit(proc_term_unit)));
+            }
         }
 
         if let Some(proc_term_paren) = ProcTermParen::parse(tokens, i)? {
-            return Ok(Some(ProcTerm::Paren(proc_term_paren)));
+            // Check for postfix dereference
+            if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
+                ProcTerm::Paren(proc_term_paren.clone()),
+                tokens,
+                i,
+            )? {
+                return Ok(Some(deref_term));
+            } else {
+                return Ok(Some(ProcTerm::Paren(proc_term_paren)));
+            }
         }
         Ok(None)
     }

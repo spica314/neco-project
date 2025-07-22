@@ -110,6 +110,14 @@ pub fn extract_type_from_term(term: &Term<PhaseParse>) -> Result<String, Compile
 }
 
 /// Generate Structure of Arrays (SoA) allocation using mmap
+///
+/// This function implements Structure of Arrays layout by allocating separate
+/// memory regions for each field of the struct elements, rather than storing
+/// all fields of an element together (Array of Structures).
+///
+/// For example, for a Point struct with x, y, z fields and size N:
+/// - AoS layout: [x0,y0,z0][x1,y1,z1][x2,y2,z2]...
+/// - SoA layout: [x0,x1,x2,...] [y0,y1,y2,...] [z0,z1,z2,...]
 pub fn generate_soa_allocation(
     array_name: &str,
     array_info: &ArrayInfo,
@@ -119,51 +127,51 @@ pub fn generate_soa_allocation(
     variables: &mut HashMap<String, i32>,
     arrays: &mut HashMap<String, ArrayInfo>,
 ) -> Result<(), CompileError> {
-    // For each field in the struct, allocate a separate array using mmap
-    // mmap syscall: rax=9, rdi=addr(0), rsi=length, rdx=prot, r10=flags, r8=fd, r9=offset
-
     let mut updated_info = array_info.clone();
+
+    output.push_str(&format!(
+        "    ; Structure of Arrays allocation for {array_name}\n"
+    ));
+    output.push_str(&format!(
+        "    ; Allocating {} separate arrays for each field\n",
+        array_info.field_names.len()
+    ));
 
     for (field_idx, field_name) in array_info.field_names.iter().enumerate() {
         let field_type = &array_info.field_types[field_idx];
 
         // Calculate size needed for this field array
-        let element_size = match field_type.as_str() {
-            "f32" => 4,
-            "f64" => 8,
-            "u64" | "i64" => 8,
-            "u32" | "i32" => 4,
-            _ => 8, // Default to 8 bytes
-        };
+        let element_size = get_type_size(field_type);
+
+        output.push_str(&format!("    ; Allocating array for field '{field_name}' of type '{field_type}' (element size: {element_size} bytes)\n"));
 
         // Calculate total size = element_size * array_length
         if size != "rsi" {
-            output.push_str(&format!("    mov rsi, {size}\n"));
+            output.push_str(&format!("    mov rsi, {size}        ; Load array size\n"));
         }
-        output.push_str(&format!("    mov rax, {element_size}\n"));
-        output.push_str("    mul rsi\n"); // rax = element_size * array_length
-        output.push_str("    mov rsi, rax\n"); // rsi = total_size
+        output.push_str(&format!(
+            "    mov rax, {element_size}   ; Load element size\n"
+        ));
+        output.push_str("    mul rsi                  ; rax = element_size * array_length\n");
+        output.push_str("    mov rsi, rax             ; rsi = total_size for this field array\n");
 
-        // mmap syscall
-        output.push_str("    mov rax, 9\n"); // sys_mmap
-        output.push_str("    mov rdi, 0\n"); // addr = NULL
-        // rsi already contains total_size
-        output.push_str("    mov rdx, 3\n"); // prot = PROT_READ | PROT_WRITE
-        output.push_str("    mov r10, 34\n"); // flags = MAP_PRIVATE | MAP_ANONYMOUS
-        output.push_str("    mov r8, -1\n"); // fd = -1
-        output.push_str("    mov r9, 0\n"); // offset = 0
+        // mmap syscall for this field's array
+        output.push_str("    mov rax, 9               ; sys_mmap\n");
+        output.push_str("    mov rdi, 0               ; addr = NULL (let kernel choose)\n");
+        output.push_str("    mov rdx, 3               ; prot = PROT_READ | PROT_WRITE\n");
+        output.push_str("    mov r10, 34              ; flags = MAP_PRIVATE | MAP_ANONYMOUS\n");
+        output.push_str("    mov r8, -1               ; fd = -1 (anonymous mapping)\n");
+        output.push_str("    mov r9, 0                ; offset = 0\n");
         output.push_str("    syscall\n");
 
-        // Store the returned pointer for this field
-        // We'll use a simple naming convention: arrayname_fieldname_ptr
+        // Store the returned pointer for this field's array
         let ptr_var_name = format!("{array_name}_{field_name}_ptr");
         *stack_offset += 8;
         let ptr_offset = *stack_offset;
-        variables.insert(ptr_var_name, ptr_offset);
+        variables.insert(ptr_var_name.clone(), ptr_offset);
 
-        // Store the mmap result (in rax) to the pointer variable
         output.push_str(&format!(
-            "    mov qword ptr [rsp + {}], rax\n",
+            "    mov qword ptr [rsp + {}], rax  ; Store {ptr_var_name}\n",
             ptr_offset - 8
         ));
     }
@@ -174,10 +182,16 @@ pub fn generate_soa_allocation(
     }
     arrays.insert(array_name.to_string(), updated_info);
 
+    output.push_str(&format!(
+        "    ; SoA allocation complete for {array_name}\n\n"
+    ));
     Ok(())
 }
 
 /// Generate Structure of Arrays (SoA) allocation with variable name
+///
+/// This is similar to `generate_soa_allocation` but uses the variable name
+/// instead of the array type name for pointer variable naming.
 pub fn generate_soa_allocation_with_var(
     var_name: &str,
     array_info: &ArrayInfo,
@@ -186,53 +200,54 @@ pub fn generate_soa_allocation_with_var(
     stack_offset: &mut i32,
     variables: &mut HashMap<String, i32>,
 ) -> Result<(), CompileError> {
-    // For each field in the struct, allocate a separate array using mmap
-    // mmap syscall: rax=9, rdi=addr(0), rsi=length, rdx=prot, r10=flags, r8=fd, r9=offset
+    output.push_str(&format!("    ; SoA allocation for variable '{var_name}'\n"));
+    output.push_str(&format!(
+        "    ; Allocating {} separate field arrays\n",
+        array_info.field_names.len()
+    ));
 
     for (field_idx, field_name) in array_info.field_names.iter().enumerate() {
         let field_type = &array_info.field_types[field_idx];
+        let element_size = get_type_size(field_type);
 
-        // Calculate size needed for this field array
-        let element_size = match field_type.as_str() {
-            "f32" => 4,
-            "f64" => 8,
-            "u64" | "i64" => 8,
-            "u32" | "i32" => 4,
-            _ => 8, // Default to 8 bytes
-        };
+        output.push_str(&format!(
+            "    ; Field '{field_name}': {field_type} array ({element_size} bytes per element)\n"
+        ));
 
         // Calculate total size = element_size * array_length
         if size != "rsi" {
-            output.push_str(&format!("    mov rsi, {size}\n"));
+            output.push_str(&format!("    mov rsi, {size}        ; Load array size\n"));
         }
-        output.push_str(&format!("    mov rax, {element_size}\n"));
-        output.push_str("    mul rsi\n"); // rax = element_size * array_length
-        output.push_str("    mov rsi, rax\n"); // rsi = total_size
+        output.push_str(&format!(
+            "    mov rax, {element_size}   ; Load element size\n"
+        ));
+        output.push_str("    mul rsi                  ; rax = element_size * array_length\n");
+        output.push_str("    mov rsi, rax             ; rsi = total_size for field array\n");
 
-        // mmap syscall
-        output.push_str("    mov rax, 9\n"); // sys_mmap
-        output.push_str("    mov rdi, 0\n"); // addr = NULL
-        // rsi already contains total_size
-        output.push_str("    mov rdx, 3\n"); // prot = PROT_READ | PROT_WRITE
-        output.push_str("    mov r10, 34\n"); // flags = MAP_PRIVATE | MAP_ANONYMOUS
-        output.push_str("    mov r8, -1\n"); // fd = -1
-        output.push_str("    mov r9, 0\n"); // offset = 0
+        // mmap syscall for this field's array
+        output.push_str("    mov rax, 9               ; sys_mmap\n");
+        output.push_str("    mov rdi, 0               ; addr = NULL\n");
+        output.push_str("    mov rdx, 3               ; prot = PROT_READ | PROT_WRITE\n");
+        output.push_str("    mov r10, 34              ; flags = MAP_PRIVATE | MAP_ANONYMOUS\n");
+        output.push_str("    mov r8, -1               ; fd = -1\n");
+        output.push_str("    mov r9, 0                ; offset = 0\n");
         output.push_str("    syscall\n");
 
-        // Store the returned pointer for this field
-        // Use variable name instead of type name for the pointer variable
+        // Store the returned pointer using variable name
         let ptr_var_name = format!("{var_name}_{field_name}_ptr");
         *stack_offset += 8;
         let ptr_offset = *stack_offset;
-        variables.insert(ptr_var_name, ptr_offset);
+        variables.insert(ptr_var_name.clone(), ptr_offset);
 
-        // Store the mmap result (in rax) to the pointer variable
         output.push_str(&format!(
-            "    mov qword ptr [rsp + {}], rax\n",
+            "    mov qword ptr [rsp + {}], rax  ; Store {ptr_var_name}\n",
             ptr_offset - 8
         ));
     }
 
+    output.push_str(&format!(
+        "    ; SoA allocation complete for variable '{var_name}'\n\n"
+    ));
     Ok(())
 }
 
@@ -406,13 +421,7 @@ pub fn get_element_size(
 ) -> Result<usize, CompileError> {
     if let Some(pos) = field_names.iter().position(|name| name == field_name) {
         let field_type = &field_types[pos];
-        Ok(match field_type.as_str() {
-            "f32" => 4,
-            "f64" => 8,
-            "u64" | "i64" => 8,
-            "u32" | "i32" => 4,
-            _ => 8, // Default to 8 bytes
-        })
+        Ok(get_type_size(field_type))
     } else {
         Err(CompileError::UnsupportedConstruct(format!(
             "Unknown field: {field_name}"
@@ -432,5 +441,18 @@ pub fn get_field_type(
         Err(CompileError::UnsupportedConstruct(format!(
             "Unknown field: {field_name}"
         )))
+    }
+}
+
+/// Get the size in bytes for a type
+pub fn get_type_size(type_name: &str) -> usize {
+    match type_name {
+        "f32" => 4,
+        "f64" => 8,
+        "u64" | "i64" => 8,
+        "u32" | "i32" => 4,
+        "u16" | "i16" => 2,
+        "u8" | "i8" => 1,
+        _ => 8, // Default to 8 bytes for unknown types
     }
 }

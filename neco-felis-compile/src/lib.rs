@@ -102,13 +102,35 @@ impl AssemblyCompiler {
                 )))
             }
             ProcTerm::ConstructorCall(constructor_call) => {
-                // Handle constructor calls in let expressions
-                self.compile_proc_constructor_call(constructor_call)?;
+                // Handle array constructor calls in let expressions
+                let type_name = constructor_call.type_name.s();
+                let method_name = constructor_call.method.s();
+                let constructor_name = format!("{type_name}::{method_name}");
 
-                // Store the result (rax) to the variable's stack location
-                self.output
-                    .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
-                Ok(())
+                if constructor_name.contains("::new_with_size") {
+                    // Check if this is an array constructor
+                    if self.arrays.contains_key(type_name) {
+                        // Store variable-to-array-type mapping for field access
+                        self.variable_arrays
+                            .insert(var_name.to_string(), type_name.to_string());
+
+                        // For array constructors, we need to use the variable name for SoA allocation
+                        self.compile_proc_constructor_call_with_var(constructor_call, var_name)?;
+                        Ok(())
+                    } else {
+                        // Non-array constructor
+                        self.compile_proc_constructor_call(constructor_call)?;
+                        self.output
+                            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+                        Ok(())
+                    }
+                } else {
+                    // Other constructor calls
+                    self.compile_proc_constructor_call(constructor_call)?;
+                    self.output
+                        .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+                    Ok(())
+                }
             }
             _ => Err(CompileError::UnsupportedConstruct(format!(
                 "let with non-number value: {let_expr:?}"

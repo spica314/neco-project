@@ -977,11 +977,67 @@ impl AssemblyCompiler {
             }
             ProcTerm::FieldAccess(field_access) => {
                 // Handle field access like points.x 0 for f32 loading
-                let struct_name = field_access.object.s();
+                let object_name = field_access.object.s();
                 let field_name = field_access.field.s();
 
-                if let Some(var_offset) = self.variables.get(struct_name) {
-                    // Load the base pointer
+                // Check if this is a Structure of Arrays (SoA) access
+                let soa_ptr_var_name = format!("{object_name}_{field_name}_ptr");
+                if let Some(&ptr_offset) = self.variables.get(&soa_ptr_var_name) {
+                    // This is SoA access - load the field array pointer
+                    self.output.push_str(&format!(
+                        "    mov rax, qword ptr [rsp + {}]\n",
+                        ptr_offset - 8
+                    ));
+
+                    // Handle index if present
+                    if let Some(index_term) = &field_access.index {
+                        // Get array info for element size calculation
+                        if let Some(array_type_name) = self.variable_arrays.get(object_name)
+                            && let Some(array_info) = self.arrays.get(array_type_name)
+                        {
+                            let element_size = crate::arrays::get_element_size(
+                                &array_info.field_types,
+                                &array_info.field_names,
+                                field_name,
+                            )?;
+
+                            match &**index_term {
+                                ProcTerm::Number(num) => {
+                                    let index = crate::arrays::parse_number(num.number.s());
+                                    let offset = index.parse::<usize>().unwrap_or(0) * element_size;
+                                    if offset > 0 {
+                                        self.output.push_str(&format!("    add rax, {offset}\n"));
+                                    }
+                                }
+                                ProcTerm::Variable(var) => {
+                                    if let Some(&var_offset) = self.variables.get(var.variable.s())
+                                    {
+                                        self.output.push_str(&format!(
+                                            "    mov rbx, qword ptr [rsp + {}]\n",
+                                            var_offset - 8
+                                        ));
+                                        self.output
+                                            .push_str(&format!("    mov rcx, {element_size}\n"));
+                                        self.output.push_str("    imul rbx, rcx\n");
+                                        self.output.push_str("    add rax, rbx\n");
+                                    }
+                                }
+                                _ => {
+                                    return Err(CompileError::UnsupportedConstruct(format!(
+                                        "Unsupported index type in field access: {index_term:?}"
+                                    )));
+                                }
+                            }
+                        }
+                    }
+
+                    // Load f32 value from SoA array into XMM register
+                    self.output
+                        .push_str(&format!("    movss {register}, dword ptr [rax]\n"));
+
+                    Ok(())
+                } else if let Some(var_offset) = self.variables.get(object_name) {
+                    // Fall back to struct-based access for non-SoA variables
                     self.output.push_str(&format!(
                         "    mov rax, qword ptr [rsp + {}]\n",
                         var_offset - 8
@@ -1008,7 +1064,7 @@ impl AssemblyCompiler {
                     Ok(())
                 } else {
                     Err(CompileError::UnsupportedConstruct(format!(
-                        "Unknown struct variable: {struct_name}"
+                        "Unknown variable: {object_name}"
                     )))
                 }
             }

@@ -302,11 +302,62 @@ impl AssemblyCompiler {
         &mut self,
         field_access: &ProcTermFieldAccess<PhaseParse>,
     ) -> Result<(), CompileError> {
-        // Field access now returns a reference to the field rather than the field value
-        let struct_name = field_access.object.s();
+        let object_name = field_access.object.s();
         let field_name = field_access.field.s();
 
-        if let Some(var_offset) = self.variables.get(struct_name) {
+        // Check if this is a Structure of Arrays (SoA) access
+        let soa_ptr_var_name = format!("{object_name}_{field_name}_ptr");
+        if let Some(&ptr_offset) = self.variables.get(&soa_ptr_var_name) {
+            // This is SoA access - load the field array pointer
+            self.output.push_str(&format!(
+                "    mov rax, qword ptr [rsp + {}]\n",
+                ptr_offset - 8
+            ));
+
+            // Handle index if present
+            if let Some(index_term) = &field_access.index {
+                // Get array info for element size calculation
+                if let Some(array_type_name) = self.variable_arrays.get(object_name)
+                    && let Some(array_info) = self.arrays.get(array_type_name)
+                {
+                    let element_size = crate::arrays::get_element_size(
+                        &array_info.field_types,
+                        &array_info.field_names,
+                        field_name,
+                    )?;
+
+                    match &**index_term {
+                        ProcTerm::Number(num) => {
+                            let index = crate::arrays::parse_number(num.number.s());
+                            let offset = index.parse::<usize>().unwrap_or(0) * element_size;
+                            if offset > 0 {
+                                self.output.push_str(&format!("    add rax, {offset}\n"));
+                            }
+                        }
+                        ProcTerm::Variable(var) => {
+                            if let Some(&var_offset) = self.variables.get(var.variable.s()) {
+                                self.output.push_str(&format!(
+                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    var_offset - 8
+                                ));
+                                self.output
+                                    .push_str(&format!("    mov rcx, {element_size}\n"));
+                                self.output.push_str("    imul rbx, rcx\n");
+                                self.output.push_str("    add rax, rbx\n");
+                            }
+                        }
+                        _ => {
+                            return Err(CompileError::UnsupportedConstruct(format!(
+                                "Unsupported index type in field access: {index_term:?}"
+                            )));
+                        }
+                    }
+                }
+            }
+            // rax now contains the address of the field element in the SoA
+            Ok(())
+        } else if let Some(var_offset) = self.variables.get(object_name) {
+            // Fall back to struct-based access for non-SoA variables
             let field_offset = match field_name {
                 "x" => 0,
                 "y" => 4,
@@ -325,12 +376,10 @@ impl AssemblyCompiler {
                 self.output
                     .push_str(&format!("    add rax, {field_offset}\n"));
             }
-            // rax now contains the address of the field (a reference)
-
             Ok(())
         } else {
             Err(CompileError::UnsupportedConstruct(format!(
-                "Unknown struct variable: {struct_name}"
+                "Unknown variable: {object_name}"
             )))
         }
     }
@@ -348,6 +397,74 @@ impl AssemblyCompiler {
         Ok(())
     }
 
+    pub fn compile_proc_constructor_call_with_var(
+        &mut self,
+        constructor_call: &ProcTermConstructorCall<PhaseParse>,
+        var_name: &str,
+    ) -> Result<(), CompileError> {
+        let type_name = constructor_call.type_name.s();
+        let method_name = constructor_call.method.s();
+        let constructor_name = format!("{type_name}::{method_name}");
+
+        if constructor_name.contains("::new_with_size") {
+            // Look up array information
+            if let Some(array_info) = self.arrays.get(type_name).cloned() {
+                // Get the size argument
+                let size_arg = if !constructor_call.args.is_empty()
+                    && let Some(arg) = constructor_call.args.first()
+                {
+                    match arg {
+                        ProcTerm::Number(num) => num.number.s().to_string(),
+                        ProcTerm::Variable(var) => {
+                            if let Some(&offset) = self.variables.get(var.variable.s()) {
+                                // Load variable value into rsi for use by SoA allocation
+                                self.output.push_str(&format!(
+                                    "    mov rsi, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                "rsi".to_string()
+                            } else {
+                                return Err(CompileError::UnsupportedConstruct(format!(
+                                    "Unknown variable in array size: {}",
+                                    var.variable.s()
+                                )));
+                            }
+                        }
+                        _ => {
+                            return Err(CompileError::UnsupportedConstruct(format!(
+                                "Unsupported size argument type: {arg:?}"
+                            )));
+                        }
+                    }
+                } else {
+                    return Err(CompileError::UnsupportedConstruct(
+                        "Missing size argument for array constructor".to_string(),
+                    ));
+                };
+
+                // Generate Structure of Arrays allocation using variable name
+                crate::arrays::generate_soa_allocation_with_var(
+                    var_name,
+                    &array_info,
+                    &size_arg,
+                    &mut self.output,
+                    &mut self.stack_offset,
+                    &mut self.variables,
+                )?;
+
+                Ok(())
+            } else {
+                Err(CompileError::UnsupportedConstruct(format!(
+                    "Array type not found: {type_name}"
+                )))
+            }
+        } else {
+            Err(CompileError::UnsupportedConstruct(format!(
+                "Constructor call not yet implemented: {constructor_name}"
+            )))
+        }
+    }
+
     pub fn compile_proc_constructor_call(
         &mut self,
         constructor_call: &ProcTermConstructorCall<PhaseParse>,
@@ -357,22 +474,58 @@ impl AssemblyCompiler {
         let constructor_name = format!("{type_name}::{method_name}");
 
         if constructor_name.contains("::new_with_size") {
-            if !constructor_call.args.is_empty()
-                && let Some(arg) = constructor_call.args.first()
-            {
-                self.load_proc_argument_into_register(arg, "rax")?;
+            // Look up array information
+            if let Some(array_info) = self.arrays.get(type_name).cloned() {
+                // Get the size argument
+                let size_arg = if !constructor_call.args.is_empty()
+                    && let Some(arg) = constructor_call.args.first()
+                {
+                    match arg {
+                        ProcTerm::Number(num) => num.number.s().to_string(),
+                        ProcTerm::Variable(var) => {
+                            if let Some(&offset) = self.variables.get(var.variable.s()) {
+                                // Load variable value into rsi for use by SoA allocation
+                                self.output.push_str(&format!(
+                                    "    mov rsi, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                "rsi".to_string()
+                            } else {
+                                return Err(CompileError::UnsupportedConstruct(format!(
+                                    "Unknown variable in array size: {}",
+                                    var.variable.s()
+                                )));
+                            }
+                        }
+                        _ => {
+                            return Err(CompileError::UnsupportedConstruct(format!(
+                                "Unsupported size argument type: {arg:?}"
+                            )));
+                        }
+                    }
+                } else {
+                    return Err(CompileError::UnsupportedConstruct(
+                        "Missing size argument for array constructor".to_string(),
+                    ));
+                };
+
+                // Generate Structure of Arrays allocation
+                crate::arrays::generate_soa_allocation(
+                    type_name,
+                    &array_info,
+                    &size_arg,
+                    &mut self.output,
+                    &mut self.stack_offset,
+                    &mut self.variables,
+                    &mut self.arrays,
+                )?;
+
+                Ok(())
+            } else {
+                Err(CompileError::UnsupportedConstruct(format!(
+                    "Array type not found: {type_name}"
+                )))
             }
-
-            self.output.push_str("    mov rax, 9\n");
-            self.output.push_str("    mov rdi, 0\n");
-            self.output.push_str("    mov rsi, 4096\n");
-            self.output.push_str("    mov rdx, 3\n");
-            self.output.push_str("    mov r10, 34\n");
-            self.output.push_str("    mov r8, -1\n");
-            self.output.push_str("    mov r9, 0\n");
-            self.output.push_str("    syscall\n");
-
-            Ok(())
         } else {
             Err(CompileError::UnsupportedConstruct(format!(
                 "Constructor call not yet implemented: {constructor_name}"

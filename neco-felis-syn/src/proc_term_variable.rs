@@ -6,12 +6,6 @@ pub struct ProcTermVariable<P: Phase> {
     pub ext: P::ProcTermVariableExt,
 }
 
-impl<P: Phase> ProcTermVariable<P> {
-    pub fn variable(&self) -> &TokenVariable {
-        &self.variable
-    }
-}
-
 impl Parse for ProcTermVariable<PhaseParse> {
     fn parse(tokens: &[crate::token::Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         if let Some(token_variable) = TokenVariable::parse(tokens, i)? {

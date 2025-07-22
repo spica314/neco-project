@@ -11,12 +11,6 @@ pub struct ProcTermParen<P: Phase> {
     pub ext: P::ProcTermParenExt,
 }
 
-impl<P: Phase> ProcTermParen<P> {
-    pub fn proc_term(&self) -> &ProcTerm<P> {
-        &self.proc_term
-    }
-}
-
 impl Parse for ProcTermParen<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;

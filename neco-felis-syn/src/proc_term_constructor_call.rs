@@ -12,16 +12,6 @@ pub struct ProcTermConstructorCall<P: Phase> {
     pub ext: P::ProcTermConstructorCallExt,
 }
 
-impl<P: Phase> ProcTermConstructorCall<P> {
-    pub fn type_name(&self) -> &str {
-        self.type_name.s()
-    }
-
-    pub fn method_name(&self) -> &str {
-        self.method.s()
-    }
-}
-
 impl Parse for ProcTermConstructorCall<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;

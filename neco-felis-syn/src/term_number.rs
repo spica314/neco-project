@@ -6,12 +6,6 @@ pub struct TermNumber<P: Phase> {
     pub ext: P::TermNumberExt,
 }
 
-impl<P: Phase> TermNumber<P> {
-    pub fn number(&self) -> &TokenNumber {
-        &self.number
-    }
-}
-
 impl Parse for TermNumber<PhaseParse> {
     fn parse(tokens: &[crate::token::Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         if let Some(token_number) = TokenNumber::parse(tokens, i)? {

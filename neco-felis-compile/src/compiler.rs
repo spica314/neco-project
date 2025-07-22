@@ -196,13 +196,6 @@ impl AssemblyCompiler {
         }
     }
 
-    pub fn compile_term(&mut self, term: &Term<PhaseParse>) -> Result<(), CompileError> {
-        match term {
-            Term::Apply(apply) => self.compile_apply(apply),
-            _ => Err(CompileError::UnsupportedConstruct(format!("{term:?}"))),
-        }
-    }
-
     pub fn compile_proc_term(
         &mut self,
         proc_term: &ProcTerm<PhaseParse>,
@@ -250,52 +243,10 @@ impl AssemblyCompiler {
                 }
             } else {
                 // This is a call to a user-defined procedure
-                return self.compile_user_proc_call(var.variable.s(), &apply.args);
+                todo!();
             }
         }
         Err(CompileError::UnsupportedConstruct(format!("{apply:?}")))
-    }
-
-    pub fn compile_user_proc_call(
-        &mut self,
-        proc_name: &str,
-        args: &[ProcTerm<PhaseParse>],
-    ) -> Result<(), CompileError> {
-        // For a basic implementation, we'll:
-        // 1. Evaluate arguments and pass them via registers/stack
-        // 2. Call the procedure
-        // 3. Result will be in rax
-
-        // For now, this is a very basic implementation that assumes
-        // procedures use standard calling conventions
-
-        // TODO: Implement proper argument passing
-        // For the specific case of proc_call.fe, we need to:
-        // 1. Put first arg (40u64) in rdi
-        // 2. Put second arg (2u64) in rsi
-        // 3. Call the function
-        // 4. Result comes back in rax
-
-        if !args.is_empty() {
-            // First argument in rdi
-            if let ProcTerm::Number(num) = &args[0] {
-                let value = self.parse_number(num.number.s());
-                self.output.push_str(&format!("    mov rdi, {value}\n"));
-            }
-        }
-
-        if args.len() >= 2 {
-            // Second argument in rsi
-            if let ProcTerm::Number(num) = &args[1] {
-                let value = self.parse_number(num.number.s());
-                self.output.push_str(&format!("    mov rsi, {value}\n"));
-            }
-        }
-
-        // Call the procedure
-        self.output.push_str(&format!("    call {proc_name}\n"));
-
-        Ok(())
     }
 
     pub fn compile_proc_field_access(
@@ -355,27 +306,6 @@ impl AssemblyCompiler {
                 }
             }
             // rax now contains the address of the field element in the SoA
-            Ok(())
-        } else if let Some(var_offset) = self.variables.get(object_name) {
-            // Fall back to struct-based access for non-SoA variables
-            let field_offset = match field_name {
-                "x" => 0,
-                "y" => 4,
-                "z" => 8,
-                _ => 0,
-            };
-
-            // Load the base address of the struct into rax
-            self.output.push_str(&format!(
-                "    mov rax, qword ptr [rsp + {}]\n",
-                var_offset - 8
-            ));
-
-            // Add the field offset to get the address of the field
-            if field_offset > 0 {
-                self.output
-                    .push_str(&format!("    add rax, {field_offset}\n"));
-            }
             Ok(())
         } else {
             Err(CompileError::UnsupportedConstruct(format!(
@@ -637,38 +567,6 @@ impl AssemblyCompiler {
     }
 
     pub fn count_let_variables_in_proc_term(_proc_term: &ProcTerm<PhaseParse>) -> i32 {
-        0
-    }
-
-    pub fn count_let_variables_in_term(_term: &Term<PhaseParse>) -> i32 {
-        0
-    }
-
-    pub fn count_array_pointers_in_statements(statements: &Statements<PhaseParse>) -> i32 {
-        match statements {
-            Statements::Then(then) => {
-                Self::count_array_pointers_in_statement(&then.head)
-                    + Self::count_array_pointers_in_statements(&then.tail)
-            }
-            Statements::Statement(statement) => Self::count_array_pointers_in_statement(statement),
-            Statements::Nil => 0,
-        }
-    }
-
-    pub fn count_array_pointers_in_statement(statement: &Statement<PhaseParse>) -> i32 {
-        match statement {
-            Statement::Let(_) => 1,
-            Statement::LetMut(_) => 1,
-            Statement::Expr(proc_term) => Self::count_array_pointers_in_proc_term(proc_term),
-            _ => 0,
-        }
-    }
-
-    pub fn count_array_pointers_in_proc_term(_proc_term: &ProcTerm<PhaseParse>) -> i32 {
-        0
-    }
-
-    pub fn count_array_pointers_in_term(_term: &Term<PhaseParse>) -> i32 {
         0
     }
 }

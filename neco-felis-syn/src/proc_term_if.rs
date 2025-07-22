@@ -22,30 +22,6 @@ pub struct ProcTermIfElse<P: Phase> {
     pub brace_r: TokenBraceR,
 }
 
-impl<P: Phase> ProcTermIf<P> {
-    /// Get the condition expression
-    pub fn condition(&self) -> &Statements<P> {
-        &self.condition
-    }
-
-    /// Get the then body expression
-    pub fn then_body(&self) -> &Statements<P> {
-        &self.then_body
-    }
-
-    /// Get the else clause if present
-    pub fn else_clause(&self) -> Option<&ProcTermIfElse<P>> {
-        self.else_clause.as_ref()
-    }
-}
-
-impl<P: Phase> ProcTermIfElse<P> {
-    /// Get the else body expression
-    pub fn else_body(&self) -> &Statements<P> {
-        &self.else_body
-    }
-}
-
 impl Parse for ProcTermIf<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;

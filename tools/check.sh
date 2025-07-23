@@ -25,7 +25,6 @@ cargo clippy --all-targets --all-features -- -D warnings
 echo "Running tests..."
 if command -v nvidia-smi >/dev/null 2>&1 && \
    nvidia-smi -L 2>/dev/null | grep -qE '^GPU [0-9]+'; then
-    echo "ptx device exists"
     cargo test --workspace --offline --features neco-felis-compile/has-ptx-device
 else
     cargo test --workspace --offline

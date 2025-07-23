@@ -130,10 +130,10 @@ pub fn generate_soa_allocation(
     let mut updated_info = array_info.clone();
 
     output.push_str(&format!(
-        "    ; Structure of Arrays allocation for {array_name}\n"
+        "    # Structure of Arrays allocation for {array_name}\n"
     ));
     output.push_str(&format!(
-        "    ; Allocating {} separate arrays for each field\n",
+        "    # Allocating {} separate arrays for each field\n",
         array_info.field_names.len()
     ));
 
@@ -143,25 +143,25 @@ pub fn generate_soa_allocation(
         // Calculate size needed for this field array
         let element_size = get_type_size(field_type);
 
-        output.push_str(&format!("    ; Allocating array for field '{field_name}' of type '{field_type}' (element size: {element_size} bytes)\n"));
+        output.push_str(&format!("    # Allocating array for field '{field_name}' of type '{field_type}' (element size: {element_size} bytes)\n"));
 
         // Calculate total size = element_size * array_length
         if size != "rsi" {
-            output.push_str(&format!("    mov rsi, {size}        ; Load array size\n"));
+            output.push_str(&format!("    mov rsi, {size}        # Load array size\n"));
         }
         output.push_str(&format!(
-            "    mov rax, {element_size}   ; Load element size\n"
+            "    mov rax, {element_size}   # Load element size\n"
         ));
-        output.push_str("    mul rsi                  ; rax = element_size * array_length\n");
-        output.push_str("    mov rsi, rax             ; rsi = total_size for this field array\n");
+        output.push_str("    mul rsi                  # rax = element_size * array_length\n");
+        output.push_str("    mov rsi, rax             # rsi = total_size for this field array\n");
 
         // mmap syscall for this field's array
-        output.push_str("    mov rax, 9               ; sys_mmap\n");
-        output.push_str("    mov rdi, 0               ; addr = NULL (let kernel choose)\n");
-        output.push_str("    mov rdx, 3               ; prot = PROT_READ | PROT_WRITE\n");
-        output.push_str("    mov r10, 34              ; flags = MAP_PRIVATE | MAP_ANONYMOUS\n");
-        output.push_str("    mov r8, -1               ; fd = -1 (anonymous mapping)\n");
-        output.push_str("    mov r9, 0                ; offset = 0\n");
+        output.push_str("    mov rax, 9               # sys_mmap\n");
+        output.push_str("    mov rdi, 0               # addr = NULL (let kernel choose)\n");
+        output.push_str("    mov rdx, 3               # prot = PROT_READ | PROT_WRITE\n");
+        output.push_str("    mov r10, 34              # flags = MAP_PRIVATE | MAP_ANONYMOUS\n");
+        output.push_str("    mov r8, -1               # fd = -1 (anonymous mapping)\n");
+        output.push_str("    mov r9, 0                # offset = 0\n");
         output.push_str("    syscall\n");
 
         // Store the returned pointer for this field's array
@@ -171,7 +171,7 @@ pub fn generate_soa_allocation(
         variables.insert(ptr_var_name.clone(), ptr_offset);
 
         output.push_str(&format!(
-            "    mov qword ptr [rsp + {}], rax  ; Store {ptr_var_name}\n",
+            "    mov qword ptr [rsp + {}], rax  # Store {ptr_var_name}\n",
             ptr_offset - 8
         ));
     }
@@ -183,7 +183,7 @@ pub fn generate_soa_allocation(
     arrays.insert(array_name.to_string(), updated_info);
 
     output.push_str(&format!(
-        "    ; SoA allocation complete for {array_name}\n\n"
+        "    # SoA allocation complete for {array_name}\n\n"
     ));
     Ok(())
 }
@@ -200,9 +200,9 @@ pub fn generate_soa_allocation_with_var(
     stack_offset: &mut i32,
     variables: &mut HashMap<String, i32>,
 ) -> Result<(), CompileError> {
-    output.push_str(&format!("    ; SoA allocation for variable '{var_name}'\n"));
+    output.push_str(&format!("    # SoA allocation for variable '{var_name}'\n"));
     output.push_str(&format!(
-        "    ; Allocating {} separate field arrays\n",
+        "    # Allocating {} separate field arrays\n",
         array_info.field_names.len()
     ));
 
@@ -211,26 +211,26 @@ pub fn generate_soa_allocation_with_var(
         let element_size = get_type_size(field_type);
 
         output.push_str(&format!(
-            "    ; Field '{field_name}': {field_type} array ({element_size} bytes per element)\n"
+            "    # Field '{field_name}': {field_type} array ({element_size} bytes per element)\n"
         ));
 
         // Calculate total size = element_size * array_length
         if size != "rsi" {
-            output.push_str(&format!("    mov rsi, {size}        ; Load array size\n"));
+            output.push_str(&format!("    mov rsi, {size}        # Load array size\n"));
         }
         output.push_str(&format!(
-            "    mov rax, {element_size}   ; Load element size\n"
+            "    mov rax, {element_size}   # Load element size\n"
         ));
-        output.push_str("    mul rsi                  ; rax = element_size * array_length\n");
-        output.push_str("    mov rsi, rax             ; rsi = total_size for field array\n");
+        output.push_str("    mul rsi                  # rax = element_size * array_length\n");
+        output.push_str("    mov rsi, rax             # rsi = total_size for field array\n");
 
         // mmap syscall for this field's array
-        output.push_str("    mov rax, 9               ; sys_mmap\n");
-        output.push_str("    mov rdi, 0               ; addr = NULL\n");
-        output.push_str("    mov rdx, 3               ; prot = PROT_READ | PROT_WRITE\n");
-        output.push_str("    mov r10, 34              ; flags = MAP_PRIVATE | MAP_ANONYMOUS\n");
-        output.push_str("    mov r8, -1               ; fd = -1\n");
-        output.push_str("    mov r9, 0                ; offset = 0\n");
+        output.push_str("    mov rax, 9               # sys_mmap\n");
+        output.push_str("    mov rdi, 0               # addr = NULL\n");
+        output.push_str("    mov rdx, 3               # prot = PROT_READ | PROT_WRITE\n");
+        output.push_str("    mov r10, 34              # flags = MAP_PRIVATE | MAP_ANONYMOUS\n");
+        output.push_str("    mov r8, -1               # fd = -1\n");
+        output.push_str("    mov r9, 0                # offset = 0\n");
         output.push_str("    syscall\n");
 
         // Store the returned pointer using variable name
@@ -240,13 +240,13 @@ pub fn generate_soa_allocation_with_var(
         variables.insert(ptr_var_name.clone(), ptr_offset);
 
         output.push_str(&format!(
-            "    mov qword ptr [rsp + {}], rax  ; Store {ptr_var_name}\n",
+            "    mov qword ptr [rsp + {}], rax  # Store {ptr_var_name}\n",
             ptr_offset - 8
         ));
     }
 
     output.push_str(&format!(
-        "    ; SoA allocation complete for variable '{var_name}'\n\n"
+        "    # SoA allocation complete for variable '{var_name}'\n\n"
     ));
     Ok(())
 }

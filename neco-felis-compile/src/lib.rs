@@ -3,6 +3,7 @@ use neco_felis_syn::*;
 // Module declarations
 pub mod arithmetic;
 pub mod arrays;
+pub mod compile_options;
 pub mod compiler;
 pub mod control_flow;
 pub mod error;
@@ -11,9 +12,14 @@ pub mod error;
 pub use compiler::{ArrayInfo, AssemblyCompiler};
 pub use error::CompileError;
 
+use crate::compile_options::CompileOptions;
+
 /// Main public API function to compile a file to assembly
-pub fn compile_to_assembly(file: &File<PhaseParse>) -> Result<String, CompileError> {
-    let mut compiler = AssemblyCompiler::new();
+pub fn compile_to_assembly(
+    file: &File<PhaseParse>,
+    compile_options: CompileOptions,
+) -> Result<String, CompileError> {
+    let mut compiler = AssemblyCompiler::new(compile_options);
     compiler.compile_file(file)
 }
 
@@ -355,7 +361,24 @@ pub fn compile_file_to_assembly(file_path: &str) -> Result<String, Box<dyn std::
     let mut i = 0;
     let file = File::parse(&tokens, &mut i)?.ok_or("Failed to parse file")?;
 
-    let assembly = compile_to_assembly(&file)?;
+    let compile_options = CompileOptions { use_ptx: false };
+    let assembly = compile_to_assembly(&file, compile_options)?;
+    Ok(assembly)
+}
+
+pub fn compile_file_to_assembly_with_ptx(
+    file_path: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let mut file_id_generator = FileIdGenerator::new();
+    let file_id = file_id_generator.generate_file_id();
+    let source = std::fs::read_to_string(file_path)?;
+    let tokens = Token::lex(&source, file_id);
+
+    let mut i = 0;
+    let file = File::parse(&tokens, &mut i)?.ok_or("Failed to parse file")?;
+
+    let compile_options = CompileOptions { use_ptx: true };
+    let assembly = compile_to_assembly(&file, compile_options)?;
     Ok(assembly)
 }
 
@@ -507,6 +530,55 @@ mod tests {
 
         // Step 4: Execute the program
         let exec_status = Command::new(&exe_file).status()?;
+
+        Ok(exec_status)
+    }
+
+    /// Helper function to compile, assemble, link, and execute a Felis program
+    fn compile_and_execute_with_ptx(
+        file_path: &str,
+    ) -> Result<std::process::ExitStatus, Box<dyn std::error::Error>> {
+        // Create temporary directory for build artifacts
+        let temp_dir = TempDir::new()?;
+        let asm_file = temp_dir.path().join("program.s");
+        let obj_file = temp_dir.path().join("program.o");
+        let exe_file = temp_dir.path().join("program");
+
+        // Step 1: Compile Felis to assembly
+        let assembly = compile_file_to_assembly_with_ptx(file_path)?;
+        std::fs::write(&asm_file, assembly)?;
+
+        // Step 2: Assemble to object file
+        let as_status = Command::new("as")
+            .args([
+                "--64",
+                &asm_file.to_string_lossy(),
+                "-o",
+                &obj_file.to_string_lossy(),
+            ])
+            .status()?;
+
+        if !as_status.success() {
+            return Err("Assembly failed".into());
+        }
+
+        // Step 3: Link to executable
+        let ld_status = Command::new("gcc")
+            .args([
+                obj_file.to_string_lossy().as_ref(),
+                "-o",
+                &exe_file.to_string_lossy(),
+                "/opt/cuda/lib64/stubs/libcuda.so",
+            ])
+            .status()?;
+
+        if !ld_status.success() {
+            return Err("Linking failed".into());
+        }
+
+        // Step 4: Execute the program
+        let exec_status = Command::new(&exe_file).status()?;
+        // std::thread::sleep(std::time::Duration::from_secs(100));
 
         Ok(exec_status)
     }
@@ -964,6 +1036,27 @@ mod tests {
     #[test]
     fn test_proc_call_integration() {
         let result = compile_and_execute("../testcases/felis/single/proc_call.fe");
+
+        match result {
+            Ok(status) => {
+                println!(
+                    "proc_call.fe executed successfully with exit code: {:?}",
+                    status.code()
+                );
+                // proc_call.fe should exit with code 42 (40 + 2 = 42)
+                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+            }
+            Err(e) => {
+                // Skip test if assembler/linker not available
+                println!("Skipping proc_call.fe integration test: {e}");
+            }
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "has-ptx-device")]
+    fn test_ptx_1() {
+        let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_1.fe");
 
         match result {
             Ok(status) => {

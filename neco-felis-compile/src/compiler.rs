@@ -1,4 +1,4 @@
-use crate::error::CompileError;
+use crate::{compile_options::CompileOptions, error::CompileError};
 use neco_felis_syn::*;
 use std::collections::HashMap;
 
@@ -23,16 +23,11 @@ pub struct AssemblyCompiler {
     pub arrays: HashMap<String, ArrayInfo>,
     pub variable_arrays: HashMap<String, String>,
     pub loop_stack: Vec<String>,
-}
-
-impl Default for AssemblyCompiler {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub compile_options: CompileOptions,
 }
 
 impl AssemblyCompiler {
-    pub fn new() -> Self {
+    pub fn new(compile_options: CompileOptions) -> Self {
         Self {
             output: String::new(),
             entrypoint: None,
@@ -42,29 +37,110 @@ impl AssemblyCompiler {
             arrays: HashMap::new(),
             variable_arrays: HashMap::new(),
             loop_stack: Vec::new(),
+            compile_options,
         }
     }
 
     pub fn compile_file(&mut self, file: &File<PhaseParse>) -> Result<String, CompileError> {
-        self.output.push_str(".intel_syntax noprefix\n");
-        self.output.push_str(".section .text\n");
-        self.output.push_str(".globl _start\n\n");
+        if !self.compile_options.use_ptx {
+            self.output.push_str(".intel_syntax noprefix\n");
+            self.output.push_str(".section .text\n");
+            self.output.push_str(".globl _start\n\n");
 
-        for item in file.items() {
-            self.compile_item(item)?;
-        }
+            for item in file.items() {
+                self.compile_item(item)?;
+            }
 
-        if let Some(entrypoint) = &self.entrypoint {
-            self.output.push_str("_start:\n");
-            self.output.push_str(&format!("    call {entrypoint}\n"));
-            self.output.push_str("    mov rax, 60\n");
-            self.output.push_str("    mov rdi, 0\n");
-            self.output.push_str("    syscall\n");
+            if let Some(entrypoint) = &self.entrypoint {
+                self.output.push_str("_start:\n");
+                self.output.push_str(&format!("    call {entrypoint}\n"));
+                self.output.push_str("    mov rax, 60\n");
+                self.output.push_str("    mov rdi, 0\n");
+                self.output.push_str("    syscall\n");
+            } else {
+                return Err(CompileError::EntrypointNotFound);
+            }
+
+            Ok(self.output.clone())
         } else {
-            return Err(CompileError::EntrypointNotFound);
-        }
+            self.output.push_str(".intel_syntax noprefix\n");
 
-        Ok(self.output.clone())
+            // ptx template
+            let s = r#"
+    .text
+    .globl	__cu_device
+    .bss
+    .align 4
+    .type	__cu_device, @object
+    .size	__cu_device, 4
+__cu_device:
+    .zero	4
+    .globl	__cu_context
+    .align 8
+    .type	__cu_context, @object
+    .size	__cu_context, 8
+__cu_context:
+    .zero	8
+    .globl	__cu_module
+    .align 8
+    .type	__cu_module, @object
+    .size	__cu_module, 8
+__cu_module:
+    .zero	8
+    .globl	__cu_function
+    .align 8
+    .type	__cu_function, @object
+    .size	__cu_function, 8
+__cu_function:
+    .zero	8
+    .globl	__cu_device_ptr
+    .align 8
+    .type	__cu_device_ptr, @object
+    .size	__cu_device_ptr, 8
+__cu_device_ptr:
+    .zero	8
+"#;
+            self.output.push_str(s);
+
+            self.output.push_str(".section .text\n");
+            self.output.push_str(".globl main\n\n");
+
+            for item in file.items() {
+                self.compile_item(item)?;
+            }
+
+            if let Some(entrypoint) = &self.entrypoint {
+                self.output.push_str("main:\n");
+
+                self.output.push_str("    push rbp\n");
+                let s = r#"
+    # cuInit(0)
+    mov     edi, 0
+    call    cuInit@PLT
+    # cuDeviceGet(&cu_device, 0)
+    mov	    esi, 0
+    lea	    rdi, __cu_device[rip]
+    call    cuDeviceGet@PLT
+    # cuCtxCreate_v2(&cu_context, 0, cu_device)
+    mov	    eax, DWORD PTR __cu_device[rip]
+    mov	    edx, eax
+    mov	    esi, 0
+    lea	    rdi, __cu_context[rip]
+    call    cuCtxCreate_v2@PLT
+"#;
+                self.output.push_str(s);
+
+                self.output.push_str(&format!("    call {entrypoint}\n"));
+                self.output.push_str("    mov rax, 60\n");
+                self.output.push_str("    mov rdi, 0\n");
+                self.output.push_str("    syscall\n");
+                self.output.push_str("    pop rbp\n");
+            } else {
+                return Err(CompileError::EntrypointNotFound);
+            }
+
+            Ok(self.output.clone())
+        }
     }
 
     pub fn compile_item(&mut self, item: &Item<PhaseParse>) -> Result<(), CompileError> {

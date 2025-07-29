@@ -1,0 +1,18 @@
+#entrypoint main;
+
+#use_builtin "syscall" #as __syscall;
+#use_builtin "u64_add" #as __u64_add;
+#use_builtin "u64" #as __u64;
+
+#proc print_c : (x: __u64) -> () {
+    #let #mut y @ y_ref = x;
+    __syscall 1 1 y_ref 1 0 0;
+}
+
+#proc main : () -> () {
+    print_c 97;
+    print_c 10;
+    #let syscall_id = 231u64;
+    #let error_code = 0u64;
+    __syscall syscall_id error_code 0 0 0 0;
+}

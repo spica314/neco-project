@@ -19,6 +19,7 @@ pub struct AssemblyCompiler {
     pub entrypoint: Option<String>,
     pub builtins: HashMap<String, String>,
     pub variables: HashMap<String, i32>,
+    pub reference_variables: HashMap<String, String>, // Maps reference var -> original var
     pub stack_offset: i32,
     pub arrays: HashMap<String, ArrayInfo>,
     pub variable_arrays: HashMap<String, String>,
@@ -33,6 +34,7 @@ impl AssemblyCompiler {
             entrypoint: None,
             builtins: HashMap::new(),
             variables: HashMap::new(),
+            reference_variables: HashMap::new(),
             stack_offset: 0,
             arrays: HashMap::new(),
             variable_arrays: HashMap::new(),
@@ -319,7 +321,28 @@ __cu_device_ptr:
                 }
             } else {
                 // This is a call to a user-defined procedure
-                todo!();
+                let proc_name = var.variable.s();
+
+                // Set up arguments in registers (following System V ABI)
+                for (i, arg) in apply.args.iter().enumerate() {
+                    match i {
+                        0 => self.load_proc_argument_into_register(arg, "rdi")?,
+                        1 => self.load_proc_argument_into_register(arg, "rsi")?,
+                        2 => self.load_proc_argument_into_register(arg, "rdx")?,
+                        3 => self.load_proc_argument_into_register(arg, "rcx")?,
+                        4 => self.load_proc_argument_into_register(arg, "r8")?,
+                        5 => self.load_proc_argument_into_register(arg, "r9")?,
+                        _ => {
+                            return Err(CompileError::UnsupportedConstruct(
+                                "More than 6 arguments not supported".to_string(),
+                            ));
+                        }
+                    }
+                }
+
+                // Call the user-defined procedure
+                self.output.push_str(&format!("    call {proc_name}\n"));
+                return Ok(());
             }
         }
         Err(CompileError::UnsupportedConstruct(format!("{apply:?}")))
@@ -636,7 +659,7 @@ __cu_device_ptr:
     pub fn count_let_variables_in_statement(statement: &Statement<PhaseParse>) -> i32 {
         match statement {
             Statement::Let(_) => 1,
-            Statement::LetMut(_) => 1,
+            Statement::LetMut(_) => 2, // let mut uses 2 stack slots: one for value, one for reference
             Statement::Expr(proc_term) => Self::count_let_variables_in_proc_term(proc_term),
             _ => 0,
         }

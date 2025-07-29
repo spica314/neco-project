@@ -152,23 +152,38 @@ impl AssemblyCompiler {
         let var_name = let_mut_expr.variable_name();
         let ref_var_name = let_mut_expr.reference_variable_name();
 
-        // Allocate stack space for this variable
+        // Allocate stack space for the value variable
         self.stack_offset += 8; // 8 bytes for 64-bit value
-        let offset = self.stack_offset;
+        let value_offset = self.stack_offset;
 
-        // Store both the variable's and reference variable's stack offset
-        // Both point to the same memory location
-        self.variables.insert(var_name.to_string(), offset);
-        self.variables.insert(ref_var_name.to_string(), offset);
+        // Allocate stack space for the reference variable (to hold address)
+        self.stack_offset += 8; // 8 bytes for 64-bit address
+        let ref_offset = self.stack_offset;
+
+        // Store the value variable's stack offset
+        self.variables.insert(var_name.to_string(), value_offset);
+        // Store the reference variable's stack offset (it holds the address of value_var)
+        self.variables.insert(ref_var_name.to_string(), ref_offset);
+        // Track that ref_var_name is a reference to var_name
+        self.reference_variables
+            .insert(ref_var_name.to_string(), var_name.to_string());
 
         match &*let_mut_expr.value {
             ProcTerm::Number(num) => {
-                // Move the value to the stack location
+                // Store the value in the value variable's location
                 let number_value = self.parse_number(num.number.s());
                 self.output.push_str(&format!(
                     "    mov qword ptr [rsp + {}], {}\n",
-                    offset - 8,
+                    value_offset - 8,
                     number_value
+                ));
+
+                // Store the address of the value variable in the reference variable
+                self.output
+                    .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                self.output.push_str(&format!(
+                    "    mov qword ptr [rsp + {}], rax\n",
+                    ref_offset - 8
                 ));
                 Ok(())
             }
@@ -178,16 +193,107 @@ impl AssemblyCompiler {
                     && let Some(builtin) = self.builtins.get(var.variable.s())
                 {
                     match builtin.as_str() {
-                        "u64_add" => return self.compile_u64_add_let_proc(apply, offset),
-                        "u64_sub" => return self.compile_u64_sub_let_proc(apply, offset),
-                        "u64_mul" => return self.compile_u64_mul_let_proc(apply, offset),
-                        "u64_div" => return self.compile_u64_div_let_proc(apply, offset),
-                        "u64_mod" => return self.compile_u64_mod_let_proc(apply, offset),
-                        "f32_add" => return self.compile_f32_add_let_proc(apply, offset),
-                        "f32_sub" => return self.compile_f32_sub_let_proc(apply, offset),
-                        "f32_mul" => return self.compile_f32_mul_let_proc(apply, offset),
-                        "f32_div" => return self.compile_f32_div_let_proc(apply, offset),
-                        "f32_to_u64" => return self.compile_f32_to_u64_let_proc(apply, offset),
+                        "u64_add" => {
+                            self.compile_u64_add_let_proc(apply, value_offset)?;
+                            // Store the address of the value variable in the reference variable
+                            self.output
+                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rsp + {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "u64_sub" => {
+                            self.compile_u64_sub_let_proc(apply, value_offset)?;
+                            self.output
+                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rsp + {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "u64_mul" => {
+                            self.compile_u64_mul_let_proc(apply, value_offset)?;
+                            self.output
+                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rsp + {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "u64_div" => {
+                            self.compile_u64_div_let_proc(apply, value_offset)?;
+                            self.output
+                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rsp + {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "u64_mod" => {
+                            self.compile_u64_mod_let_proc(apply, value_offset)?;
+                            self.output
+                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rsp + {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "f32_add" => {
+                            self.compile_f32_add_let_proc(apply, value_offset)?;
+                            self.output
+                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rsp + {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "f32_sub" => {
+                            self.compile_f32_sub_let_proc(apply, value_offset)?;
+                            self.output
+                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rsp + {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "f32_mul" => {
+                            self.compile_f32_mul_let_proc(apply, value_offset)?;
+                            self.output
+                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rsp + {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "f32_div" => {
+                            self.compile_f32_div_let_proc(apply, value_offset)?;
+                            self.output
+                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rsp + {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "f32_to_u64" => {
+                            self.compile_f32_to_u64_let_proc(apply, value_offset)?;
+                            self.output
+                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rsp + {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
                         _ => {}
                     }
                 }
@@ -199,10 +305,49 @@ impl AssemblyCompiler {
                 // Handle constructor calls in let mut expressions
                 self.compile_proc_constructor_call(constructor_call)?;
 
-                // Store the result (rax) to the variable's stack location
+                // Store the result (rax) to the value variable's stack location
+                self.output.push_str(&format!(
+                    "    mov qword ptr [rsp + {}], rax\n",
+                    value_offset - 8
+                ));
+
+                // Store the address of the value variable in the reference variable
                 self.output
-                    .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+                    .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                self.output.push_str(&format!(
+                    "    mov qword ptr [rsp + {}], rax\n",
+                    ref_offset - 8
+                ));
                 Ok(())
+            }
+            ProcTerm::Variable(var) => {
+                // Handle variable references in let mut expressions
+                let var_name = var.variable.s();
+                if let Some(&var_offset) = self.variables.get(var_name) {
+                    // Load value from the source variable's stack location
+                    self.output.push_str(&format!(
+                        "    mov rax, qword ptr [rsp + {}]\n",
+                        var_offset - 8
+                    ));
+                    // Store it to the value variable's stack location
+                    self.output.push_str(&format!(
+                        "    mov qword ptr [rsp + {}], rax\n",
+                        value_offset - 8
+                    ));
+
+                    // Store the address of the value variable in the reference variable
+                    self.output
+                        .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                    self.output.push_str(&format!(
+                        "    mov qword ptr [rsp + {}], rax\n",
+                        ref_offset - 8
+                    ));
+                    Ok(())
+                } else {
+                    Err(CompileError::UnsupportedConstruct(format!(
+                        "let mut with undefined variable: {var_name}"
+                    )))
+                }
             }
             _ => Err(CompileError::UnsupportedConstruct(format!(
                 "let mut with non-number value: {let_mut_expr:?}"
@@ -222,15 +367,26 @@ impl AssemblyCompiler {
             CompileError::UnsupportedConstruct(format!("Unknown variable: {var_name}"))
         })?;
 
+        // Check if this is a reference variable
+        let is_reference = self.reference_variables.contains_key(var_name);
+
         match &*assign_expr.value {
             ProcTerm::Number(num) => {
-                // Move the value to the stack location
                 let number_value = self.parse_number(num.number.s());
-                self.output.push_str(&format!(
-                    "    mov qword ptr [rsp + {}], {}\n",
-                    offset - 8,
-                    number_value
-                ));
+                if is_reference {
+                    // This is a reference variable - load the address and store to that location
+                    self.output
+                        .push_str(&format!("    mov rax, qword ptr [rsp + {}]\n", offset - 8));
+                    self.output
+                        .push_str(&format!("    mov qword ptr [rax], {number_value}\n"));
+                } else {
+                    // Regular variable - store directly
+                    self.output.push_str(&format!(
+                        "    mov qword ptr [rsp + {}], {}\n",
+                        offset - 8,
+                        number_value
+                    ));
+                }
                 Ok(())
             }
             ProcTerm::Apply(apply) => {
@@ -239,16 +395,228 @@ impl AssemblyCompiler {
                     && let Some(builtin) = self.builtins.get(var.variable.s())
                 {
                     match builtin.as_str() {
-                        "u64_add" => return self.compile_u64_add_assign_proc(apply, offset),
-                        "u64_sub" => return self.compile_u64_sub_assign_proc(apply, offset),
-                        "u64_mul" => return self.compile_u64_mul_assign_proc(apply, offset),
-                        "u64_div" => return self.compile_u64_div_assign_proc(apply, offset),
-                        "u64_mod" => return self.compile_u64_mod_assign_proc(apply, offset),
-                        "f32_add" => return self.compile_f32_add_assign_proc(apply, offset),
-                        "f32_sub" => return self.compile_f32_sub_assign_proc(apply, offset),
-                        "f32_mul" => return self.compile_f32_mul_assign_proc(apply, offset),
-                        "f32_div" => return self.compile_f32_div_assign_proc(apply, offset),
-                        "f32_to_u64" => return self.compile_f32_to_u64_assign_proc(apply, offset),
+                        "u64_add" => {
+                            if is_reference {
+                                // For reference variables, compute in rax then store via indirect addressing
+                                if apply.args.len() != 2 {
+                                    return Err(CompileError::UnsupportedConstruct(format!(
+                                        "u64_add expects 2 arguments, got {}",
+                                        apply.args.len()
+                                    )));
+                                }
+
+                                // Load first argument into rax
+                                match &apply.args[0] {
+                                    ProcTerm::Number(num) => {
+                                        let value = self.parse_number(num.number.s());
+                                        self.output.push_str(&format!("    mov rax, {value}\n"));
+                                    }
+                                    ProcTerm::Variable(var) => {
+                                        if let Some(&var_offset) =
+                                            self.variables.get(var.variable.s())
+                                        {
+                                            self.output.push_str(&format!(
+                                                "    mov rax, qword ptr [rsp + {}]\n",
+                                                var_offset - 8
+                                            ));
+                                        }
+                                    }
+                                    _ => {
+                                        return Err(CompileError::UnsupportedConstruct(
+                                            "Unsupported first argument in u64_add".to_string(),
+                                        ));
+                                    }
+                                }
+
+                                // Load second argument into rbx and add
+                                match &apply.args[1] {
+                                    ProcTerm::Number(num) => {
+                                        let value = self.parse_number(num.number.s());
+                                        self.output.push_str(&format!("    mov rbx, {value}\n"));
+                                    }
+                                    ProcTerm::Variable(var) => {
+                                        if let Some(&var_offset) =
+                                            self.variables.get(var.variable.s())
+                                        {
+                                            self.output.push_str(&format!(
+                                                "    mov rbx, qword ptr [rsp + {}]\n",
+                                                var_offset - 8
+                                            ));
+                                        }
+                                    }
+                                    _ => {
+                                        return Err(CompileError::UnsupportedConstruct(
+                                            "Unsupported second argument in u64_add".to_string(),
+                                        ));
+                                    }
+                                }
+
+                                self.output.push_str("    add rax, rbx\n");
+
+                                // Store result via reference
+                                self.output.push_str(&format!(
+                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str("    mov qword ptr [rbx], rax\n");
+                                return Ok(());
+                            } else {
+                                return self.compile_u64_add_assign_proc(apply, offset);
+                            }
+                        }
+                        "u64_sub" => {
+                            if is_reference {
+                                self.compile_u64_sub_assign_proc(apply, offset)?;
+                                self.output.push_str(&format!(
+                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str(&format!(
+                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str("    mov qword ptr [rbx], rax\n");
+                                return Ok(());
+                            } else {
+                                return self.compile_u64_sub_assign_proc(apply, offset);
+                            }
+                        }
+                        "u64_mul" => {
+                            if is_reference {
+                                self.compile_u64_mul_assign_proc(apply, offset)?;
+                                self.output.push_str(&format!(
+                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str(&format!(
+                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str("    mov qword ptr [rbx], rax\n");
+                                return Ok(());
+                            } else {
+                                return self.compile_u64_mul_assign_proc(apply, offset);
+                            }
+                        }
+                        "u64_div" => {
+                            if is_reference {
+                                self.compile_u64_div_assign_proc(apply, offset)?;
+                                self.output.push_str(&format!(
+                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str(&format!(
+                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str("    mov qword ptr [rbx], rax\n");
+                                return Ok(());
+                            } else {
+                                return self.compile_u64_div_assign_proc(apply, offset);
+                            }
+                        }
+                        "u64_mod" => {
+                            if is_reference {
+                                self.compile_u64_mod_assign_proc(apply, offset)?;
+                                self.output.push_str(&format!(
+                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str(&format!(
+                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str("    mov qword ptr [rbx], rax\n");
+                                return Ok(());
+                            } else {
+                                return self.compile_u64_mod_assign_proc(apply, offset);
+                            }
+                        }
+                        "f32_add" => {
+                            if is_reference {
+                                self.compile_f32_add_assign_proc(apply, offset)?;
+                                self.output.push_str(&format!(
+                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str(&format!(
+                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str("    mov qword ptr [rbx], rax\n");
+                                return Ok(());
+                            } else {
+                                return self.compile_f32_add_assign_proc(apply, offset);
+                            }
+                        }
+                        "f32_sub" => {
+                            if is_reference {
+                                self.compile_f32_sub_assign_proc(apply, offset)?;
+                                self.output.push_str(&format!(
+                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str(&format!(
+                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str("    mov qword ptr [rbx], rax\n");
+                                return Ok(());
+                            } else {
+                                return self.compile_f32_sub_assign_proc(apply, offset);
+                            }
+                        }
+                        "f32_mul" => {
+                            if is_reference {
+                                self.compile_f32_mul_assign_proc(apply, offset)?;
+                                self.output.push_str(&format!(
+                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str(&format!(
+                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str("    mov qword ptr [rbx], rax\n");
+                                return Ok(());
+                            } else {
+                                return self.compile_f32_mul_assign_proc(apply, offset);
+                            }
+                        }
+                        "f32_div" => {
+                            if is_reference {
+                                self.compile_f32_div_assign_proc(apply, offset)?;
+                                self.output.push_str(&format!(
+                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str(&format!(
+                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str("    mov qword ptr [rbx], rax\n");
+                                return Ok(());
+                            } else {
+                                return self.compile_f32_div_assign_proc(apply, offset);
+                            }
+                        }
+                        "f32_to_u64" => {
+                            if is_reference {
+                                self.compile_f32_to_u64_assign_proc(apply, offset)?;
+                                self.output.push_str(&format!(
+                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str(&format!(
+                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    offset - 8
+                                ));
+                                self.output.push_str("    mov qword ptr [rbx], rax\n");
+                                return Ok(());
+                            } else {
+                                return self.compile_f32_to_u64_assign_proc(apply, offset);
+                            }
+                        }
                         _ => {}
                     }
                 }
@@ -360,6 +728,9 @@ pub fn compile_file_to_assembly(file_path: &str) -> Result<String, Box<dyn std::
 
     let mut i = 0;
     let file = File::parse(&tokens, &mut i)?.ok_or("Failed to parse file")?;
+    if i != tokens.len() {
+        return Err(format!("Failed to parse file. token at {} / {}", i, tokens.len()).into());
+    }
 
     let compile_options = CompileOptions { use_ptx: false };
     let assembly = compile_to_assembly(&file, compile_options)?;
@@ -399,678 +770,4 @@ impl AssemblyCompiler {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::process::Command;
-    use tempfile::TempDir;
-
-    #[test]
-    fn test_compile_exit_42() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/exit_42.fe").unwrap();
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("mov rax, 231"));
-        assert!(assembly.contains("mov rdi, 42"));
-        assert!(assembly.contains("syscall"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-    }
-
-    #[test]
-    fn test_compile_add() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/add.fe").unwrap();
-        println!("Generated assembly for add.fe:\n{assembly}");
-
-        // Update expectations based on the new #let syntax
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-        assert!(assembly.contains("sub rsp, 16")); // Stack allocation for 2 let variables
-        assert!(assembly.contains("mov qword ptr [rsp + 0], 231")); // syscall_id = 231u64
-        assert!(assembly.contains("mov rax, 40")); // u64_add first arg
-        assert!(assembly.contains("mov rbx, 2")); // u64_add second arg
-        assert!(assembly.contains("add rax, rbx")); // u64_add operation
-        assert!(assembly.contains("mov qword ptr [rsp + 8], rax")); // Store result
-        assert!(assembly.contains("syscall"));
-    }
-
-    #[test]
-    fn test_compile_sub() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/sub.fe").unwrap();
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("mov rax, 50"));
-        assert!(assembly.contains("mov rbx, 8"));
-        assert!(assembly.contains("sub rax, rbx"));
-        assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
-        assert!(assembly.contains("syscall"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-    }
-
-    #[test]
-    fn test_compile_mul() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/mul.fe").unwrap();
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("mov rax, 6"));
-        assert!(assembly.contains("mov rbx, 7"));
-        assert!(assembly.contains("imul rax, rbx"));
-        assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
-        assert!(assembly.contains("syscall"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-    }
-
-    #[test]
-    fn test_compile_div() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/div.fe").unwrap();
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("mov rax, 84"));
-        assert!(assembly.contains("mov rbx, 2"));
-        assert!(assembly.contains("xor rdx, rdx"));
-        assert!(assembly.contains("div rbx"));
-        assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
-        assert!(assembly.contains("syscall"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-    }
-
-    #[test]
-    fn test_compile_mod() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/mod.fe").unwrap();
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("mov rax, 142"));
-        assert!(assembly.contains("mov rbx, 100"));
-        assert!(assembly.contains("xor rdx, rdx"));
-        assert!(assembly.contains("div rbx"));
-        assert!(assembly.contains("mov qword ptr [rsp + 8], rdx"));
-        assert!(assembly.contains("syscall"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-    }
-
-    /// Helper function to compile, assemble, link, and execute a Felis program
-    fn compile_and_execute(
-        file_path: &str,
-    ) -> Result<std::process::ExitStatus, Box<dyn std::error::Error>> {
-        // Create temporary directory for build artifacts
-        let temp_dir = TempDir::new()?;
-        let asm_file = temp_dir.path().join("program.s");
-        let obj_file = temp_dir.path().join("program.o");
-        let exe_file = temp_dir.path().join("program");
-
-        // Step 1: Compile Felis to assembly
-        let assembly = compile_file_to_assembly(file_path)?;
-        std::fs::write(&asm_file, assembly)?;
-
-        // Step 2: Assemble to object file
-        let as_status = Command::new("as")
-            .args([
-                "--64",
-                &asm_file.to_string_lossy(),
-                "-o",
-                &obj_file.to_string_lossy(),
-            ])
-            .status()?;
-
-        if !as_status.success() {
-            return Err("Assembly failed".into());
-        }
-
-        // Step 3: Link to executable
-        let ld_status = Command::new("ld")
-            .args([
-                obj_file.to_string_lossy().as_ref(),
-                "-o",
-                &exe_file.to_string_lossy(),
-            ])
-            .status()?;
-
-        if !ld_status.success() {
-            return Err("Linking failed".into());
-        }
-
-        // Step 4: Execute the program
-        let exec_status = Command::new(&exe_file).status()?;
-
-        Ok(exec_status)
-    }
-
-    /// Helper function to compile, assemble, link, and execute a Felis program
-    fn compile_and_execute_with_ptx(
-        file_path: &str,
-    ) -> Result<std::process::ExitStatus, Box<dyn std::error::Error>> {
-        // Create temporary directory for build artifacts
-        let temp_dir = TempDir::new()?;
-        let asm_file = temp_dir.path().join("program.s");
-        let obj_file = temp_dir.path().join("program.o");
-        let exe_file = temp_dir.path().join("program");
-
-        // Step 1: Compile Felis to assembly
-        let assembly = compile_file_to_assembly_with_ptx(file_path)?;
-        std::fs::write(&asm_file, assembly)?;
-
-        // Step 2: Assemble to object file
-        let as_status = Command::new("as")
-            .args([
-                "--64",
-                &asm_file.to_string_lossy(),
-                "-o",
-                &obj_file.to_string_lossy(),
-            ])
-            .status()?;
-
-        if !as_status.success() {
-            return Err("Assembly failed".into());
-        }
-
-        // Step 3: Link to executable
-        let ld_status = Command::new("gcc")
-            .args([
-                obj_file.to_string_lossy().as_ref(),
-                "-o",
-                &exe_file.to_string_lossy(),
-                "/opt/cuda/lib64/stubs/libcuda.so",
-            ])
-            .status()?;
-
-        if !ld_status.success() {
-            return Err("Linking failed".into());
-        }
-
-        // Step 4: Execute the program
-        let exec_status = Command::new(&exe_file).status()?;
-        // std::thread::sleep(std::time::Duration::from_secs(100));
-
-        Ok(exec_status)
-    }
-
-    #[test]
-    fn test_exit_42_integration() {
-        let result = compile_and_execute("../testcases/felis/single/exit_42.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "exit_42.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // exit_42.fe should exit with code 42
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping exit_42.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_let_integration() {
-        let result = compile_and_execute("../testcases/felis/single/let.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "let.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // let.fe should exit with code 42 (error_code value in syscall)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping let.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_add_integration() {
-        let result = compile_and_execute("../testcases/felis/single/add.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "add.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // add.fe should exit with code 42 (40 + 2 = 42)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping add.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_sub_integration() {
-        let result = compile_and_execute("../testcases/felis/single/sub.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "sub.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // sub.fe should exit with code 42 (50 - 8 = 42)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping sub.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_mul_integration() {
-        let result = compile_and_execute("../testcases/felis/single/mul.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "mul.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // mul.fe should exit with code 42 (6 * 7 = 42)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping mul.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_div_integration() {
-        let result = compile_and_execute("../testcases/felis/single/div.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "div.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // div.fe should exit with code 42 (84 / 2 = 42)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping div.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_mod_integration() {
-        let result = compile_and_execute("../testcases/felis/single/mod.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "mod.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // mod.fe should exit with code 42 (142 % 100 = 42)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping mod.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_compile_add_f32() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/add_f32.fe").unwrap();
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("mov eax, 0x42200000")); // 40.0f32
-        assert!(assembly.contains("movd xmm0, eax"));
-        assert!(assembly.contains("mov eax, 0x40000000")); // 2.0f32
-        assert!(assembly.contains("movd xmm1, eax"));
-        assert!(assembly.contains("addss xmm0, xmm1"));
-        assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
-        assert!(assembly.contains("cvttss2si rax, xmm0"));
-        assert!(assembly.contains("syscall"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-    }
-
-    #[test]
-    fn test_compile_sub_f32() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/sub_f32.fe").unwrap();
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("mov eax, 0x42480000")); // 50.0f32
-        assert!(assembly.contains("movd xmm0, eax"));
-        assert!(assembly.contains("mov eax, 0x41000000")); // 8.0f32
-        assert!(assembly.contains("movd xmm1, eax"));
-        assert!(assembly.contains("subss xmm0, xmm1"));
-        assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
-        assert!(assembly.contains("cvttss2si rax, xmm0"));
-        assert!(assembly.contains("syscall"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-    }
-
-    #[test]
-    fn test_compile_mul_f32() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/mul_f32.fe").unwrap();
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("mov eax, 0x40c00000")); // 6.0f32
-        assert!(assembly.contains("movd xmm0, eax"));
-        assert!(assembly.contains("mov eax, 0x40e00000")); // 7.0f32
-        assert!(assembly.contains("movd xmm1, eax"));
-        assert!(assembly.contains("mulss xmm0, xmm1"));
-        assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
-        assert!(assembly.contains("cvttss2si rax, xmm0"));
-        assert!(assembly.contains("syscall"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-    }
-
-    #[test]
-    fn test_compile_div_f32() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/div_f32.fe").unwrap();
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("mov eax, 0x42a80000")); // 84.0f32
-        assert!(assembly.contains("movd xmm0, eax"));
-        assert!(assembly.contains("mov eax, 0x40000000")); // 2.0f32
-        assert!(assembly.contains("movd xmm1, eax"));
-        assert!(assembly.contains("divss xmm0, xmm1"));
-        assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
-        assert!(assembly.contains("cvttss2si rax, xmm0"));
-        assert!(assembly.contains("syscall"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-    }
-
-    #[test]
-    fn test_add_f32_integration() {
-        let result = compile_and_execute("../testcases/felis/single/add_f32.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "add_f32.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // add_f32.fe should exit with code 42 (40.0 + 2.0 = 42.0)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping add_f32.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_sub_f32_integration() {
-        let result = compile_and_execute("../testcases/felis/single/sub_f32.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "sub_f32.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // sub_f32.fe should exit with code 42 (50.0 - 8.0 = 42.0)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping sub_f32.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_mul_f32_integration() {
-        let result = compile_and_execute("../testcases/felis/single/mul_f32.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "mul_f32.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // mul_f32.fe should exit with code 42 (6.0 * 7.0 = 42.0)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping mul_f32.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_div_f32_integration() {
-        let result = compile_and_execute("../testcases/felis/single/div_f32.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "div_f32.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // div_f32.fe should exit with code 42 (84.0 / 2.0 = 42.0)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping div_f32.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_compile_let_mut() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/let_mut.fe").unwrap();
-        println!("Generated assembly for let_mut.fe:\n{assembly}");
-
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-        assert!(assembly.contains("sub rsp, 16")); // Stack allocation for 2 variables
-        assert!(assembly.contains("mov qword ptr [rsp + 0], 231")); // syscall_id = 231u64
-        assert!(assembly.contains("mov qword ptr [rsp + 8], 0")); // let mut error_code = 0u64
-        assert!(assembly.contains("mov qword ptr [rsp + 8], 42")); // error_code = 42u64
-        assert!(assembly.contains("syscall"));
-    }
-
-    #[test]
-    fn test_let_mut_integration() {
-        let result = compile_and_execute("../testcases/felis/single/let_mut.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "let_mut.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // let_mut.fe should exit with code 42 (assigned error_code value in syscall)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping let_mut.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_compile_array() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/array.fe").unwrap();
-        println!("Generated assembly for array.fe:\n{assembly}");
-
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("_start:"));
-
-        // Check for mmap syscalls (one for each field: x, y, z)
-        assert!(assembly.contains("mov rax, 9")); // sys_mmap
-        assert!(assembly.contains("mov rdi, 0")); // addr = NULL
-        assert!(assembly.contains("mov rdx, 3")); // prot = PROT_READ | PROT_WRITE
-        assert!(assembly.contains("mov r10, 34")); // flags = MAP_PRIVATE | MAP_ANONYMOUS
-        assert!(assembly.contains("mov r8, -1")); // fd = -1
-        assert!(assembly.contains("mov r9, 0")); // offset = 0
-
-        // Check for array field assignments
-        assert!(assembly.contains("mov ebx, 0x41200000")); // 10.0f32
-        assert!(assembly.contains("mov dword ptr [rax], ebx"));
-
-        // Check for field access in builtin calls
-        assert!(assembly.contains("movss xmm0, dword ptr [rax]"));
-        assert!(assembly.contains("addss xmm0, xmm1"));
-
-        // Check for f32_to_u64 conversion
-        assert!(assembly.contains("cvttss2si rax, xmm0"));
-
-        assert!(assembly.contains("syscall"));
-    }
-
-    #[test]
-    fn test_if_1_integration() {
-        let result = compile_and_execute("../testcases/felis/single/if_1.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "if_1.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // if_1.fe should exit with code 42 (0 == 0 is true, so executes then body)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping if_1.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_if_2_integration() {
-        let result = compile_and_execute("../testcases/felis/single/if_2.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "if_2.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // if_2.fe should exit with code 42 (0 == 1 is false, so executes else body)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping if_2.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_array_integration() {
-        let result = compile_and_execute("../testcases/felis/single/array.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "array.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // array.fe should exit with code 42 (10.0 + 14.0 + 18.0 = 42.0)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping array.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_loop_break() {
-        let result = compile_and_execute("../testcases/felis/single/loop_break.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "loop_break.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping loop_break.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_compile_proc_call() {
-        let assembly = compile_file_to_assembly("../testcases/felis/single/proc_call.fe").unwrap();
-        assert!(assembly.contains(".intel_syntax noprefix"));
-        assert!(assembly.contains("main:"));
-        assert!(assembly.contains("f:"));
-        assert!(assembly.contains("_start:"));
-
-        // Check that proc f is defined and called
-        assert!(assembly.contains("call f"));
-        assert!(assembly.contains("ret")); // Both main and f should have ret
-
-        // Check that syscall is properly set up
-        assert!(assembly.contains("mov qword ptr [rsp + 0], 231")); // syscall_id = 231u64
-        assert!(assembly.contains("syscall"));
-
-        // Check that function arguments are set up
-        assert!(assembly.contains("mov rdi, 40")); // First argument
-        assert!(assembly.contains("mov rsi, 2")); // Second argument
-    }
-
-    #[test]
-    fn test_proc_call_integration() {
-        let result = compile_and_execute("../testcases/felis/single/proc_call.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "proc_call.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // proc_call.fe should exit with code 42 (40 + 2 = 42)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping proc_call.fe integration test: {e}");
-            }
-        }
-    }
-
-    #[test]
-    #[cfg(feature = "has-ptx-device")]
-    fn test_ptx_1() {
-        let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_1.fe");
-
-        match result {
-            Ok(status) => {
-                println!(
-                    "proc_call.fe executed successfully with exit code: {:?}",
-                    status.code()
-                );
-                // proc_call.fe should exit with code 42 (40 + 2 = 42)
-                assert_eq!(status.code(), Some(42), "Program should exit with code 42");
-            }
-            Err(e) => {
-                // Skip test if assembler/linker not available
-                println!("Skipping proc_call.fe integration test: {e}");
-            }
-        }
-    }
-}
+mod tests;

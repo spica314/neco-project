@@ -762,6 +762,39 @@ fn test_print_c_integration() {
 }
 
 #[test]
+fn test_print_num3_integration() {
+    let result = compile_and_execute_with_output("../testcases/felis/single/print_num3.fe");
+
+    match result {
+        Ok(output) => {
+            println!("print_num3.fe executed successfully");
+            println!("stdout: {:?}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {:?}", String::from_utf8_lossy(&output.stderr));
+            println!("exit code: {:?}", output.status.code());
+
+            // Check that the program exits with code 0
+            assert_eq!(
+                output.status.code(),
+                Some(0),
+                "Program should exit with code 0"
+            );
+
+            // Check that stdout is "123\n12\n1\n0\n"
+            let expected_output = "123\n12\n1\n0\n";
+            let actual_output = String::from_utf8_lossy(&output.stdout);
+            assert_eq!(
+                actual_output, expected_output,
+                "Program should output 'a\\n'"
+            );
+        }
+        Err(e) => {
+            // Skip test if assembler/linker not available
+            println!("Skipping print_num3.fe integration test: {e}");
+        }
+    }
+}
+
+#[test]
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_1() {
     let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_1.fe");

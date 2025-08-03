@@ -27,6 +27,7 @@ pub fn count_array_pointers_in_statement(statement: &Statement<PhaseParse>) -> i
         Statement::Loop(loop_stmt) => count_array_pointers_in_statements(&loop_stmt.body),
         Statement::Break(_) => 0,
         Statement::Return(return_stmt) => count_array_pointers_in_proc_term(&return_stmt.value),
+        Statement::CallPtx(_) => 0,
         Statement::Expr(proc_term) => count_array_pointers_in_proc_term(proc_term),
         Statement::Ext(_) => unreachable!("Ext statements not supported in PhaseParse"),
     }
@@ -171,7 +172,7 @@ pub fn generate_soa_allocation(
         variables.insert(ptr_var_name.clone(), ptr_offset);
 
         output.push_str(&format!(
-            "    mov qword ptr [rsp + {}], rax  # Store {ptr_var_name}\n",
+            "    mov qword ptr [rbp - 8 - {}], rax  # Store {ptr_var_name}\n",
             ptr_offset - 8
         ));
     }
@@ -240,7 +241,7 @@ pub fn generate_soa_allocation_with_var(
         variables.insert(ptr_var_name.clone(), ptr_offset);
 
         output.push_str(&format!(
-            "    mov qword ptr [rsp + {}], rax  # Store {ptr_var_name}\n",
+            "    mov qword ptr [rbp - 8 - {}], rax  # Store {ptr_var_name}\n",
             ptr_offset - 8
         ));
     }
@@ -288,7 +289,7 @@ pub fn compile_field_assign(
         if let Some(&ptr_offset) = variables.get(&ptr_var_name) {
             // Load the base pointer
             output.push_str(&format!(
-                "    mov rax, qword ptr [rsp + {}]\n",
+                "    mov rax, qword ptr [rbp - 8 - {}]\n",
                 ptr_offset - 8
             ));
 
@@ -305,7 +306,7 @@ pub fn compile_field_assign(
                 ProcTerm::Variable(var) => {
                     if let Some(&var_offset) = variables.get(var.variable.s()) {
                         output.push_str(&format!(
-                            "    mov rbx, qword ptr [rsp + {}]\n",
+                            "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                             var_offset - 8
                         ));
                         output.push_str(&format!("    mov rcx, {element_size}\n"));
@@ -349,7 +350,7 @@ pub fn compile_field_assign(
                 ProcTerm::Variable(var) => {
                     if let Some(&var_offset) = variables.get(var.variable.s()) {
                         output.push_str(&format!(
-                            "    mov rbx, qword ptr [rsp + {}]\n",
+                            "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                             var_offset - 8
                         ));
                         output.push_str("    mov qword ptr [rax], rbx\n");
@@ -372,7 +373,7 @@ pub fn compile_field_assign(
     if let Some(&var_offset) = variables.get(obj_name) {
         // Load the base pointer
         output.push_str(&format!(
-            "    mov rax, qword ptr [rsp + {}]\n",
+            "    mov rax, qword ptr [rbp - 8 - {}]\n",
             var_offset - 8
         ));
 

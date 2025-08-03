@@ -1,5 +1,6 @@
 ---
 source: neco-felis-syn/src/file.rs
+assertion_line: 90
 expression: file
 ---
 File {
@@ -94,6 +95,7 @@ File {
         ),
         Proc(
             ItemProc {
+                ptx_modifier: None,
                 keyword_proc: TokenKeyword {
                     pos: Pos {
                         file_id: FileId(

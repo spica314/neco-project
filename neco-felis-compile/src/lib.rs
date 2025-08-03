@@ -43,6 +43,7 @@ impl AssemblyCompiler {
             Statement::Loop(loop_stmt) => control_flow::compile_loop(self, loop_stmt),
             Statement::Break(break_stmt) => control_flow::compile_break(self, break_stmt),
             Statement::Return(return_stmt) => self.compile_return(return_stmt),
+            Statement::CallPtx(call_ptx_stmt) => self.compile_call_ptx(call_ptx_stmt),
             Statement::Expr(proc_term) => self.compile_proc_term(proc_term),
             Statement::Ext(_) => unreachable!("Ext statements not supported in PhaseParse"),
         }
@@ -75,7 +76,7 @@ impl AssemblyCompiler {
                 // Move the value to the stack location
                 let number_value = self.parse_number(num.number.s());
                 self.output.push_str(&format!(
-                    "    mov qword ptr [rsp + {}], {}\n",
+                    "    mov qword ptr [rbp - 8 - {}], {}\n",
                     offset - 8,
                     number_value
                 ));
@@ -96,6 +97,12 @@ impl AssemblyCompiler {
                             "f32_mul" => return self.compile_f32_mul_let_proc(apply, offset),
                             "f32_div" => return self.compile_f32_div_let_proc(apply, offset),
                             "f32_to_u64" => return self.compile_f32_to_u64_let_proc(apply, offset),
+                            "u64_to_f32" => return self.compile_u64_to_f32_let_proc(apply, offset),
+                            "u64" => return self.compile_u64_let_proc(apply, offset),
+                            "f32" => return self.compile_f32_let_proc(apply, offset),
+                            "ctaid_x" => return self.compile_ctaid_x_let_proc(offset),
+                            "ntid_x" => return self.compile_ntid_x_let_proc(offset),
+                            "tid_x" => return self.compile_tid_x_let_proc(offset),
                             _ => {}
                         }
                     } else {
@@ -126,15 +133,19 @@ impl AssemblyCompiler {
                     } else {
                         // Non-array constructor
                         self.compile_proc_constructor_call(constructor_call)?;
-                        self.output
-                            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+                        self.output.push_str(&format!(
+                            "    mov qword ptr [rbp - 8 - {}], rax\n",
+                            offset - 8
+                        ));
                         Ok(())
                     }
                 } else {
                     // Other constructor calls
                     self.compile_proc_constructor_call(constructor_call)?;
-                    self.output
-                        .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+                    self.output.push_str(&format!(
+                        "    mov qword ptr [rbp - 8 - {}], rax\n",
+                        offset - 8
+                    ));
                     Ok(())
                 }
             }
@@ -173,16 +184,16 @@ impl AssemblyCompiler {
                 // Store the value in the value variable's location
                 let number_value = self.parse_number(num.number.s());
                 self.output.push_str(&format!(
-                    "    mov qword ptr [rsp + {}], {}\n",
+                    "    mov qword ptr [rbp - 8 - {}], {}\n",
                     value_offset - 8,
                     number_value
                 ));
 
                 // Store the address of the value variable in the reference variable
                 self.output
-                    .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                    .push_str(&format!("    lea rax, [rbp - 8 - {}]\n", value_offset - 8));
                 self.output.push_str(&format!(
-                    "    mov qword ptr [rsp + {}], rax\n",
+                    "    mov qword ptr [rbp - 8 - {}], rax\n",
                     ref_offset - 8
                 ));
                 Ok(())
@@ -196,100 +207,192 @@ impl AssemblyCompiler {
                         "u64_add" => {
                             self.compile_u64_add_let_proc(apply, value_offset)?;
                             // Store the address of the value variable in the reference variable
-                            self.output
-                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
                             self.output.push_str(&format!(
-                                "    mov qword ptr [rsp + {}], rax\n",
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
                                 ref_offset - 8
                             ));
                             return Ok(());
                         }
                         "u64_sub" => {
                             self.compile_u64_sub_let_proc(apply, value_offset)?;
-                            self.output
-                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
                             self.output.push_str(&format!(
-                                "    mov qword ptr [rsp + {}], rax\n",
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
                                 ref_offset - 8
                             ));
                             return Ok(());
                         }
                         "u64_mul" => {
                             self.compile_u64_mul_let_proc(apply, value_offset)?;
-                            self.output
-                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
                             self.output.push_str(&format!(
-                                "    mov qword ptr [rsp + {}], rax\n",
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
                                 ref_offset - 8
                             ));
                             return Ok(());
                         }
                         "u64_div" => {
                             self.compile_u64_div_let_proc(apply, value_offset)?;
-                            self.output
-                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
                             self.output.push_str(&format!(
-                                "    mov qword ptr [rsp + {}], rax\n",
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
                                 ref_offset - 8
                             ));
                             return Ok(());
                         }
                         "u64_mod" => {
                             self.compile_u64_mod_let_proc(apply, value_offset)?;
-                            self.output
-                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
                             self.output.push_str(&format!(
-                                "    mov qword ptr [rsp + {}], rax\n",
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
                                 ref_offset - 8
                             ));
                             return Ok(());
                         }
                         "f32_add" => {
                             self.compile_f32_add_let_proc(apply, value_offset)?;
-                            self.output
-                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
                             self.output.push_str(&format!(
-                                "    mov qword ptr [rsp + {}], rax\n",
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
                                 ref_offset - 8
                             ));
                             return Ok(());
                         }
                         "f32_sub" => {
                             self.compile_f32_sub_let_proc(apply, value_offset)?;
-                            self.output
-                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
                             self.output.push_str(&format!(
-                                "    mov qword ptr [rsp + {}], rax\n",
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
                                 ref_offset - 8
                             ));
                             return Ok(());
                         }
                         "f32_mul" => {
                             self.compile_f32_mul_let_proc(apply, value_offset)?;
-                            self.output
-                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
                             self.output.push_str(&format!(
-                                "    mov qword ptr [rsp + {}], rax\n",
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
                                 ref_offset - 8
                             ));
                             return Ok(());
                         }
                         "f32_div" => {
                             self.compile_f32_div_let_proc(apply, value_offset)?;
-                            self.output
-                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
                             self.output.push_str(&format!(
-                                "    mov qword ptr [rsp + {}], rax\n",
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
                                 ref_offset - 8
                             ));
                             return Ok(());
                         }
                         "f32_to_u64" => {
                             self.compile_f32_to_u64_let_proc(apply, value_offset)?;
-                            self.output
-                                .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
                             self.output.push_str(&format!(
-                                "    mov qword ptr [rsp + {}], rax\n",
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "u64_to_f32" => {
+                            self.compile_u64_to_f32_let_proc(apply, value_offset)?;
+                            self.output.push_str(&format!(
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "u64" => {
+                            self.compile_u64_let_proc(apply, value_offset)?;
+                            self.output.push_str(&format!(
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "f32" => {
+                            self.compile_f32_let_proc(apply, value_offset)?;
+                            self.output.push_str(&format!(
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "ctaid_x" => {
+                            self.compile_ctaid_x_let_proc(value_offset)?;
+                            self.output.push_str(&format!(
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "ntid_x" => {
+                            self.compile_ntid_x_let_proc(value_offset)?;
+                            self.output.push_str(&format!(
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
+                                ref_offset - 8
+                            ));
+                            return Ok(());
+                        }
+                        "tid_x" => {
+                            self.compile_tid_x_let_proc(value_offset)?;
+                            self.output.push_str(&format!(
+                                "    lea rax, [rbp - 8 - {}]\n",
+                                value_offset - 8
+                            ));
+                            self.output.push_str(&format!(
+                                "    mov qword ptr [rbp - 8 - {}], rax\n",
                                 ref_offset - 8
                             ));
                             return Ok(());
@@ -307,15 +410,15 @@ impl AssemblyCompiler {
 
                 // Store the result (rax) to the value variable's stack location
                 self.output.push_str(&format!(
-                    "    mov qword ptr [rsp + {}], rax\n",
+                    "    mov qword ptr [rbp - 8 - {}], rax\n",
                     value_offset - 8
                 ));
 
                 // Store the address of the value variable in the reference variable
                 self.output
-                    .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                    .push_str(&format!("    lea rax, [rbp - 8 - {}]\n", value_offset - 8));
                 self.output.push_str(&format!(
-                    "    mov qword ptr [rsp + {}], rax\n",
+                    "    mov qword ptr [rbp - 8 - {}], rax\n",
                     ref_offset - 8
                 ));
                 Ok(())
@@ -326,20 +429,20 @@ impl AssemblyCompiler {
                 if let Some(&var_offset) = self.variables.get(var_name) {
                     // Load value from the source variable's stack location
                     self.output.push_str(&format!(
-                        "    mov rax, qword ptr [rsp + {}]\n",
+                        "    mov rax, qword ptr [rbp - 8 - {}]\n",
                         var_offset - 8
                     ));
                     // Store it to the value variable's stack location
                     self.output.push_str(&format!(
-                        "    mov qword ptr [rsp + {}], rax\n",
+                        "    mov qword ptr [rbp - 8 - {}], rax\n",
                         value_offset - 8
                     ));
 
                     // Store the address of the value variable in the reference variable
                     self.output
-                        .push_str(&format!("    lea rax, [rsp + {}]\n", value_offset - 8));
+                        .push_str(&format!("    lea rax, [rbp - 8 - {}]\n", value_offset - 8));
                     self.output.push_str(&format!(
-                        "    mov qword ptr [rsp + {}], rax\n",
+                        "    mov qword ptr [rbp - 8 - {}], rax\n",
                         ref_offset - 8
                     ));
                     Ok(())
@@ -375,14 +478,16 @@ impl AssemblyCompiler {
                 let number_value = self.parse_number(num.number.s());
                 if is_reference {
                     // This is a reference variable - load the address and store to that location
-                    self.output
-                        .push_str(&format!("    mov rax, qword ptr [rsp + {}]\n", offset - 8));
+                    self.output.push_str(&format!(
+                        "    mov rax, qword ptr [rbp - 8 - {}]\n",
+                        offset - 8
+                    ));
                     self.output
                         .push_str(&format!("    mov qword ptr [rax], {number_value}\n"));
                 } else {
                     // Regular variable - store directly
                     self.output.push_str(&format!(
-                        "    mov qword ptr [rsp + {}], {}\n",
+                        "    mov qword ptr [rbp - 8 - {}], {}\n",
                         offset - 8,
                         number_value
                     ));
@@ -416,7 +521,7 @@ impl AssemblyCompiler {
                                             self.variables.get(var.variable.s())
                                         {
                                             self.output.push_str(&format!(
-                                                "    mov rax, qword ptr [rsp + {}]\n",
+                                                "    mov rax, qword ptr [rbp - 8 - {}]\n",
                                                 var_offset - 8
                                             ));
                                         }
@@ -439,7 +544,7 @@ impl AssemblyCompiler {
                                             self.variables.get(var.variable.s())
                                         {
                                             self.output.push_str(&format!(
-                                                "    mov rbx, qword ptr [rsp + {}]\n",
+                                                "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                                 var_offset - 8
                                             ));
                                         }
@@ -455,7 +560,7 @@ impl AssemblyCompiler {
 
                                 // Store result via reference
                                 self.output.push_str(&format!(
-                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str("    mov qword ptr [rbx], rax\n");
@@ -468,11 +573,11 @@ impl AssemblyCompiler {
                             if is_reference {
                                 self.compile_u64_sub_assign_proc(apply, offset)?;
                                 self.output.push_str(&format!(
-                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str(&format!(
-                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    "    mov rax, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str("    mov qword ptr [rbx], rax\n");
@@ -485,11 +590,11 @@ impl AssemblyCompiler {
                             if is_reference {
                                 self.compile_u64_mul_assign_proc(apply, offset)?;
                                 self.output.push_str(&format!(
-                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str(&format!(
-                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    "    mov rax, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str("    mov qword ptr [rbx], rax\n");
@@ -502,11 +607,11 @@ impl AssemblyCompiler {
                             if is_reference {
                                 self.compile_u64_div_assign_proc(apply, offset)?;
                                 self.output.push_str(&format!(
-                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str(&format!(
-                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    "    mov rax, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str("    mov qword ptr [rbx], rax\n");
@@ -519,11 +624,11 @@ impl AssemblyCompiler {
                             if is_reference {
                                 self.compile_u64_mod_assign_proc(apply, offset)?;
                                 self.output.push_str(&format!(
-                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str(&format!(
-                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    "    mov rax, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str("    mov qword ptr [rbx], rax\n");
@@ -536,11 +641,11 @@ impl AssemblyCompiler {
                             if is_reference {
                                 self.compile_f32_add_assign_proc(apply, offset)?;
                                 self.output.push_str(&format!(
-                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str(&format!(
-                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    "    mov rax, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str("    mov qword ptr [rbx], rax\n");
@@ -553,11 +658,11 @@ impl AssemblyCompiler {
                             if is_reference {
                                 self.compile_f32_sub_assign_proc(apply, offset)?;
                                 self.output.push_str(&format!(
-                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str(&format!(
-                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    "    mov rax, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str("    mov qword ptr [rbx], rax\n");
@@ -570,11 +675,11 @@ impl AssemblyCompiler {
                             if is_reference {
                                 self.compile_f32_mul_assign_proc(apply, offset)?;
                                 self.output.push_str(&format!(
-                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str(&format!(
-                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    "    mov rax, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str("    mov qword ptr [rbx], rax\n");
@@ -587,11 +692,11 @@ impl AssemblyCompiler {
                             if is_reference {
                                 self.compile_f32_div_assign_proc(apply, offset)?;
                                 self.output.push_str(&format!(
-                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str(&format!(
-                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    "    mov rax, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str("    mov qword ptr [rbx], rax\n");
@@ -604,11 +709,11 @@ impl AssemblyCompiler {
                             if is_reference {
                                 self.compile_f32_to_u64_assign_proc(apply, offset)?;
                                 self.output.push_str(&format!(
-                                    "    mov rbx, qword ptr [rsp + {}]\n",
+                                    "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str(&format!(
-                                    "    mov rax, qword ptr [rsp + {}]\n",
+                                    "    mov rax, qword ptr [rbp - 8 - {}]\n",
                                     offset - 8
                                 ));
                                 self.output.push_str("    mov qword ptr [rbx], rax\n");
@@ -629,8 +734,10 @@ impl AssemblyCompiler {
                 self.compile_proc_constructor_call(constructor_call)?;
 
                 // Store the result (rax) to the variable's stack location
-                self.output
-                    .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+                self.output.push_str(&format!(
+                    "    mov qword ptr [rbp - 8 - {}], rax\n",
+                    offset - 8
+                ));
                 Ok(())
             }
             _ => Err(CompileError::UnsupportedConstruct(format!(
@@ -659,7 +766,7 @@ impl AssemblyCompiler {
                     if let Some(&offset) = self.variables.get(var_name) {
                         // Load value from stack into register
                         self.output.push_str(&format!(
-                            "    mov {}, qword ptr [rsp + {}]\n",
+                            "    mov {}, qword ptr [rbp - 8 - {}]\n",
                             registers[i],
                             offset - 8
                         ));
@@ -708,8 +815,10 @@ impl AssemblyCompiler {
             self.output.push_str(&format!("    call {var_name}\n"));
 
             // Store the result (rax) to the variable's stack location
-            self.output
-                .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+            self.output.push_str(&format!(
+                "    mov qword ptr [rbp - 8 - {}], rax\n",
+                offset - 8
+            ));
 
             Ok(())
         } else {
@@ -747,6 +856,9 @@ pub fn compile_file_to_assembly_with_ptx(
 
     let mut i = 0;
     let file = File::parse(&tokens, &mut i)?.ok_or("Failed to parse file")?;
+    if i != tokens.len() {
+        return Err(format!("Failed to parse file. token at {} / {}", i, tokens.len()).into());
+    }
 
     let compile_options = CompileOptions { use_ptx: true };
     let assembly = compile_to_assembly(&file, compile_options)?;
@@ -765,6 +877,229 @@ impl AssemblyCompiler {
         // For now, return statements don't generate any specific assembly
         // The return value is already in the correct register/stack location
         // from the previous expression compilation
+        Ok(())
+    }
+
+    /// Compile a #call_ptx statement
+    pub fn compile_call_ptx(
+        &mut self,
+        call_ptx: &StatementCallPtx<PhaseParse>,
+    ) -> Result<(), CompileError> {
+        let function_name = call_ptx.function_name.s();
+
+        // Ensure this is a known PTX function
+        if !self.ptx_functions.contains(&function_name.to_string()) {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "Unknown PTX function: {function_name}"
+            )));
+        }
+
+        // Handle arguments
+        let (has_array, array_var_name, array_info) = if !call_ptx.args.is_empty() {
+            // Extract array name from the argument
+            let array_var_name = match &call_ptx.args[0] {
+                ProcTerm::Variable(var) => var.variable.s(),
+                _ => {
+                    return Err(CompileError::UnsupportedConstruct(
+                        "call_ptx expects array variable as argument".to_string(),
+                    ));
+                }
+            };
+
+            // Get array info
+            let array_type_name = self.variable_arrays.get(array_var_name).ok_or_else(|| {
+                CompileError::UnsupportedConstruct(format!(
+                    "Unknown array variable: {array_var_name}"
+                ))
+            })?;
+
+            let array_info = self.arrays.get(array_type_name).ok_or_else(|| {
+                CompileError::UnsupportedConstruct(format!("Unknown array type: {array_type_name}"))
+            })?;
+
+            (true, array_var_name, array_info.clone())
+        } else {
+            // No arguments - create dummy info
+            (
+                false,
+                "",
+                ArrayInfo {
+                    element_type: String::new(),
+                    field_names: vec![],
+                    field_types: vec![],
+                    dimension: 1,
+                    size: None,
+                },
+            )
+        };
+
+        // Generate CUDA API calls
+        self.output.push_str("    # call_ptx implementation\n");
+
+        // self.output.push_str("    sub rsp, 8");
+
+        // Load PTX module if not already loaded
+        self.output.push_str("    # Load PTX module\n");
+        self.output
+            .push_str(&format!("    lea rdi, ptx_code_{function_name}[rip]\n"));
+        self.output.push_str("    lea rsi, __cu_module[rip]\n");
+        self.output.push_str("    call cuModuleLoadData@PLT\n");
+
+        // self.output.push_str("    mov rax, 231\n");
+        // self.output.push_str("    mov rdi, 41\n");
+        // self.output.push_str("    syscall\n");
+
+        // Get function from module
+        self.output.push_str("    # Get function from module\n");
+        self.output.push_str("    lea rdi, __cu_function[rip]\n");
+        self.output
+            .push_str("    mov rsi, QWORD PTR __cu_module[rip]\n");
+        self.output.push_str(&format!(
+            "    lea rdx, ptx_function_name_{function_name}[rip]\n"
+        ));
+        self.output.push_str("    call cuModuleGetFunction@PLT\n");
+
+        // self.output.push_str("    mov rax, 231\n");
+        // self.output.push_str("    mov rdi, 41\n");
+        // self.output.push_str("    syscall\n");
+
+        if has_array {
+            // Allocate device memory for each field
+            let field_count = array_info.field_names.len();
+            for (i, field_name) in array_info.field_names.iter().enumerate() {
+                self.output.push_str(&format!(
+                    "    # Allocate device memory for field {field_name}\n"
+                ));
+                self.output
+                    .push_str(&format!("    lea rdi, device_ptr_{}[rip]\n", i + 1));
+
+                // Calculate size based on array size and element type
+                // For now, assume 65536 elements and 8 bytes per element
+                self.output.push_str("    mov rsi, 524288\n"); // 65536 * 8
+                self.output.push_str("    call cuMemAlloc_v2@PLT\n");
+            }
+
+            // Copy data to device
+            for (i, field_name) in array_info.field_names.iter().enumerate() {
+                self.output
+                    .push_str(&format!("    # Copy {field_name} data to device\n"));
+                self.output.push_str(&format!(
+                    "    mov rdi, QWORD PTR device_ptr_{}[rip]\n",
+                    i + 1
+                ));
+
+                // Get host pointer for this field
+                let field_ptr_var = format!("{array_var_name}_{field_name}_ptr");
+                if let Some(&offset) = self.variables.get(&field_ptr_var) {
+                    self.output.push_str(&format!(
+                        "    mov rsi, QWORD PTR [rbp - 8 - {}]\n",
+                        offset - 8
+                    ));
+                }
+
+                self.output.push_str("    mov rdx, 524288\n"); // Size
+                self.output.push_str("    call cuMemcpyHtoD_v2@PLT\n");
+            }
+
+            // Set up kernel parameters
+            self.output.push_str("    # Set up kernel parameters\n");
+            for i in 1..=field_count {
+                self.output
+                    .push_str(&format!("    lea rax, device_ptr_{i}[rip]\n"));
+                self.output.push_str(&format!(
+                    "    mov QWORD PTR [rbp - 8 - {}], rax\n",
+                    200 + (i - 1) * 8
+                ));
+            }
+        }
+
+        // self.output.push_str("    mov rax, 231\n");
+        // self.output.push_str("    mov rdi, 41\n");
+        // self.output.push_str("    syscall\n");
+
+        // Launch kernel
+        self.output.push_str("    # Launch kernel\n");
+
+        self.output.push_str("    sub rsp, 8\n");
+
+        self.output
+            .push_str("    mov rdi, QWORD PTR __cu_function[rip]\n");
+
+        // Grid dimensions
+        self.output
+            .push_str(&format!("    mov rsi, {}\n", call_ptx.grid_dim_x.s()));
+        self.output
+            .push_str(&format!("    mov rdx, {}\n", call_ptx.grid_dim_y.s()));
+        self.output
+            .push_str(&format!("    mov rcx, {}\n", call_ptx.grid_dim_z.s()));
+
+        // Block dimensions
+        self.output
+            .push_str(&format!("    mov r8, {}\n", call_ptx.block_dim_x.s()));
+        self.output
+            .push_str(&format!("    mov r9, {}\n", call_ptx.block_dim_y.s()));
+        self.output
+            .push_str(&format!("    push {}\n", call_ptx.block_dim_z.s()));
+
+        // Extra (reverse stack order)
+        self.output.push_str("    push 0\n");
+
+        // Kernel params (reverse stack order)
+        if has_array && !array_info.field_names.is_empty() {
+            self.output.push_str("    lea rax, [rbp - 8 -  216]\n");
+            self.output.push_str("    push rax\n");
+        } else {
+            self.output.push_str("    push 0\n"); // NULL params
+        }
+
+        // Shared memory and stream (reverse stack order)
+        self.output.push_str("    push 0\n"); // sharedMemBytes
+        self.output.push_str("    push 0\n"); // stream
+
+        self.output.push_str("    call cuLaunchKernel@PLT\n");
+        self.output.push_str("    add rsp, 48\n"); // Clean up stack
+
+        // // Synchronize
+        // self.output.push_str("    call cuCtxSynchronize@PLT\n");
+
+        if has_array {
+            // Copy results back
+            for (i, field_name) in array_info.field_names.iter().enumerate() {
+                self.output
+                    .push_str(&format!("    # Copy {field_name} data back from device\n"));
+
+                // Get host pointer for this field
+                let field_ptr_var = format!("{array_var_name}_{field_name}_ptr");
+                if let Some(&offset) = self.variables.get(&field_ptr_var) {
+                    self.output.push_str(&format!(
+                        "    mov rdi, QWORD PTR [rbp - 8 - {}]\n",
+                        offset - 8
+                    ));
+                }
+
+                self.output.push_str(&format!(
+                    "    mov rsi, QWORD PTR device_ptr_{}[rip]\n",
+                    i + 1
+                ));
+                self.output.push_str("    mov rdx, 524288\n"); // Size
+                self.output.push_str("    call cuMemcpyDtoH_v2@PLT\n");
+            }
+
+            // Free device memory
+            let field_count = array_info.field_names.len();
+            for i in 1..=field_count {
+                self.output
+                    .push_str(&format!("    # Free device memory {i}\n"));
+                self.output
+                    .push_str(&format!("    mov rdi, QWORD PTR device_ptr_{i}[rip]\n"));
+                self.output.push_str("    call cuMemFree_v2@PLT\n");
+            }
+        }
+
+        // self.output.push_str("    mov rax, 231\n");
+        // self.output.push_str("    mov rdi, 41\n");
+        // self.output.push_str("    syscall\n");
+
         Ok(())
     }
 }

@@ -23,11 +23,11 @@ fn test_compile_add() {
     assert!(assembly.contains("main:"));
     assert!(assembly.contains("_start:"));
     assert!(assembly.contains("sub rsp, 16")); // Stack allocation for 2 let variables
-    assert!(assembly.contains("mov qword ptr [rsp + 0], 231")); // syscall_id = 231u64
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 0], 231")); // syscall_id = 231u64
     assert!(assembly.contains("mov rax, 40")); // u64_add first arg
     assert!(assembly.contains("mov rbx, 2")); // u64_add second arg
     assert!(assembly.contains("add rax, rbx")); // u64_add operation
-    assert!(assembly.contains("mov qword ptr [rsp + 8], rax")); // Store result
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 8], rax")); // Store result
     assert!(assembly.contains("syscall"));
 }
 
@@ -38,7 +38,7 @@ fn test_compile_sub() {
     assert!(assembly.contains("mov rax, 50"));
     assert!(assembly.contains("mov rbx, 8"));
     assert!(assembly.contains("sub rax, rbx"));
-    assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 8], rax"));
     assert!(assembly.contains("syscall"));
     assert!(assembly.contains("main:"));
     assert!(assembly.contains("_start:"));
@@ -51,7 +51,7 @@ fn test_compile_mul() {
     assert!(assembly.contains("mov rax, 6"));
     assert!(assembly.contains("mov rbx, 7"));
     assert!(assembly.contains("imul rax, rbx"));
-    assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 8], rax"));
     assert!(assembly.contains("syscall"));
     assert!(assembly.contains("main:"));
     assert!(assembly.contains("_start:"));
@@ -65,7 +65,7 @@ fn test_compile_div() {
     assert!(assembly.contains("mov rbx, 2"));
     assert!(assembly.contains("xor rdx, rdx"));
     assert!(assembly.contains("div rbx"));
-    assert!(assembly.contains("mov qword ptr [rsp + 8], rax"));
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 8], rax"));
     assert!(assembly.contains("syscall"));
     assert!(assembly.contains("main:"));
     assert!(assembly.contains("_start:"));
@@ -79,7 +79,7 @@ fn test_compile_mod() {
     assert!(assembly.contains("mov rbx, 100"));
     assert!(assembly.contains("xor rdx, rdx"));
     assert!(assembly.contains("div rbx"));
-    assert!(assembly.contains("mov qword ptr [rsp + 8], rdx"));
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 8], rdx"));
     assert!(assembly.contains("syscall"));
     assert!(assembly.contains("main:"));
     assert!(assembly.contains("_start:"));
@@ -97,6 +97,7 @@ fn compile_and_execute(
 
     // Step 1: Compile Felis to assembly
     let assembly = compile_file_to_assembly(file_path)?;
+    eprintln!("assembly : {assembly}");
     std::fs::write(&asm_file, assembly)?;
 
     // Step 2: Assemble to object file
@@ -185,6 +186,7 @@ fn compile_and_execute_with_ptx(
 ) -> Result<std::process::ExitStatus, Box<dyn std::error::Error>> {
     // Create temporary directory for build artifacts
     let temp_dir = TempDir::new()?;
+    eprintln!("temp_dir = {temp_dir:?}");
     let asm_file = temp_dir.path().join("program.s");
     let obj_file = temp_dir.path().join("program.o");
     let exe_file = temp_dir.path().join("program");
@@ -210,6 +212,7 @@ fn compile_and_execute_with_ptx(
     // Step 3: Link to executable
     let ld_status = Command::new("gcc")
         .args([
+            "-no-pie",
             obj_file.to_string_lossy().as_ref(),
             "-o",
             &exe_file.to_string_lossy(),
@@ -223,7 +226,7 @@ fn compile_and_execute_with_ptx(
 
     // Step 4: Execute the program
     let exec_status = Command::new(&exe_file).status()?;
-    // std::thread::sleep(std::time::Duration::from_secs(100));
+    // std::thread::sleep(std::time::Duration::from_secs(50));
 
     Ok(exec_status)
 }
@@ -377,7 +380,7 @@ fn test_compile_add_f32() {
     assert!(assembly.contains("mov eax, 0x40000000")); // 2.0f32
     assert!(assembly.contains("movd xmm1, eax"));
     assert!(assembly.contains("addss xmm0, xmm1"));
-    assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
+    assert!(assembly.contains("movss dword ptr [rbp - 8 - 8], xmm0"));
     assert!(assembly.contains("cvttss2si rax, xmm0"));
     assert!(assembly.contains("syscall"));
     assert!(assembly.contains("main:"));
@@ -393,7 +396,7 @@ fn test_compile_sub_f32() {
     assert!(assembly.contains("mov eax, 0x41000000")); // 8.0f32
     assert!(assembly.contains("movd xmm1, eax"));
     assert!(assembly.contains("subss xmm0, xmm1"));
-    assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
+    assert!(assembly.contains("movss dword ptr [rbp - 8 - 8], xmm0"));
     assert!(assembly.contains("cvttss2si rax, xmm0"));
     assert!(assembly.contains("syscall"));
     assert!(assembly.contains("main:"));
@@ -409,7 +412,7 @@ fn test_compile_mul_f32() {
     assert!(assembly.contains("mov eax, 0x40e00000")); // 7.0f32
     assert!(assembly.contains("movd xmm1, eax"));
     assert!(assembly.contains("mulss xmm0, xmm1"));
-    assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
+    assert!(assembly.contains("movss dword ptr [rbp - 8 - 8], xmm0"));
     assert!(assembly.contains("cvttss2si rax, xmm0"));
     assert!(assembly.contains("syscall"));
     assert!(assembly.contains("main:"));
@@ -425,7 +428,7 @@ fn test_compile_div_f32() {
     assert!(assembly.contains("mov eax, 0x40000000")); // 2.0f32
     assert!(assembly.contains("movd xmm1, eax"));
     assert!(assembly.contains("divss xmm0, xmm1"));
-    assert!(assembly.contains("movss dword ptr [rsp + 8], xmm0"));
+    assert!(assembly.contains("movss dword ptr [rbp - 8 - 8], xmm0"));
     assert!(assembly.contains("cvttss2si rax, xmm0"));
     assert!(assembly.contains("syscall"));
     assert!(assembly.contains("main:"));
@@ -521,11 +524,11 @@ fn test_compile_let_mut() {
     assert!(assembly.contains("main:"));
     assert!(assembly.contains("_start:"));
     assert!(assembly.contains("sub rsp, 24")); // Stack allocation for 3 variables (syscall_id, value, reference)
-    assert!(assembly.contains("mov qword ptr [rsp + 0], 231")); // syscall_id = 231u64
-    assert!(assembly.contains("mov qword ptr [rsp + 8], 0")); // let mut error_code = 0u64 (value)
-    assert!(assembly.contains("lea rax, [rsp + 8]")); // Calculate address of error_code
-    assert!(assembly.contains("mov qword ptr [rsp + 16], rax")); // Store address in error_code_ref
-    assert!(assembly.contains("mov rax, qword ptr [rsp + 16]")); // Load address from error_code_ref
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 0], 231")); // syscall_id = 231u64
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 8], 0")); // let mut error_code = 0u64 (value)
+    assert!(assembly.contains("lea rax, [rbp - 8 - 8]")); // Calculate address of error_code
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 16], rax")); // Store address in error_code_ref
+    assert!(assembly.contains("mov rax, qword ptr [rbp - 8 - 16]")); // Load address from error_code_ref
     assert!(assembly.contains("mov qword ptr [rax], 42")); // error_code_ref <- 42u64 (indirect assignment)
     assert!(assembly.contains("syscall"));
 }
@@ -673,7 +676,7 @@ fn test_compile_proc_call() {
     assert!(assembly.contains("ret")); // Both main and f should have ret
 
     // Check that syscall is properly set up
-    assert!(assembly.contains("mov qword ptr [rsp + 0], 231")); // syscall_id = 231u64
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 0], 231")); // syscall_id = 231u64
     assert!(assembly.contains("syscall"));
 
     // Check that function arguments are set up
@@ -693,7 +696,7 @@ fn test_compile_print_c() {
     assert!(assembly.contains("call print_c"));
 
     // Check that let mut with variable assignment works
-    assert!(assembly.contains("lea rax, [rsp")); // Address calculation for y_ref
+    assert!(assembly.contains("lea rax, [rbp")); // Address calculation for y_ref
 
     // Check that print_c uses correct syscall (write syscall: 1)
     assert!(assembly.contains("mov rax, 1")); // sys_write
@@ -704,8 +707,8 @@ fn test_compile_print_c() {
     assert!(assembly.contains("mov rdi, 10")); // ASCII '\n'
 
     // Check that program exits with code 0
-    assert!(assembly.contains("mov qword ptr [rsp + 8], 0")); // error_code = 0u64
-    assert!(assembly.contains("mov qword ptr [rsp + 0], 231")); // syscall_id = 231u64
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 8], 0")); // error_code = 0u64
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 0], 231")); // syscall_id = 231u64
 }
 
 #[test]
@@ -798,6 +801,27 @@ fn test_print_num3_integration() {
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_1() {
     let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_1.fe");
+
+    match result {
+        Ok(status) => {
+            println!(
+                "proc_call.fe executed successfully with exit code: {:?}",
+                status.code()
+            );
+            // proc_call.fe should exit with code 42 (40 + 2 = 42)
+            assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+        }
+        Err(e) => {
+            // Skip test if assembler/linker not available
+            println!("Skipping proc_call.fe integration test: {e}");
+        }
+    }
+}
+
+#[test]
+#[cfg(feature = "has-ptx-device")]
+fn test_ptx_2() {
+    let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_2.fe");
 
     match result {
         Ok(status) => {

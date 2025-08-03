@@ -27,8 +27,10 @@ impl AssemblyCompiler {
         self.output.push_str("    add rax, rbx\n");
 
         // Store result from rax to the variable's stack location
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -57,8 +59,10 @@ impl AssemblyCompiler {
         self.output.push_str("    sub rax, rbx\n");
 
         // Store result from rax to the variable's stack location
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -87,8 +91,10 @@ impl AssemblyCompiler {
         self.output.push_str("    imul rax, rbx\n");
 
         // Store result from rax to the variable's stack location
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -121,8 +127,10 @@ impl AssemblyCompiler {
         self.output.push_str("    div rbx\n");
 
         // Store result from rax to the variable's stack location
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -155,8 +163,10 @@ impl AssemblyCompiler {
         self.output.push_str("    div rbx\n");
 
         // Store remainder from rdx to the variable's stack location
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rdx\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rdx\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -187,7 +197,7 @@ impl AssemblyCompiler {
 
         // Store result from xmm0 to the variable's stack location
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -219,7 +229,7 @@ impl AssemblyCompiler {
 
         // Store result from xmm0 to the variable's stack location
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -251,7 +261,7 @@ impl AssemblyCompiler {
 
         // Store result from xmm0 to the variable's stack location
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -285,7 +295,7 @@ impl AssemblyCompiler {
 
         // Store result from xmm0 to the variable's stack location
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -314,8 +324,10 @@ impl AssemblyCompiler {
         self.output.push_str("    cvttss2si rax, xmm0\n");
 
         // Store result from rax to the variable's stack location
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -339,8 +351,10 @@ impl AssemblyCompiler {
         self.load_proc_argument_into_register(arg1, "rax")?;
         self.load_proc_argument_into_register(arg2, "rbx")?;
         self.output.push_str("    add rax, rbx\n");
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -363,8 +377,10 @@ impl AssemblyCompiler {
         self.load_proc_argument_into_register(arg1, "rax")?;
         self.load_proc_argument_into_register(arg2, "rbx")?;
         self.output.push_str("    sub rax, rbx\n");
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -387,8 +403,10 @@ impl AssemblyCompiler {
         self.load_proc_argument_into_register(arg1, "rax")?;
         self.load_proc_argument_into_register(arg2, "rbx")?;
         self.output.push_str("    imul rax, rbx\n");
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -412,8 +430,10 @@ impl AssemblyCompiler {
         self.load_proc_argument_into_register(arg2, "rbx")?;
         self.output.push_str("    xor rdx, rdx\n"); // Clear rdx for unsigned division
         self.output.push_str("    div rbx\n");
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -438,8 +458,10 @@ impl AssemblyCompiler {
         self.output.push_str("    xor rdx, rdx\n"); // Clear rdx for unsigned division
         self.output.push_str("    div rbx\n");
         // For modulo, result is in rdx
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rdx\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rdx\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -469,7 +491,7 @@ impl AssemblyCompiler {
 
         // Store result from xmm0 to the variable's stack location
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -500,7 +522,7 @@ impl AssemblyCompiler {
 
         // Store result from xmm0 to the variable's stack location
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -531,7 +553,7 @@ impl AssemblyCompiler {
 
         // Store result from xmm0 to the variable's stack location
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -562,7 +584,7 @@ impl AssemblyCompiler {
 
         // Store result from xmm0 to the variable's stack location
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -590,8 +612,10 @@ impl AssemblyCompiler {
         self.output.push_str("    cvttss2si rax, xmm0\n");
 
         // Store result from rax to the variable's stack location
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -615,8 +639,10 @@ impl AssemblyCompiler {
         self.load_proc_argument_into_register(arg1, "rax")?;
         self.load_proc_argument_into_register(arg2, "rbx")?;
         self.output.push_str("    add rax, rbx\n");
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -639,8 +665,10 @@ impl AssemblyCompiler {
         self.load_proc_argument_into_register(arg1, "rax")?;
         self.load_proc_argument_into_register(arg2, "rbx")?;
         self.output.push_str("    sub rax, rbx\n");
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -663,8 +691,10 @@ impl AssemblyCompiler {
         self.load_proc_argument_into_register(arg1, "rax")?;
         self.load_proc_argument_into_register(arg2, "rbx")?;
         self.output.push_str("    imul rax, rbx\n");
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -688,8 +718,10 @@ impl AssemblyCompiler {
         self.load_proc_argument_into_register(arg2, "rbx")?;
         self.output.push_str("    xor rdx, rdx\n");
         self.output.push_str("    div rbx\n");
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -713,8 +745,10 @@ impl AssemblyCompiler {
         self.load_proc_argument_into_register(arg2, "rbx")?;
         self.output.push_str("    xor rdx, rdx\n");
         self.output.push_str("    div rbx\n");
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rdx\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rdx\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -738,7 +772,7 @@ impl AssemblyCompiler {
         self.load_f32_proc_argument_into_register(arg2, "xmm1")?;
         self.output.push_str("    addss xmm0, xmm1\n");
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -764,7 +798,7 @@ impl AssemblyCompiler {
         self.load_f32_proc_argument_into_register(arg2, "xmm1")?;
         self.output.push_str("    subss xmm0, xmm1\n");
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -790,7 +824,7 @@ impl AssemblyCompiler {
         self.load_f32_proc_argument_into_register(arg2, "xmm1")?;
         self.output.push_str("    mulss xmm0, xmm1\n");
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -816,7 +850,7 @@ impl AssemblyCompiler {
         self.load_f32_proc_argument_into_register(arg2, "xmm1")?;
         self.output.push_str("    divss xmm0, xmm1\n");
         self.output.push_str(&format!(
-            "    movss dword ptr [rsp + {}], xmm0\n",
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
             offset - 8
         ));
 
@@ -844,8 +878,10 @@ impl AssemblyCompiler {
         self.output.push_str("    cvttss2si rax, xmm0\n");
 
         // Store result from rax to the variable's stack location
-        self.output
-            .push_str(&format!("    mov qword ptr [rsp + {}], rax\n", offset - 8));
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
 
         Ok(())
     }
@@ -866,7 +902,7 @@ impl AssemblyCompiler {
                 let var_name = var.variable.s();
                 if let Some(&var_offset) = self.variables.get(var_name) {
                     self.output.push_str(&format!(
-                        "    mov {register}, qword ptr [rsp + {}]\n",
+                        "    mov {register}, qword ptr [rbp - 8 - {}]\n",
                         var_offset - 8
                     ));
                 } else {
@@ -913,7 +949,7 @@ impl AssemblyCompiler {
                 let var_name = var.variable.s();
                 if let Some(&var_offset) = self.variables.get(var_name) {
                     self.output.push_str(&format!(
-                        "    movss {register}, dword ptr [rsp + {}]\n",
+                        "    movss {register}, dword ptr [rbp - 8 - {}]\n",
                         var_offset - 8
                     ));
                 } else {
@@ -961,7 +997,7 @@ impl AssemblyCompiler {
                 let var_name = var.variable.s();
                 if let Some(&var_offset) = self.variables.get(var_name) {
                     self.output.push_str(&format!(
-                        "    movss {register}, dword ptr [rsp + {}]\n",
+                        "    movss {register}, dword ptr [rbp - 8 - {}]\n",
                         var_offset - 8
                     ));
                     Ok(())
@@ -985,7 +1021,7 @@ impl AssemblyCompiler {
                 if let Some(&ptr_offset) = self.variables.get(&soa_ptr_var_name) {
                     // This is SoA access - load the field array pointer
                     self.output.push_str(&format!(
-                        "    mov rax, qword ptr [rsp + {}]\n",
+                        "    mov rax, qword ptr [rbp - 8 - {}]\n",
                         ptr_offset - 8
                     ));
 
@@ -1013,7 +1049,7 @@ impl AssemblyCompiler {
                                     if let Some(&var_offset) = self.variables.get(var.variable.s())
                                     {
                                         self.output.push_str(&format!(
-                                            "    mov rbx, qword ptr [rsp + {}]\n",
+                                            "    mov rbx, qword ptr [rbp - 8 - {}]\n",
                                             var_offset - 8
                                         ));
                                         self.output
@@ -1039,7 +1075,7 @@ impl AssemblyCompiler {
                 } else if let Some(var_offset) = self.variables.get(object_name) {
                     // Fall back to struct-based access for non-SoA variables
                     self.output.push_str(&format!(
-                        "    mov rax, qword ptr [rsp + {}]\n",
+                        "    mov rax, qword ptr [rbp - 8 - {}]\n",
                         var_offset - 8
                     ));
 
@@ -1090,5 +1126,129 @@ impl AssemblyCompiler {
     /// Utility methods
     pub fn float_to_hex(f: f32) -> String {
         format!("0x{:08x}", f.to_bits())
+    }
+
+    /// Convert u64 to f32
+    pub fn compile_u64_to_f32_let_proc(
+        &mut self,
+        apply: &ProcTermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        if apply.args.len() != 1 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "u64_to_f32 expects 1 argument, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg = &apply.args[0];
+
+        // Load u64 argument into rax
+        self.load_proc_argument_into_register(arg, "rax")?;
+
+        // Convert u64 to f32
+        self.output.push_str("    cvtsi2ss xmm0, rax\n");
+
+        // Store result from xmm0 to the variable's stack location
+        self.output.push_str(&format!(
+            "    movss dword ptr [rbp - 8 - {}], xmm0\n",
+            offset - 8
+        ));
+
+        Ok(())
+    }
+
+    /// Create u64 value from literal
+    pub fn compile_u64_let_proc(
+        &mut self,
+        apply: &ProcTermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        if apply.args.len() != 1 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "__u64 expects 1 argument, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg = &apply.args[0];
+
+        // Load argument value
+        self.load_proc_argument_into_register(arg, "rax")?;
+
+        // Store to variable location
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax\n",
+            offset - 8
+        ));
+
+        Ok(())
+    }
+
+    /// Create f32 value from literal
+    pub fn compile_f32_let_proc(
+        &mut self,
+        apply: &ProcTermApply<PhaseParse>,
+        offset: i32,
+    ) -> Result<(), CompileError> {
+        if apply.args.len() != 1 {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "__f32 expects 1 argument, got {}",
+                apply.args.len()
+            )));
+        }
+
+        let arg = &apply.args[0];
+
+        // Load f32 argument
+        match arg {
+            ProcTerm::Number(num) => {
+                let number_str = num.number.s();
+                let float_value = number_str.parse::<f32>().unwrap_or(0.0);
+                self.output.push_str(&format!(
+                    "    mov eax, {}\n",
+                    Self::float_to_hex(float_value)
+                ));
+                self.output.push_str(&format!(
+                    "    mov dword ptr [rbp - 8 - {}], eax\n",
+                    offset - 8
+                ));
+            }
+            _ => {
+                return Err(CompileError::UnsupportedConstruct(format!(
+                    "__f32 expects numeric literal, got: {arg:?}"
+                )));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// GPU thread ID builtins - these just return 0 in CPU mode
+    pub fn compile_ctaid_x_let_proc(&mut self, offset: i32) -> Result<(), CompileError> {
+        // In CPU mode, return 0
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], 0\n",
+            offset - 8
+        ));
+        Ok(())
+    }
+
+    pub fn compile_ntid_x_let_proc(&mut self, offset: i32) -> Result<(), CompileError> {
+        // In CPU mode, return 1 (single thread)
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], 1\n",
+            offset - 8
+        ));
+        Ok(())
+    }
+
+    pub fn compile_tid_x_let_proc(&mut self, offset: i32) -> Result<(), CompileError> {
+        // In CPU mode, return 0
+        self.output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], 0\n",
+            offset - 8
+        ));
+        Ok(())
     }
 }

@@ -231,6 +231,57 @@ fn compile_and_execute_with_ptx(
     Ok(exec_status)
 }
 
+/// Helper function to compile, assemble, link, and execute a Felis program with PTX and output capture
+fn compile_and_execute_with_ptx_output(
+    file_path: &str,
+) -> Result<std::process::Output, Box<dyn std::error::Error>> {
+    // Create temporary directory for build artifacts
+    let temp_dir = TempDir::new()?;
+    eprintln!("temp_dir = {temp_dir:?}");
+    let asm_file = temp_dir.path().join("program.s");
+    let obj_file = temp_dir.path().join("program.o");
+    let exe_file = temp_dir.path().join("program");
+
+    // Step 1: Compile Felis to assembly
+    let assembly = compile_file_to_assembly_with_ptx(file_path)?;
+    std::fs::write(&asm_file, assembly)?;
+
+    // Step 2: Assemble to object file
+    let as_status = Command::new("as")
+        .args([
+            "--64",
+            &asm_file.to_string_lossy(),
+            "-o",
+            &obj_file.to_string_lossy(),
+        ])
+        .status()?;
+
+    if !as_status.success() {
+        return Err("Assembly failed".into());
+    }
+
+    // Step 3: Link to executable
+    let ld_status = Command::new("gcc")
+        .args([
+            "-no-pie",
+            obj_file.to_string_lossy().as_ref(),
+            "-o",
+            &exe_file.to_string_lossy(),
+            "/opt/cuda/lib64/stubs/libcuda.so",
+        ])
+        .status()?;
+
+    if !ld_status.success() {
+        return Err("Linking failed".into());
+    }
+
+    // Step 4: Execute the program and capture output
+    let output = Command::new(&exe_file).output()?;
+    // std::thread::sleep(std::time::Duration::from_secs(50));
+
+    Ok(output)
+}
+
 #[test]
 fn test_exit_42_integration() {
     let result = compile_and_execute("../testcases/felis/single/exit_42.fe");
@@ -525,11 +576,11 @@ fn test_compile_let_mut() {
     assert!(assembly.contains("_start:"));
     assert!(assembly.contains("sub rsp, 24")); // Stack allocation for 3 variables (syscall_id, value, reference)
     assert!(assembly.contains("mov qword ptr [rbp - 8 - 0], 231")); // syscall_id = 231u64
-    assert!(assembly.contains("mov qword ptr [rbp - 8 - 8], 0")); // let mut error_code = 0u64 (value)
-    assert!(assembly.contains("lea rax, [rbp - 8 - 8]")); // Calculate address of error_code
+    assert!(assembly.contains("mov qword ptr [rbp - 8 - 8], rax")); // let mut error_code = 0u64 (value)
+    assert!(assembly.contains("lea rax, qword ptr [rbp - 8 - 8]")); // Calculate address of error_code
     assert!(assembly.contains("mov qword ptr [rbp - 8 - 16], rax")); // Store address in error_code_ref
-    assert!(assembly.contains("mov rax, qword ptr [rbp - 8 - 16]")); // Load address from error_code_ref
-    assert!(assembly.contains("mov qword ptr [rax], 42")); // error_code_ref <- 42u64 (indirect assignment)
+    assert!(assembly.contains("mov rbx, qword ptr [rbp - 8 - 16]")); // Load address from error_code_ref
+    assert!(assembly.contains("mov qword ptr [rbx], rax")); // error_code_ref <- 42u64 (indirect assignment)
     assert!(assembly.contains("syscall"));
 }
 
@@ -571,8 +622,8 @@ fn test_compile_array() {
     assert!(assembly.contains("mov r9, 0")); // offset = 0
 
     // Check for array field assignments
-    assert!(assembly.contains("mov ebx, 0x41200000")); // 10.0f32
-    assert!(assembly.contains("mov dword ptr [rax], ebx"));
+    assert!(assembly.contains("mov rax, 0x41200000")); // 10.0f32
+    assert!(assembly.contains("mov qword ptr [rbx], rax"));
 
     // Check for field access in builtin calls
     assert!(assembly.contains("movss xmm0, dword ptr [rax]"));
@@ -645,6 +696,63 @@ fn test_array_integration() {
 }
 
 #[test]
+fn test_array_2_integration() {
+    let result = compile_and_execute("../testcases/felis/single/array_2.fe");
+
+    match result {
+        Ok(status) => {
+            println!(
+                "array_2.fe executed successfully with exit code: {:?}",
+                status.code()
+            );
+            // array.fe should exit with code 42 (10.0 + 14.0 + 18.0 = 42.0)
+            assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+        }
+        Err(e) => {
+            // Skip test if assembler/linker not available
+            panic!("Skipping array_2.fe integration test: {e}");
+        }
+    }
+}
+
+#[test]
+fn test_array_3_integration() {
+    let result = compile_and_execute("../testcases/felis/single/array_3.fe");
+
+    match result {
+        Ok(status) => {
+            println!(
+                "array_3.fe executed successfully with exit code: {:?}",
+                status.code()
+            );
+            // array.fe should exit with code 42 (10.0 + 14.0 + 18.0 = 42.0)
+            assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+        }
+        Err(e) => {
+            // Skip test if assembler/linker not available
+            panic!("Skipping array_3.fe integration test: {e}");
+        }
+    }
+}
+
+#[test]
+fn test_array_4_integration() {
+    let result = compile_and_execute_with_output("../testcases/felis/single/array_4.fe");
+
+    match result {
+        Ok(output) => {
+            let expected = "P3\n2 2\n255\n0 1 2\n3 4 5\n6 7 8\n9 10 11\n";
+            let actual_output = String::from_utf8_lossy(&output.stdout);
+            assert_eq!(actual_output, expected);
+        }
+        Err(e) => {
+            // Skip test if assembler/linker not available
+            panic!("Skipping array_4.fe integration test: {e}");
+        }
+    }
+}
+
+#[test]
 fn test_loop_break() {
     let result = compile_and_execute("../testcases/felis/single/loop_break.fe");
 
@@ -696,7 +804,7 @@ fn test_compile_print_c() {
     assert!(assembly.contains("call print_c"));
 
     // Check that let mut with variable assignment works
-    assert!(assembly.contains("lea rax, [rbp")); // Address calculation for y_ref
+    assert!(assembly.contains("lea rax, qword ptr [rbp")); // Address calculation for y_ref
 
     // Check that print_c uses correct syscall (write syscall: 1)
     assert!(assembly.contains("mov rax, 1")); // sys_write
@@ -835,6 +943,80 @@ fn test_ptx_2() {
         Err(e) => {
             // Skip test if assembler/linker not available
             println!("Skipping proc_call.fe integration test: {e}");
+        }
+    }
+}
+
+#[test]
+#[ignore]
+#[cfg(feature = "has-ptx-device")]
+fn test_ptx_2_output() {
+    let result = compile_and_execute_with_ptx_output("../testcases/felis/single/ptx_2.fe");
+
+    match result {
+        Ok(output) => {
+            println!("ptx_2.fe executed successfully");
+            println!("stdout: {:?}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {:?}", String::from_utf8_lossy(&output.stderr));
+            println!("exit code: {:?}", output.status.code());
+
+            // Check that the program exits with code 42
+            assert_eq!(
+                output.status.code(),
+                Some(42),
+                "Program should exit with code 42"
+            );
+
+            // Check that stdout matches expected output
+            // The program outputs the value at ps.r[0], which should be 0 for thread_id 0
+            let expected_output = "0";
+            let actual_output = String::from_utf8_lossy(&output.stdout);
+            eprintln!("actual_output = {actual_output:?}");
+            let _ = std::fs::write("/tmp/a.ppm", actual_output.as_bytes());
+            assert_eq!(
+                actual_output, expected_output,
+                "Program output should match expected output"
+            );
+        }
+        Err(e) => {
+            panic!("Skipping ptx_2.fe output integration test: {e}");
+        }
+    }
+}
+
+#[test]
+#[ignore]
+#[cfg(feature = "has-ptx-device")]
+fn test_ptx_3_output() {
+    let result = compile_and_execute_with_ptx_output("../testcases/felis/single/ptx_3.fe");
+
+    match result {
+        Ok(output) => {
+            println!("ptx_3.fe executed successfully");
+            println!("stdout: {:?}", String::from_utf8_lossy(&output.stdout));
+            println!("stderr: {:?}", String::from_utf8_lossy(&output.stderr));
+            println!("exit code: {:?}", output.status.code());
+
+            // Check that the program exits with code 42
+            assert_eq!(
+                output.status.code(),
+                Some(42),
+                "Program should exit with code 42"
+            );
+
+            // Check that stdout matches expected output
+            // The program outputs the value at ps.r[0], which should be 0 for thread_id 0
+            let expected_output = "P3\n2 2\n255\n0 0 51\n255 0 51\n0 255 51\n255 255 51\n";
+            let actual_output = String::from_utf8_lossy(&output.stdout);
+            eprintln!("actual_output = {actual_output:?}");
+            // std::fs::write("/tmp/a.ppm", actual_output.as_bytes());
+            assert_eq!(
+                actual_output, expected_output,
+                "Program output should match expected output"
+            );
+        }
+        Err(e) => {
+            panic!("Skipping ptx_3.fe output integration test: {e}");
         }
     }
 }

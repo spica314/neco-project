@@ -1,0 +1,30 @@
+#entrypoint main;
+
+#use_builtin "syscall" #as __syscall;
+#use_builtin "f32_add" #as __f32_add;
+#use_builtin "f32_to_u64" #as __f32_to_u64;
+
+#array Points {
+    #item: #struct {
+        x: f32,
+        y: f32,
+        z: f32,
+    },
+    #dimension: 1,
+    #new_with_size: new_with_size,
+}
+
+#proc main : () -> () {
+    #let points = Points::new_with_size 1;
+    points.x 0 <- 10.0f32;
+    points.y 0 <- 14.0f32;
+    points.z 0 <- 18.0f32;
+
+    #let a = points .x 0 .*;
+    #let s = __f32_add a (points .y 0 .*);
+    #let t = __f32_add s (points .z 0 .*);
+
+    #let syscall_id = 231u64;
+    #let error_code = __f32_to_u64 t;
+    __syscall syscall_id error_code 0 0 0 0;
+}

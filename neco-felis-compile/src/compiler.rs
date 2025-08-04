@@ -1,4 +1,7 @@
-use crate::{compile_options::CompileOptions, error::CompileError};
+use crate::{
+    compile_options::CompileOptions, error::CompileError, ptx::PtxCompiler,
+    statement::StatementCompiler,
+};
 use neco_felis_syn::*;
 use std::collections::HashMap;
 
@@ -27,6 +30,10 @@ pub struct AssemblyCompiler {
     pub compile_options: CompileOptions,
     pub ptx_output: String,
     pub ptx_functions: Vec<String>,
+    pub ptx_registers: HashMap<String, String>, // Maps variable names to PTX registers
+    pub ptx_next_u64_reg: usize,
+    pub ptx_next_u32_reg: usize,
+    pub ptx_next_f32_reg: usize,
 }
 
 impl AssemblyCompiler {
@@ -44,6 +51,10 @@ impl AssemblyCompiler {
             compile_options,
             ptx_output: String::new(),
             ptx_functions: Vec::new(),
+            ptx_registers: HashMap::new(),
+            ptx_next_u64_reg: 4, // Start from %rd4 (1-3 are for params)
+            ptx_next_u32_reg: 1,
+            ptx_next_f32_reg: 1,
         }
     }
 
@@ -126,16 +137,52 @@ __cu_device_ptr:
     # cuInit(0)
     mov     edi, 0
     call    cuInit@PLT
+    test    eax, eax
+    jz      cuda_init_ok
+    # cuInit failed - print error and exit
+    mov     rax, 1
+    mov     rdi, 2
+    mov     rsi, offset cuda_init_error
+    mov     rdx, 17
+    syscall
+    mov     rax, 60
+    mov     rdi, 1
+    syscall
+cuda_init_ok:
     # cuDeviceGet(&cu_device, 0)
     mov	    esi, 0
     lea	    rdi, __cu_device[rip]
     call    cuDeviceGet@PLT
+    test    eax, eax
+    jz      cuda_device_ok
+    # cuDeviceGet failed - print error and exit
+    mov     rax, 1
+    mov     rdi, 2
+    mov     rsi, offset cuda_device_error
+    mov     rdx, 20
+    syscall
+    mov     rax, 60
+    mov     rdi, 2
+    syscall
+cuda_device_ok:
     # cuCtxCreate_v2(&cu_context, 0, cu_device)
     mov	    eax, DWORD PTR __cu_device[rip]
     mov	    edx, eax
     mov	    esi, 0
     lea	    rdi, __cu_context[rip]
     call    cuCtxCreate_v2@PLT
+    test    eax, eax
+    jz      cuda_context_ok
+    # cuCtxCreate_v2 failed - print error and exit
+    mov     rax, 1
+    mov     rdi, 2
+    mov     rsi, offset cuda_context_error
+    mov     rdx, 21
+    syscall
+    mov     rax, 60
+    mov     rdi, 3
+    syscall
+cuda_context_ok:
 "#;
                 self.output.push_str(s);
 
@@ -152,6 +199,25 @@ __cu_device_ptr:
             // Add PTX code as data
             if !self.ptx_output.is_empty() {
                 self.output.push_str("\n.section .rodata\n");
+
+                // Add CUDA error messages
+                self.output.push_str("cuda_init_error:\n");
+                self.output.push_str("    .asciz \"CUDA init failed\\n\"\n");
+                self.output.push_str("cuda_device_error:\n");
+                self.output
+                    .push_str("    .asciz \"CUDA device failed\\n\"\n");
+                self.output.push_str("cuda_context_error:\n");
+                self.output
+                    .push_str("    .asciz \"CUDA context failed\\n\"\n");
+                self.output.push_str("cuda_module_error:\n");
+                self.output
+                    .push_str("    .asciz \"PTX module load failed\\n\"\n");
+                self.output.push_str("cuda_function_error:\n");
+                self.output
+                    .push_str("    .asciz \"PTX function get failed\\n\"\n");
+                self.output.push_str("cuda_launch_error:\n");
+                self.output
+                    .push_str("    .asciz \"PTX kernel launch failed\\n\"\n");
 
                 // Add PTX function names
                 for func_name in &self.ptx_functions {
@@ -351,13 +417,31 @@ __cu_device_ptr:
     ) -> Result<(), CompileError> {
         match statements {
             Statements::Then(then) => {
-                self.compile_statement(&then.head)?;
+                StatementCompiler::compile_statement(
+                    &then.head,
+                    &mut self.variables,
+                    &mut self.reference_variables,
+                    &self.builtins,
+                    &self.arrays,
+                    &mut self.variable_arrays,
+                    &mut self.stack_offset,
+                    &mut self.output,
+                )?;
                 match &*then.tail {
                     Statements::Nil => Ok(()),
                     _ => self.compile_statements(&then.tail),
                 }
             }
-            Statements::Statement(statement) => self.compile_statement(statement),
+            Statements::Statement(statement) => StatementCompiler::compile_statement(
+                statement,
+                &mut self.variables,
+                &mut self.reference_variables,
+                &self.builtins,
+                &self.arrays,
+                &mut self.variable_arrays,
+                &mut self.stack_offset,
+                &mut self.output,
+            ),
             Statements::Nil => Ok(()),
         }
     }
@@ -366,154 +450,64 @@ __cu_device_ptr:
         &mut self,
         proc_term: &ProcTerm<PhaseParse>,
     ) -> Result<(), CompileError> {
-        match proc_term {
-            ProcTerm::Apply(apply) => self.compile_proc_apply(apply),
-            ProcTerm::Variable(var) => self.compile_proc_variable(var),
-            ProcTerm::FieldAccess(field_access) => self.compile_proc_field_access(field_access),
-            ProcTerm::ConstructorCall(constructor_call) => {
-                self.compile_proc_constructor_call(constructor_call)
-            }
-            ProcTerm::Dereference(dereference) => self.compile_proc_dereference(dereference),
-            ProcTerm::If(if_expr) => crate::control_flow::compile_proc_if(self, if_expr),
-            _ => Err(CompileError::UnsupportedConstruct(format!("{proc_term:?}"))),
-        }
+        crate::statement::expressions::compile_proc_term(
+            proc_term,
+            &self.variables,
+            &self.reference_variables,
+            &self.builtins,
+            &self.arrays,
+            &mut HashMap::new(), // We don't modify variable_arrays in proc terms
+            &mut self.output,
+        )
     }
 
     pub fn compile_proc_variable(
         &mut self,
         var: &ProcTermVariable<PhaseParse>,
     ) -> Result<(), CompileError> {
-        let var_name = var.variable.s();
-
-        // Check if the variable exists in our variable map
-        if let Some(&offset) = self.variables.get(var_name) {
-            // Load the variable value from its stack location into rax
-            self.output.push_str(&format!(
-                "    mov rax, qword ptr [rbp - 8 - {}]\n",
-                offset - 8
-            ));
-            Ok(())
-        } else {
-            Err(CompileError::UnsupportedConstruct(format!(
-                "Unknown variable: {var_name}"
-            )))
-        }
+        crate::statement::expressions::compile_proc_variable(var, &self.variables, &mut self.output)
     }
 
     pub fn compile_proc_apply(
         &mut self,
         apply: &ProcTermApply<PhaseParse>,
     ) -> Result<(), CompileError> {
-        if let ProcTerm::Variable(var) = &*apply.f {
-            if let Some(builtin) = self.builtins.get(var.variable.s()) {
-                if builtin == "syscall" {
-                    return self.compile_proc_syscall(&apply.args);
-                }
-            } else {
-                // This is a call to a user-defined procedure
-                let proc_name = var.variable.s();
-
-                // Set up arguments in registers (following System V ABI)
-                for (i, arg) in apply.args.iter().enumerate() {
-                    match i {
-                        0 => self.load_proc_argument_into_register(arg, "rdi")?,
-                        1 => self.load_proc_argument_into_register(arg, "rsi")?,
-                        2 => self.load_proc_argument_into_register(arg, "rdx")?,
-                        3 => self.load_proc_argument_into_register(arg, "rcx")?,
-                        4 => self.load_proc_argument_into_register(arg, "r8")?,
-                        5 => self.load_proc_argument_into_register(arg, "r9")?,
-                        _ => {
-                            return Err(CompileError::UnsupportedConstruct(
-                                "More than 6 arguments not supported".to_string(),
-                            ));
-                        }
-                    }
-                }
-
-                // Call the user-defined procedure
-                self.output.push_str(&format!("    call {proc_name}\n"));
-                return Ok(());
-            }
-        }
-        Err(CompileError::UnsupportedConstruct(format!("{apply:?}")))
+        crate::statement::expressions::compile_proc_apply(
+            apply,
+            &self.variables,
+            &self.builtins,
+            &self.arrays,
+            &self.variable_arrays,
+            &mut self.output,
+        )
     }
 
     pub fn compile_proc_field_access(
         &mut self,
         field_access: &ProcTermFieldAccess<PhaseParse>,
     ) -> Result<(), CompileError> {
-        let object_name = field_access.object.s();
-        let field_name = field_access.field.s();
-
-        // Check if this is a Structure of Arrays (SoA) access
-        let soa_ptr_var_name = format!("{object_name}_{field_name}_ptr");
-        if let Some(&ptr_offset) = self.variables.get(&soa_ptr_var_name) {
-            // This is SoA access - load the field array pointer
-            self.output.push_str(&format!(
-                "    mov rax, qword ptr [rbp - 8 - {}]\n",
-                ptr_offset - 8
-            ));
-
-            // Handle index if present
-            if let Some(index_term) = &field_access.index {
-                // Get array info for element size calculation
-                if let Some(array_type_name) = self.variable_arrays.get(object_name)
-                    && let Some(array_info) = self.arrays.get(array_type_name)
-                {
-                    let element_size = crate::arrays::get_element_size(
-                        &array_info.field_types,
-                        &array_info.field_names,
-                        field_name,
-                    )?;
-
-                    match &**index_term {
-                        ProcTerm::Number(num) => {
-                            let index = crate::arrays::parse_number(num.number.s());
-                            let offset = index.parse::<usize>().unwrap_or(0) * element_size;
-                            if offset > 0 {
-                                self.output.push_str(&format!("    add rax, {offset}\n"));
-                            }
-                        }
-                        ProcTerm::Variable(var) => {
-                            if let Some(&var_offset) = self.variables.get(var.variable.s()) {
-                                self.output.push_str(&format!(
-                                    "    mov rbx, qword ptr [rbp - 8 - {}]\n",
-                                    var_offset - 8
-                                ));
-                                self.output
-                                    .push_str(&format!("    mov rcx, {element_size}\n"));
-                                self.output.push_str("    imul rbx, rcx\n");
-                                self.output.push_str("    add rax, rbx\n");
-                            }
-                        }
-                        _ => {
-                            return Err(CompileError::UnsupportedConstruct(format!(
-                                "Unsupported index type in field access: {index_term:?}"
-                            )));
-                        }
-                    }
-                }
-            }
-            // rax now contains the address of the field element in the SoA
-            Ok(())
-        } else {
-            Err(CompileError::UnsupportedConstruct(format!(
-                "Unknown variable: {object_name}"
-            )))
-        }
+        crate::statement::memory::compile_proc_field_access(
+            field_access,
+            &self.variables,
+            &self.arrays,
+            &self.variable_arrays,
+            &mut self.output,
+        )
     }
 
     pub fn compile_proc_dereference(
         &mut self,
         dereference: &ProcTermDereference<PhaseParse>,
     ) -> Result<(), CompileError> {
-        // First compile the term that produces a reference
-        self.compile_proc_term(&dereference.term)?;
-
-        // Then dereference it - rax contains the address, we need to load the value
-        self.output.push_str("    mov eax, dword ptr [rax]\n");
-
-        Ok(())
+        crate::statement::memory::compile_proc_dereference(
+            dereference,
+            &self.variables,
+            &self.reference_variables,
+            &self.builtins,
+            &self.arrays,
+            &mut HashMap::new(), // We don't modify variable_arrays in dereferences
+            &mut self.output,
+        )
     }
 
     pub fn compile_proc_constructor_call_with_var(
@@ -521,177 +515,39 @@ __cu_device_ptr:
         constructor_call: &ProcTermConstructorCall<PhaseParse>,
         var_name: &str,
     ) -> Result<(), CompileError> {
-        let type_name = constructor_call.type_name.s();
-        let method_name = constructor_call.method.s();
-        let constructor_name = format!("{type_name}::{method_name}");
-
-        if constructor_name.contains("::new_with_size") {
-            // Look up array information
-            if let Some(array_info) = self.arrays.get(type_name).cloned() {
-                // Get the size argument
-                let size_arg = if !constructor_call.args.is_empty()
-                    && let Some(arg) = constructor_call.args.first()
-                {
-                    match arg {
-                        ProcTerm::Number(num) => num.number.s().to_string(),
-                        ProcTerm::Variable(var) => {
-                            if let Some(&offset) = self.variables.get(var.variable.s()) {
-                                // Load variable value into rsi for use by SoA allocation
-                                self.output.push_str(&format!(
-                                    "    mov rsi, qword ptr [rbp - 8 - {}]\n",
-                                    offset - 8
-                                ));
-                                "rsi".to_string()
-                            } else {
-                                return Err(CompileError::UnsupportedConstruct(format!(
-                                    "Unknown variable in array size: {}",
-                                    var.variable.s()
-                                )));
-                            }
-                        }
-                        _ => {
-                            return Err(CompileError::UnsupportedConstruct(format!(
-                                "Unsupported size argument type: {arg:?}"
-                            )));
-                        }
-                    }
-                } else {
-                    return Err(CompileError::UnsupportedConstruct(
-                        "Missing size argument for array constructor".to_string(),
-                    ));
-                };
-
-                // Generate Structure of Arrays allocation using variable name
-                crate::arrays::generate_soa_allocation_with_var(
-                    var_name,
-                    &array_info,
-                    &size_arg,
-                    &mut self.output,
-                    &mut self.stack_offset,
-                    &mut self.variables,
-                )?;
-
-                Ok(())
-            } else {
-                Err(CompileError::UnsupportedConstruct(format!(
-                    "Array type not found: {type_name}"
-                )))
-            }
-        } else {
-            Err(CompileError::UnsupportedConstruct(format!(
-                "Constructor call not yet implemented: {constructor_name}"
-            )))
-        }
+        crate::statement::constructors::compile_proc_constructor_call_with_var(
+            constructor_call,
+            var_name,
+            &self.arrays,
+            &mut self.output,
+            &mut self.stack_offset,
+            &mut self.variables,
+            &mut self.variable_arrays,
+        )
     }
 
     pub fn compile_proc_constructor_call(
         &mut self,
         constructor_call: &ProcTermConstructorCall<PhaseParse>,
     ) -> Result<(), CompileError> {
-        let type_name = constructor_call.type_name.s();
-        let method_name = constructor_call.method.s();
-        let constructor_name = format!("{type_name}::{method_name}");
-
-        if constructor_name.contains("::new_with_size") {
-            // Look up array information
-            if let Some(array_info) = self.arrays.get(type_name).cloned() {
-                // Get the size argument
-                let size_arg = if !constructor_call.args.is_empty()
-                    && let Some(arg) = constructor_call.args.first()
-                {
-                    match arg {
-                        ProcTerm::Number(num) => num.number.s().to_string(),
-                        ProcTerm::Variable(var) => {
-                            if let Some(&offset) = self.variables.get(var.variable.s()) {
-                                // Load variable value into rsi for use by SoA allocation
-                                self.output.push_str(&format!(
-                                    "    mov rsi, qword ptr [rbp - 8 - {}]\n",
-                                    offset - 8
-                                ));
-                                "rsi".to_string()
-                            } else {
-                                return Err(CompileError::UnsupportedConstruct(format!(
-                                    "Unknown variable in array size: {}",
-                                    var.variable.s()
-                                )));
-                            }
-                        }
-                        _ => {
-                            return Err(CompileError::UnsupportedConstruct(format!(
-                                "Unsupported size argument type: {arg:?}"
-                            )));
-                        }
-                    }
-                } else {
-                    return Err(CompileError::UnsupportedConstruct(
-                        "Missing size argument for array constructor".to_string(),
-                    ));
-                };
-
-                // Generate Structure of Arrays allocation
-                crate::arrays::generate_soa_allocation(
-                    type_name,
-                    &array_info,
-                    &size_arg,
-                    &mut self.output,
-                    &mut self.stack_offset,
-                    &mut self.variables,
-                    &mut self.arrays,
-                )?;
-
-                Ok(())
-            } else {
-                Err(CompileError::UnsupportedConstruct(format!(
-                    "Array type not found: {type_name}"
-                )))
-            }
-        } else {
-            Err(CompileError::UnsupportedConstruct(format!(
-                "Constructor call not yet implemented: {constructor_name}"
-            )))
-        }
+        crate::statement::constructors::compile_proc_constructor_call(
+            constructor_call,
+            &self.arrays,
+            &mut self.output,
+            &mut self.stack_offset,
+            &mut self.variables,
+        )
     }
 
     pub fn compile_proc_syscall(
         &mut self,
         args: &[ProcTerm<PhaseParse>],
     ) -> Result<(), CompileError> {
-        if args.len() != 6 {
-            return Err(CompileError::InvalidSyscall);
-        }
-
-        let registers = ["rax", "rdi", "rsi", "rdx", "r10", "r8"];
-
-        for (i, arg) in args.iter().enumerate() {
-            match arg {
-                ProcTerm::Number(num) => {
-                    let number_value = self.parse_number(num.number.s());
-                    self.output
-                        .push_str(&format!("    mov {}, {}\n", registers[i], number_value));
-                }
-                ProcTerm::Variable(var) => {
-                    let var_name = var.variable.s();
-                    if let Some(&offset) = self.variables.get(var_name) {
-                        // Load value from stack into register
-                        self.output.push_str(&format!(
-                            "    mov {}, qword ptr [rbp - 8 - {}]\n",
-                            registers[i],
-                            offset - 8
-                        ));
-                    } else {
-                        return Err(CompileError::UnsupportedConstruct(format!(
-                            "Unknown variable: {var_name}"
-                        )));
-                    }
-                }
-                _ => {
-                    return Err(CompileError::InvalidSyscall);
-                }
-            }
-        }
-
-        self.output.push_str("    syscall\n");
-        Ok(())
+        crate::syscall::SyscallCompiler::compile_proc_syscall(
+            args,
+            &self.variables,
+            &mut self.output,
+        )
     }
 
     pub fn parse_number(&self, number_str: &str) -> String {
@@ -707,195 +563,32 @@ __cu_device_ptr:
         arg: &ProcTerm<PhaseParse>,
         register: &str,
     ) -> Result<(), CompileError> {
-        match arg {
-            ProcTerm::Number(number) => {
-                let value = self.parse_number(number.number.s());
-                self.output
-                    .push_str(&format!("    mov {register}, {value}\n"));
-                Ok(())
-            }
-            ProcTerm::Variable(var) => {
-                if let Some(offset) = self.variables.get(var.variable.s()) {
-                    self.output.push_str(&format!(
-                        "    mov {register}, qword ptr [rbp - 8 - {}]\n",
-                        offset - 8
-                    ));
-                } else {
-                    self.output.push_str(&format!("    mov {register}, 0\n"));
-                }
-                Ok(())
-            }
-            _ => Err(CompileError::UnsupportedConstruct(format!(
-                "Unsupported argument type: {arg:?}"
-            ))),
-        }
+        crate::syscall::SyscallCompiler::load_proc_argument_into_register(
+            arg,
+            register,
+            &self.variables,
+            &mut self.output,
+        )
     }
 
     pub fn count_let_variables_in_proc_block(&self, block: &ItemProcBlock<PhaseParse>) -> i32 {
-        Self::count_let_variables_in_statements(&block.statements)
+        crate::statement::utils::count_let_variables_in_statements(&block.statements)
     }
 
     pub fn has_ptx_calls_in_proc_block(&self, block: &ItemProcBlock<PhaseParse>) -> bool {
-        Self::has_ptx_calls_in_statements(&block.statements)
-    }
-
-    pub fn count_let_variables_in_statements(statements: &Statements<PhaseParse>) -> i32 {
-        match statements {
-            Statements::Then(then) => {
-                Self::count_let_variables_in_statement(&then.head)
-                    + Self::count_let_variables_in_statements(&then.tail)
-            }
-            Statements::Statement(statement) => Self::count_let_variables_in_statement(statement),
-            Statements::Nil => 0,
-        }
-    }
-
-    pub fn count_let_variables_in_statement(statement: &Statement<PhaseParse>) -> i32 {
-        match statement {
-            Statement::Let(_) => 1,
-            Statement::LetMut(_) => 2, // let mut uses 2 stack slots: one for value, one for reference
-            Statement::Expr(proc_term) => Self::count_let_variables_in_proc_term(proc_term),
-            _ => 0,
-        }
-    }
-
-    pub fn count_let_variables_in_proc_term(_proc_term: &ProcTerm<PhaseParse>) -> i32 {
-        0
-    }
-
-    pub fn has_ptx_calls_in_statements(statements: &Statements<PhaseParse>) -> bool {
-        match statements {
-            Statements::Then(then) => {
-                Self::has_ptx_calls_in_statement(&then.head)
-                    || Self::has_ptx_calls_in_statements(&then.tail)
-            }
-            Statements::Statement(statement) => Self::has_ptx_calls_in_statement(statement),
-            Statements::Nil => false,
-        }
-    }
-
-    pub fn has_ptx_calls_in_statement(statement: &Statement<PhaseParse>) -> bool {
-        match statement {
-            Statement::CallPtx(_) => true,
-            Statement::Expr(proc_term) => Self::has_ptx_calls_in_proc_term(proc_term),
-            _ => false,
-        }
-    }
-
-    pub fn has_ptx_calls_in_proc_term(proc_term: &ProcTerm<PhaseParse>) -> bool {
-        match proc_term {
-            ProcTerm::If(if_expr) => {
-                Self::has_ptx_calls_in_statements(&if_expr.then_body)
-                    || if_expr.else_clause.as_ref().is_some_and(|else_clause| {
-                        Self::has_ptx_calls_in_statements(&else_clause.else_body)
-                    })
-            }
-            _ => false,
-        }
+        crate::statement::utils::has_ptx_calls_in_statements(&block.statements)
     }
 
     pub fn compile_ptx_proc(&mut self, proc: &ItemProc<PhaseParse>) -> Result<(), CompileError> {
-        // Add function name to PTX functions list
-        self.ptx_functions.push(proc.name.s().to_string());
+        let mut ptx_compiler = PtxCompiler::new();
+        ptx_compiler.builtins = self.builtins.clone();
 
-        // Start PTX function
-        self.ptx_output
-            .push_str(&format!(".visible .entry {}(\n", proc.name.s()));
+        ptx_compiler.compile_ptx_proc(proc)?;
 
-        // Extract parameter names and types
-        let param_names = self.extract_proc_parameters(&proc.ty);
-
-        // Handle parameters
-        if param_names.is_empty() {
-            // No parameters
-        } else if param_names.len() == 1 {
-            // For now, assume single array parameter with struct elements
-            // Generate parameter declarations for SoA fields
-            self.ptx_output.push_str("    .param .u64 ps_r,\n");
-            self.ptx_output.push_str("    .param .u64 ps_g,\n");
-            self.ptx_output.push_str("    .param .u64 ps_b\n");
-        } else {
-            return Err(CompileError::UnsupportedConstruct(
-                "PTX kernels with multiple parameters not yet supported".to_string(),
-            ));
-        }
-
-        self.ptx_output.push_str(")\n{\n");
-
-        // Generate PTX body
-        let has_params = !param_names.is_empty();
-        self.compile_ptx_proc_block(&proc.proc_block, has_params)?;
-
-        self.ptx_output.push_str("    ret;\n");
-        self.ptx_output.push_str("}\n\n");
-
-        self.variables.clear();
-        Ok(())
-    }
-
-    pub fn compile_ptx_proc_block(
-        &mut self,
-        block: &ItemProcBlock<PhaseParse>,
-        has_params: bool,
-    ) -> Result<(), CompileError> {
-        // Initialize PTX registers for parameters
-        self.ptx_output.push_str("    .reg .u64 %rd<20>;\n");
-        self.ptx_output.push_str("    .reg .u32 %r<20>;\n");
-        self.ptx_output.push_str("    .reg .f32 %f<20>;\n");
-        self.ptx_output.push('\n');
-
-        // Load parameters only if there are any
-        if has_params {
-            self.ptx_output.push_str("    ld.param.u64 %rd1, [ps_r];\n");
-            self.ptx_output.push_str("    ld.param.u64 %rd2, [ps_g];\n");
-            self.ptx_output.push_str("    ld.param.u64 %rd3, [ps_b];\n");
-            self.ptx_output.push('\n');
-        }
-
-        // Compile statements
-        self.compile_ptx_statements(&block.statements)?;
+        // Update our state with PTX compiler results
+        self.ptx_output.push_str(&ptx_compiler.ptx_output);
+        self.ptx_functions.extend(ptx_compiler.ptx_functions);
 
         Ok(())
-    }
-
-    pub fn compile_ptx_statements(
-        &mut self,
-        statements: &Statements<PhaseParse>,
-    ) -> Result<(), CompileError> {
-        match statements {
-            Statements::Then(then) => {
-                self.compile_ptx_statement(&then.head)?;
-                match &*then.tail {
-                    Statements::Nil => Ok(()),
-                    _ => self.compile_ptx_statements(&then.tail),
-                }
-            }
-            Statements::Statement(statement) => self.compile_ptx_statement(statement),
-            Statements::Nil => Ok(()),
-        }
-    }
-
-    pub fn compile_ptx_statement(
-        &mut self,
-        statement: &Statement<PhaseParse>,
-    ) -> Result<(), CompileError> {
-        match statement {
-            Statement::Let(let_stmt) => {
-                // For PTX, we need to handle let statements differently
-                // This is a simplified version - real implementation would need proper register allocation
-                self.variables.insert(
-                    let_stmt.variable_name().to_string(),
-                    self.variables.len() as i32,
-                );
-                Ok(())
-            }
-            Statement::FieldAssign(_field_assign) => {
-                // PTX field assignment will be handled separately
-                Ok(())
-            }
-            _ => Err(CompileError::UnsupportedConstruct(format!(
-                "PTX statement not implemented: {statement:?}"
-            ))),
-        }
     }
 }

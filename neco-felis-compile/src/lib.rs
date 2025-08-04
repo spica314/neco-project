@@ -7,6 +7,9 @@ pub mod compile_options;
 pub mod compiler;
 pub mod control_flow;
 pub mod error;
+pub mod ptx;
+pub mod statement;
+pub mod syscall;
 
 // Re-exports
 pub use compiler::{ArrayInfo, AssemblyCompiler};
@@ -147,6 +150,53 @@ impl AssemblyCompiler {
                         offset - 8
                     ));
                     Ok(())
+                }
+            }
+            ProcTerm::Dereference(dereference) => {
+                // Handle dereference in let expression: #let a = points .x 0 .*;
+                // First compile the term that produces a reference (field access with index)
+                self.compile_proc_term(&dereference.term)?;
+
+                // Now rax contains the address, dereference it to get the value
+                // For f32 values, we need to load it properly
+                self.output.push_str("    mov rax, qword ptr [rax]\n");
+
+                // Store the dereferenced value in the let variable's stack slot
+                self.output.push_str(&format!(
+                    "    mov qword ptr [rbp - 8 - {}], rax\n",
+                    offset - 8
+                ));
+                Ok(())
+            }
+            ProcTerm::Paren(paren) => {
+                // Handle parenthesized expressions in let: #let x = (expr);
+                // Recursively compile the expression inside the parentheses
+                match &*paren.proc_term {
+                    ProcTerm::Dereference(dereference) => {
+                        // Handle dereference inside parentheses: #let x = (ps .r 0 .*);
+                        self.compile_proc_term(&dereference.term)?;
+
+                        // Now rax contains the address, dereference it to get the value
+                        self.output.push_str("    mov rax, qword ptr [rax]\n");
+
+                        // Store the dereferenced value in the let variable's stack slot
+                        self.output.push_str(&format!(
+                            "    mov qword ptr [rbp - 8 - {}], rax\n",
+                            offset - 8
+                        ));
+                        Ok(())
+                    }
+                    _ => {
+                        // For other expressions inside parentheses, compile them and store result
+                        self.compile_proc_term(&paren.proc_term)?;
+
+                        // Store the result in the let variable's stack slot
+                        self.output.push_str(&format!(
+                            "    mov qword ptr [rbp - 8 - {}], rax\n",
+                            offset - 8
+                        ));
+                        Ok(())
+                    }
                 }
             }
             _ => Err(CompileError::UnsupportedConstruct(format!(
@@ -450,6 +500,75 @@ impl AssemblyCompiler {
                     Err(CompileError::UnsupportedConstruct(format!(
                         "let mut with undefined variable: {var_name}"
                     )))
+                }
+            }
+            ProcTerm::Dereference(dereference) => {
+                // Handle dereference in let mut expression: #let mut a = points .x 0 .*;
+                // First compile the term that produces a reference (field access with index)
+                self.compile_proc_term(&dereference.term)?;
+
+                // Now rax contains the address, dereference it to get the value
+                self.output.push_str("    mov rax, qword ptr [rax]\n");
+
+                // Store the dereferenced value in the value variable's stack slot
+                self.output.push_str(&format!(
+                    "    mov qword ptr [rbp - 8 - {}], rax\n",
+                    value_offset - 8
+                ));
+
+                // Store the address of the value variable in the reference variable
+                self.output
+                    .push_str(&format!("    lea rax, [rbp - 8 - {}]\n", value_offset - 8));
+                self.output.push_str(&format!(
+                    "    mov qword ptr [rbp - 8 - {}], rax\n",
+                    ref_offset - 8
+                ));
+                Ok(())
+            }
+            ProcTerm::Paren(paren) => {
+                // Handle parenthesized expressions in let mut: #let mut x = (expr);
+                match &*paren.proc_term {
+                    ProcTerm::Dereference(dereference) => {
+                        // Handle dereference inside parentheses: #let mut x = (ps .r 0 .*);
+                        self.compile_proc_term(&dereference.term)?;
+
+                        // Now rax contains the address, dereference it to get the value
+                        self.output.push_str("    mov rax, qword ptr [rax]\n");
+
+                        // Store the dereferenced value in the value variable's stack slot
+                        self.output.push_str(&format!(
+                            "    mov qword ptr [rbp - 8 - {}], rax\n",
+                            value_offset - 8
+                        ));
+
+                        // Store the address of the value variable in the reference variable
+                        self.output
+                            .push_str(&format!("    lea rax, [rbp - 8 - {}]\n", value_offset - 8));
+                        self.output.push_str(&format!(
+                            "    mov qword ptr [rbp - 8 - {}], rax\n",
+                            ref_offset - 8
+                        ));
+                        Ok(())
+                    }
+                    _ => {
+                        // For other expressions inside parentheses, compile them and store result
+                        self.compile_proc_term(&paren.proc_term)?;
+
+                        // Store the result in the value variable's stack slot
+                        self.output.push_str(&format!(
+                            "    mov qword ptr [rbp - 8 - {}], rax\n",
+                            value_offset - 8
+                        ));
+
+                        // Store the address of the value variable in the reference variable
+                        self.output
+                            .push_str(&format!("    lea rax, [rbp - 8 - {}]\n", value_offset - 8));
+                        self.output.push_str(&format!(
+                            "    mov qword ptr [rbp - 8 - {}], rax\n",
+                            ref_offset - 8
+                        ));
+                        Ok(())
+                    }
                 }
             }
             _ => Err(CompileError::UnsupportedConstruct(format!(
@@ -944,10 +1063,20 @@ impl AssemblyCompiler {
             .push_str(&format!("    lea rdi, ptx_code_{function_name}[rip]\n"));
         self.output.push_str("    lea rsi, __cu_module[rip]\n");
         self.output.push_str("    call cuModuleLoadData@PLT\n");
-
-        // self.output.push_str("    mov rax, 231\n");
-        // self.output.push_str("    mov rdi, 41\n");
-        // self.output.push_str("    syscall\n");
+        self.output.push_str("    test eax, eax\n");
+        self.output.push_str("    jz module_load_ok\n");
+        self.output
+            .push_str("    # cuModuleLoadData failed - print error and exit\n");
+        self.output.push_str("    mov     rax, 1\n");
+        self.output.push_str("    mov     rdi, 2\n");
+        self.output
+            .push_str("    mov     rsi, offset cuda_module_error\n");
+        self.output.push_str("    mov     rdx, 21\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("    mov     rax, 60\n");
+        self.output.push_str("    mov     rdi, 4\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("module_load_ok:\n");
 
         // Get function from module
         self.output.push_str("    # Get function from module\n");
@@ -958,6 +1087,20 @@ impl AssemblyCompiler {
             "    lea rdx, ptx_function_name_{function_name}[rip]\n"
         ));
         self.output.push_str("    call cuModuleGetFunction@PLT\n");
+        self.output.push_str("    test eax, eax\n");
+        self.output.push_str("    jz function_get_ok\n");
+        self.output
+            .push_str("    # cuModuleGetFunction failed - print error and exit\n");
+        self.output.push_str("    mov     rax, 1\n");
+        self.output.push_str("    mov     rdi, 2\n");
+        self.output
+            .push_str("    mov     rsi, offset cuda_function_error\n");
+        self.output.push_str("    mov     rdx, 22\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("    mov     rax, 60\n");
+        self.output.push_str("    mov     rdi, 5\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("function_get_ok:\n");
 
         // self.output.push_str("    mov rax, 231\n");
         // self.output.push_str("    mov rdi, 41\n");
@@ -1058,9 +1201,23 @@ impl AssemblyCompiler {
 
         self.output.push_str("    call cuLaunchKernel@PLT\n");
         self.output.push_str("    add rsp, 48\n"); // Clean up stack
+        self.output.push_str("    test eax, eax\n");
+        self.output.push_str("    jz kernel_launch_ok\n");
+        self.output
+            .push_str("    # cuLaunchKernel failed - print error and exit\n");
+        self.output.push_str("    mov     rax, 1\n");
+        self.output.push_str("    mov     rdi, 2\n");
+        self.output
+            .push_str("    mov     rsi, offset cuda_launch_error\n");
+        self.output.push_str("    mov     rdx, 22\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("    mov     rax, 60\n");
+        self.output.push_str("    mov     rdi, 6\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("kernel_launch_ok:\n");
 
-        // // Synchronize
-        // self.output.push_str("    call cuCtxSynchronize@PLT\n");
+        // Synchronize
+        self.output.push_str("    call cuCtxSynchronize@PLT\n");
 
         if has_array {
             // Copy results back

@@ -1,6 +1,6 @@
-# neco-project
+# The Felis Programming Language
 
-Hobbyist-created compiler (neco) and programming language (Felis)
+Hobbyist-created programming language (Felis) and compiler (neco)
 
 ## License
 

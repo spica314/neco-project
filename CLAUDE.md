@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**neco-project** is a hobbyist compiler and programming language implementation:
-- **neco**: Compiler for the Felis programming language
+**The Felis Programming Language (felis-lang)** is a comprehensive repository for the Felis programming language ecosystem:
 - **Felis**: Dependently-typed functional programming language implementing Calculus of Inductive Constructions (CIC)
+- **neco**: The compiler implementation for the Felis programming language
+- Contains all components related to Felis including compiler, language specification, tooling, and documentation
 
 ## Workspace Architecture
 

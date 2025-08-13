@@ -11,11 +11,10 @@
         z: f32,
     },
     #dimension: 1,
-    #new_with_size: new_with_size,
 }
 
 #proc main : () -> () {
-    #let points = Points::new_with_size 1;
+    #let points = Points::#new_with_size 1;
     points.x 0 <- 10.0f32;
     points.y 0 <- 14.0f32;
     points.z 0 <- 18.0f32;

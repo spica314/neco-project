@@ -81,9 +81,6 @@ pub fn compile_array(
                     dimension = num.number.s().parse::<usize>().unwrap_or(1);
                 }
             }
-            "new_with_size" => {
-                // This defines the constructor method name, we'll handle it in constructor call
-            }
             _ => {}
         }
     }

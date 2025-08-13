@@ -155,7 +155,7 @@ mod test {
                 match &file.items[4] {
                     crate::Item::Array(array) => {
                         assert_eq!(array.name().s(), "Points");
-                        assert_eq!(array.fields().len(), 3);
+                        assert_eq!(array.fields().len(), 2);
                     }
                     _ => panic!("Expected 5th item to be an array"),
                 }

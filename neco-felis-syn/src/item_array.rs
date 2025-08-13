@@ -85,8 +85,6 @@ impl Parse for ItemArrayField<PhaseParse> {
             kw
         } else if let Some(kw) = TokenKeyword::parse_keyword(tokens, &mut k, "dimension")? {
             kw
-        } else if let Some(kw) = TokenKeyword::parse_keyword(tokens, &mut k, "new_with_size")? {
-            kw
         } else {
             return Ok(None);
         };

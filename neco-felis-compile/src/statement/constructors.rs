@@ -13,9 +13,9 @@ pub fn compile_proc_constructor_call_with_var(
 ) -> Result<(), CompileError> {
     let type_name = constructor_call.type_name.s();
     let method_name = constructor_call.method.s();
-    let constructor_name = format!("{type_name}::{method_name}");
+    let constructor_name = format!("{type_name}::#{method_name}");
 
-    if constructor_name.contains("::new_with_size") {
+    if constructor_name.contains("::#new_with_size") {
         // Look up array information
         if let Some(array_info) = arrays.get(type_name).cloned() {
             // Register the variable to array type mapping
@@ -85,9 +85,9 @@ pub fn compile_proc_constructor_call(
 ) -> Result<(), CompileError> {
     let type_name = constructor_call.type_name.s();
     let method_name = constructor_call.method.s();
-    let constructor_name = format!("{type_name}::{method_name}");
+    let constructor_name = format!("{type_name}::#{method_name}");
 
-    if constructor_name.contains("::new_with_size") {
+    if constructor_name.contains("::#new_with_size") {
         // Look up array information
         if let Some(array_info) = arrays.get(type_name).cloned() {
             // Get the size argument

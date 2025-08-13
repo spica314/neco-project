@@ -25,7 +25,6 @@
         b: u64,
     },
     #dimension: 1,
-    #new_with_size: new_with_size,
 }
 
 #ptx #proc f : (ps: Pixels) -> () {
@@ -95,7 +94,7 @@
 }
 
 #proc main2 : () -> () {
-    #let ps = Pixels::new_with_size 65536;
+    #let ps = Pixels::#new_with_size 65536;
 
     #call_ptx f ps 256 1 1 256 1 1;
 

@@ -25,7 +25,6 @@
         b: u64,
     },
     #dimension: 1,
-    #new_with_size: new_with_size,
 }
 
 #proc print_c : (x: __u64) -> () {
@@ -63,7 +62,7 @@
 }
 
 #proc main2 : () -> () {
-    #let ps = Pixels::new_with_size 4;
+    #let ps = Pixels::#new_with_size 4;
     ps.r 0 <- 0;
     ps.g 0 <- 1;
     ps.b 0 <- 2;

@@ -25,7 +25,6 @@
         b: u64,
     },
     #dimension: 1,
-    #new_with_size: new_with_size,
 }
 
 #ptx #proc f : (ps: Pixels) -> () {
@@ -56,7 +55,7 @@
     #let ib = __f32_to_u64 ib_sub;
 
     ps.r thread_id <- 99;
-    ps.g thread_id <- 88;  
+    ps.g thread_id <- 88;
     ps.b thread_id <- 77;
 }
 
@@ -95,7 +94,7 @@
 }
 
 #proc main2 : () -> () {
-    #let ps = Pixels::new_with_size 65536;
+    #let ps = Pixels::#new_with_size 65536;
 
     #call_ptx f ps 2 1 1 2 1 1;
 

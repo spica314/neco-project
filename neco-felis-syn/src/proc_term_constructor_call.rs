@@ -1,13 +1,13 @@
 use crate::{
     Parse, ParseError, Phase, PhaseParse, ProcTerm, ProcTermNumber, ProcTermVariable,
-    token::{Token, TokenOperator, TokenVariable},
+    token::{Token, TokenKeyword, TokenOperator, TokenVariable},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ProcTermConstructorCall<P: Phase> {
     pub type_name: TokenVariable,
     pub double_colon: TokenOperator,
-    pub method: TokenVariable,
+    pub method: TokenKeyword, // Changed from TokenVariable to TokenKeyword for #method_name
     pub args: Vec<ProcTerm<P>>,
     pub ext: P::ProcTermConstructorCallExt,
 }
@@ -26,9 +26,17 @@ impl Parse for ProcTermConstructorCall<PhaseParse> {
             return Ok(None);
         };
 
-        // Parse method name
-        let Some(method) = TokenVariable::parse(tokens, &mut k)? else {
-            return Err(ParseError::Unknown("expected method name after '::'"));
+        // Parse method name (now expects #method_name as a keyword)
+        // Check if next token is a keyword (starts with #)
+        if k >= tokens.len() {
+            return Err(ParseError::Unknown("expected #method_name after '::'"));
+        }
+
+        let method = if let Token::Keyword(keyword) = &tokens[k] {
+            k += 1;
+            keyword.clone()
+        } else {
+            return Err(ParseError::Unknown("expected #method_name after '::'"));
         };
 
         // Parse arguments (simple terms only to avoid infinite recursion)

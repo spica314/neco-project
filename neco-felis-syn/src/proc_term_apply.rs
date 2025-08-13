@@ -1,6 +1,6 @@
 use crate::{
-    Parse, ParseError, Phase, PhaseParse, ProcTerm, ProcTermFieldAccess, ProcTermNumber, ProcTermParen, ProcTermUnit,
-    ProcTermVariable, token::Token,
+    Parse, ParseError, Phase, PhaseParse, ProcTerm, ProcTermFieldAccess, ProcTermNumber,
+    ProcTermParen, ProcTermUnit, ProcTermVariable, token::Token,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -65,7 +65,9 @@ impl From<ProcTermForApplyElem> for ProcTerm<PhaseParse> {
             }
             ProcTermForApplyElem::Unit(proc_term_unit) => ProcTerm::Unit(proc_term_unit),
             ProcTermForApplyElem::Number(proc_term_number) => ProcTerm::Number(proc_term_number),
-            ProcTermForApplyElem::FieldAccess(proc_term_field_access) => ProcTerm::FieldAccess(proc_term_field_access),
+            ProcTermForApplyElem::FieldAccess(proc_term_field_access) => {
+                ProcTerm::FieldAccess(proc_term_field_access)
+            }
         }
     }
 }
@@ -82,7 +84,9 @@ impl Parse for ProcTermForApplyElem {
 
         // Try field access first before variable, since field access is more specific
         if let Some(proc_term_field_access) = ProcTermFieldAccess::parse(tokens, i)? {
-            return Ok(Some(ProcTermForApplyElem::FieldAccess(proc_term_field_access)));
+            return Ok(Some(ProcTermForApplyElem::FieldAccess(
+                proc_term_field_access,
+            )));
         }
 
         if let Some(proc_term_variable) = ProcTermVariable::parse(tokens, i)? {

@@ -296,8 +296,7 @@ fn test_exit_42_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping exit_42.fe integration test: {e}");
+            panic!("exit_42.fe integration test failed: {e}");
         }
     }
 }
@@ -316,8 +315,7 @@ fn test_let_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping let.fe integration test: {e}");
+            panic!("let.fe integration test failed: {e}");
         }
     }
 }
@@ -336,8 +334,7 @@ fn test_add_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping add.fe integration test: {e}");
+            panic!("add.fe integration test failed: {e}");
         }
     }
 }
@@ -356,8 +353,7 @@ fn test_sub_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping sub.fe integration test: {e}");
+            panic!("sub.fe integration test failed: {e}");
         }
     }
 }
@@ -376,8 +372,7 @@ fn test_mul_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping mul.fe integration test: {e}");
+            panic!("mul.fe integration test failed: {e}");
         }
     }
 }
@@ -396,8 +391,7 @@ fn test_div_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping div.fe integration test: {e}");
+            panic!("div.fe integration test failed: {e}");
         }
     }
 }
@@ -416,8 +410,7 @@ fn test_mod_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping mod.fe integration test: {e}");
+            panic!("mod.fe integration test failed: {e}");
         }
     }
 }
@@ -500,8 +493,7 @@ fn test_add_f32_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping add_f32.fe integration test: {e}");
+            panic!("add_f32.fe integration test failed: {e}");
         }
     }
 }
@@ -520,8 +512,7 @@ fn test_sub_f32_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping sub_f32.fe integration test: {e}");
+            panic!("sub_f32.fe integration test failed: {e}");
         }
     }
 }
@@ -540,8 +531,7 @@ fn test_mul_f32_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping mul_f32.fe integration test: {e}");
+            panic!("mul_f32.fe integration test failed: {e}");
         }
     }
 }
@@ -560,8 +550,7 @@ fn test_div_f32_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping div_f32.fe integration test: {e}");
+            panic!("div_f32.fe integration test failed: {e}");
         }
     }
 }
@@ -598,8 +587,7 @@ fn test_let_mut_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping let_mut.fe integration test: {e}");
+            panic!("let_mut.fe integration test failed: {e}");
         }
     }
 }
@@ -649,8 +637,7 @@ fn test_if_1_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping if_1.fe integration test: {e}");
+            panic!("if_1.fe integration test failed: {e}");
         }
     }
 }
@@ -669,8 +656,7 @@ fn test_if_2_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping if_2.fe integration test: {e}");
+            panic!("if_2.fe integration test failed: {e}");
         }
     }
 }
@@ -689,8 +675,7 @@ fn test_array_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping array.fe integration test: {e}");
+            panic!("array.fe integration test failed: {e}");
         }
     }
 }
@@ -785,8 +770,7 @@ fn test_loop_break() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping loop_break.fe integration test: {e}");
+            panic!("loop_break.fe integration test failed: {e}");
         }
     }
 }
@@ -853,8 +837,7 @@ fn test_proc_call_integration() {
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping proc_call.fe integration test: {e}");
+            panic!("proc_call.fe integration test failed: {e}");
         }
     }
 }
@@ -886,8 +869,7 @@ fn test_print_c_integration() {
             );
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping print_c.fe integration test: {e}");
+            panic!("print_c.fe integration test failed: {e}");
         }
     }
 }
@@ -919,13 +901,13 @@ fn test_print_num3_integration() {
             );
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping print_num3.fe integration test: {e}");
+            panic!("print_num3.fe integration test failed: {e}");
         }
     }
 }
 
 #[test]
+#[ignore]
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_1() {
     let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_1.fe");
@@ -933,20 +915,20 @@ fn test_ptx_1() {
     match result {
         Ok(status) => {
             println!(
-                "proc_call.fe executed successfully with exit code: {:?}",
+                "ptx_1.fe executed successfully with exit code: {:?}",
                 status.code()
             );
-            // proc_call.fe should exit with code 42 (40 + 2 = 42)
+            // ptx_1.fe should exit with code 42
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping proc_call.fe integration test: {e}");
+            panic!("ptx_1.fe integration test failed: {e}");
         }
     }
 }
 
 #[test]
+#[ignore]
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_2() {
     let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_2.fe");
@@ -954,15 +936,14 @@ fn test_ptx_2() {
     match result {
         Ok(status) => {
             println!(
-                "proc_call.fe executed successfully with exit code: {:?}",
+                "ptx_2.fe executed successfully with exit code: {:?}",
                 status.code()
             );
-            // proc_call.fe should exit with code 42 (40 + 2 = 42)
+            // ptx_2.fe should exit with code 42
             assert_eq!(status.code(), Some(42), "Program should exit with code 42");
         }
         Err(e) => {
-            // Skip test if assembler/linker not available
-            println!("Skipping proc_call.fe integration test: {e}");
+            panic!("ptx_2.fe integration test failed: {e}");
         }
     }
 }

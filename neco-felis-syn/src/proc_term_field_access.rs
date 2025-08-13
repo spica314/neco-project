@@ -25,7 +25,6 @@ impl<P: Phase> ProcTermFieldAccess<P> {
 impl Parse for ProcTermFieldAccess<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;
-        
 
         // Parse object (variable)
         let Some(object) = TokenVariable::parse(tokens, &mut k)? else {
@@ -44,10 +43,8 @@ impl Parse for ProcTermFieldAccess<PhaseParse> {
             // Check if it's a keyword token
             if let Token::Keyword(keyword) = &tokens[k] {
                 // Create a pseudo-variable with the keyword content including #
-                let field_token = TokenVariable::new(
-                    keyword.pos().clone(),
-                    format!("#{}", keyword.s())
-                );
+                let field_token =
+                    TokenVariable::new(keyword.pos().clone(), format!("#{}", keyword.s()));
                 k += 1; // Advance past the keyword
                 field_token
             } else {

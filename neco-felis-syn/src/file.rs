@@ -193,7 +193,7 @@ mod test {
 
         let mut i = 0;
         let result = File::parse(&tokens, &mut i);
-        
+
         // Debug: Print status
         if i >= 44 {
             println!("Stopped at token {i}, trying to parse remaining tokens as ItemProc");

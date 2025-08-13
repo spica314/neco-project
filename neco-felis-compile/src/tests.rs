@@ -181,6 +181,7 @@ fn compile_and_execute_with_output(
 }
 
 /// Helper function to compile, assemble, link, and execute a Felis program
+#[cfg(feature = "has-ptx-device")]
 fn compile_and_execute_with_ptx(
     file_path: &str,
 ) -> Result<std::process::ExitStatus, Box<dyn std::error::Error>> {
@@ -232,6 +233,7 @@ fn compile_and_execute_with_ptx(
 }
 
 /// Helper function to compile, assemble, link, and execute a Felis program with PTX and output capture
+#[cfg(feature = "has-ptx-device")]
 fn compile_and_execute_with_ptx_output(
     file_path: &str,
 ) -> Result<std::process::Output, Box<dyn std::error::Error>> {

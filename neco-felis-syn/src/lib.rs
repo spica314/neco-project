@@ -1,97 +1,129 @@
-pub mod file;
-pub mod file_id;
-pub mod item;
-pub mod item_array;
-pub mod item_definition;
-pub mod item_entrypoint;
-pub mod item_inductive;
-pub mod item_inductive_branch;
-pub mod item_proc;
-pub mod item_proc_block;
-pub mod item_struct;
-pub mod item_theorem;
-pub mod item_use_builtin;
-pub mod parse;
-pub mod phase;
-pub mod pos;
-pub mod proc_term;
-pub mod proc_term_apply;
-pub mod proc_term_constructor_call;
-pub mod proc_term_dereference;
-pub mod proc_term_field_access;
-pub mod proc_term_if;
-pub mod proc_term_number;
-pub mod proc_term_paren;
-pub mod proc_term_unit;
-pub mod proc_term_variable;
-pub mod statement;
-pub mod statement_assign;
-pub mod statement_break;
-pub mod statement_call_ptx;
-pub mod statement_field_assign;
-pub mod statement_let;
-pub mod statement_let_mut;
-pub mod statement_loop;
-pub mod statement_return;
-pub mod statements;
-pub mod statements_then;
-pub mod term;
-pub mod term_apply;
-pub mod term_arrow_dep;
-pub mod term_arrow_nodep;
-pub mod term_match;
-pub mod term_match_branch;
-pub mod term_number;
-pub mod term_paren;
-pub mod term_unit;
-pub mod term_variable;
-pub mod token;
+// Position and file handling
+pub mod position {
+    pub mod file;
+    pub mod file_id;
+    pub mod pos;
+}
 
-pub use file::*;
-pub use file_id::*;
-pub use item::*;
-pub use item_array::*;
-pub use item_definition::*;
-pub use item_entrypoint::*;
-pub use item_inductive::*;
-pub use item_inductive_branch::*;
-pub use item_proc::*;
-pub use item_proc_block::*;
-pub use item_struct::*;
-pub use item_theorem::*;
-pub use item_use_builtin::*;
-pub use parse::*;
-pub use phase::*;
-pub use pos::*;
-pub use proc_term::*;
-pub use proc_term_apply::*;
-pub use proc_term_constructor_call::*;
-pub use proc_term_dereference::*;
-pub use proc_term_field_access::*;
-pub use proc_term_if::*;
-pub use proc_term_number::*;
-pub use proc_term_paren::*;
-pub use proc_term_unit::*;
-pub use proc_term_variable::*;
-pub use statement::*;
-pub use statement_assign::*;
-pub use statement_break::*;
-pub use statement_call_ptx::*;
-pub use statement_field_assign::*;
-pub use statement_let::*;
-pub use statement_let_mut::*;
-pub use statement_loop::*;
-pub use statement_return::*;
-pub use statements::*;
-pub use statements_then::*;
-pub use term::*;
-pub use term_apply::*;
-pub use term_arrow_dep::*;
-pub use term_arrow_nodep::*;
-pub use term_match::*;
-pub use term_match_branch::*;
-pub use term_number::*;
-pub use term_paren::*;
-pub use term_unit::*;
-pub use term_variable::*;
-pub use token::*;
+// Items (top-level language constructs)
+pub mod items {
+    pub mod item;
+    pub mod item_array;
+    pub mod item_definition;
+    pub mod item_entrypoint;
+    pub mod item_inductive;
+    pub mod item_inductive_branch;
+    pub mod item_proc;
+    pub mod item_proc_block;
+    pub mod item_struct;
+    pub mod item_theorem;
+    pub mod item_use_builtin;
+}
+
+// Terms (expression syntax)
+pub mod terms {
+    pub mod term;
+    pub mod term_apply;
+    pub mod term_arrow_dep;
+    pub mod term_arrow_nodep;
+    pub mod term_match;
+    pub mod term_match_branch;
+    pub mod term_number;
+    pub mod term_paren;
+    pub mod term_unit;
+    pub mod term_variable;
+}
+
+// Procedural terms (procedural expression syntax)
+pub mod proc_terms {
+    pub mod proc_term;
+    pub mod proc_term_apply;
+    pub mod proc_term_constructor_call;
+    pub mod proc_term_dereference;
+    pub mod proc_term_field_access;
+    pub mod proc_term_if;
+    pub mod proc_term_number;
+    pub mod proc_term_paren;
+    pub mod proc_term_unit;
+    pub mod proc_term_variable;
+}
+
+// Statements (statement syntax)
+pub mod statements {
+    pub mod statement;
+    pub mod statement_assign;
+    pub mod statement_break;
+    pub mod statement_call_ptx;
+    pub mod statement_field_assign;
+    pub mod statement_let;
+    pub mod statement_let_mut;
+    pub mod statement_loop;
+    pub mod statement_return;
+    pub mod statements_list;
+    pub mod statements_then;
+}
+
+// Parsing infrastructure
+pub mod parsing {
+    pub mod parse;
+    pub mod phase;
+    pub mod token;
+}
+
+// Re-export all modules for backward compatibility
+pub use position::file::*;
+pub use position::file_id::*;
+pub use position::pos::*;
+
+pub use items::item::*;
+pub use items::item_array::*;
+pub use items::item_definition::*;
+pub use items::item_entrypoint::*;
+pub use items::item_inductive::*;
+pub use items::item_inductive_branch::*;
+pub use items::item_proc::*;
+pub use items::item_proc_block::*;
+pub use items::item_struct::*;
+pub use items::item_theorem::*;
+pub use items::item_use_builtin::*;
+
+pub use terms::term::*;
+pub use terms::term_apply::*;
+pub use terms::term_arrow_dep::*;
+pub use terms::term_arrow_nodep::*;
+pub use terms::term_match::*;
+pub use terms::term_match_branch::*;
+pub use terms::term_number::*;
+pub use terms::term_paren::*;
+pub use terms::term_unit::*;
+pub use terms::term_variable::*;
+
+pub use proc_terms::proc_term::*;
+pub use proc_terms::proc_term_apply::*;
+pub use proc_terms::proc_term_constructor_call::*;
+pub use proc_terms::proc_term_dereference::*;
+pub use proc_terms::proc_term_field_access::*;
+pub use proc_terms::proc_term_if::*;
+pub use proc_terms::proc_term_number::*;
+pub use proc_terms::proc_term_paren::*;
+pub use proc_terms::proc_term_unit::*;
+pub use proc_terms::proc_term_variable::*;
+
+pub use statements::statement::*;
+pub use statements::statement_assign::*;
+pub use statements::statement_break::*;
+pub use statements::statement_call_ptx::*;
+pub use statements::statement_field_assign::*;
+pub use statements::statement_let::*;
+pub use statements::statement_let_mut::*;
+pub use statements::statement_loop::*;
+pub use statements::statement_return::*;
+pub use statements::statements_list::*;
+pub use statements::statements_then::*;
+
+pub use parsing::parse::*;
+pub use parsing::phase::*;
+pub use parsing::token::*;
+
+// Re-export token module for backward compatibility with crate::token:: paths
+pub use parsing::token;

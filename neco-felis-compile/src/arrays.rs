@@ -135,6 +135,28 @@ pub fn generate_soa_allocation(
         array_info.field_names.len()
     ));
 
+    // Store the array size for later use by #len method
+    // Note: This uses array_name which may not be a variable name, but we store it just in case
+    let size_var_name = format!("{array_name}_size");
+    *stack_offset += 8;
+    let size_offset = *stack_offset;
+    variables.insert(size_var_name.clone(), size_offset);
+
+    if size == "rsi" {
+        // Size is already in rsi, store it
+        output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rsi  # Store {size_var_name}\n",
+            size_offset - 8
+        ));
+    } else {
+        // Load size and store it
+        output.push_str(&format!("    mov rax, {size}        # Load array size\n"));
+        output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax  # Store {size_var_name}\n",
+            size_offset - 8
+        ));
+    }
+
     for (field_idx, field_name) in array_info.field_names.iter().enumerate() {
         let field_type = &array_info.field_types[field_idx];
 
@@ -203,6 +225,27 @@ pub fn generate_soa_allocation_with_var(
         "    # Allocating {} separate field arrays\n",
         array_info.field_names.len()
     ));
+
+    // Store the array size for later use by #len method
+    let size_var_name = format!("{var_name}_size");
+    *stack_offset += 8;
+    let size_offset = *stack_offset;
+    variables.insert(size_var_name.clone(), size_offset);
+
+    if size == "rsi" {
+        // Size is already in rsi, store it
+        output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rsi  # Store {size_var_name}\n",
+            size_offset - 8
+        ));
+    } else {
+        // Load size and store it
+        output.push_str(&format!("    mov rax, {size}        # Load array size\n"));
+        output.push_str(&format!(
+            "    mov qword ptr [rbp - 8 - {}], rax  # Store {size_var_name}\n",
+            size_offset - 8
+        ));
+    }
 
     for (field_idx, field_name) in array_info.field_names.iter().enumerate() {
         let field_type = &array_info.field_types[field_idx];

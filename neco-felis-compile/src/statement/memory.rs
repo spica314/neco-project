@@ -141,6 +141,24 @@ pub fn compile_proc_field_access(
     let object_name = field_access.object.s();
     let field_name = field_access.field.s();
 
+    // Check if this is the #len method for an array
+    if field_name == "#len" {
+        // Look up the array size variable
+        let size_var_name = format!("{object_name}_size");
+        if let Some(&size_offset) = variables.get(&size_var_name) {
+            // Load the array size
+            output.push_str(&format!(
+                "    mov rax, qword ptr [rbp - 8 - {}]\n",
+                size_offset - 8
+            ));
+            return Ok(());
+        } else {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "Array size not found for: {object_name}"
+            )));
+        }
+    }
+
     // Check if this is a Structure of Arrays (SoA) access
     let soa_ptr_var_name = format!("{object_name}_{field_name}_ptr");
     if let Some(&ptr_offset) = variables.get(&soa_ptr_var_name) {

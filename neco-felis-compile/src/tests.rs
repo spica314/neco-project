@@ -696,6 +696,26 @@ fn test_array_integration() {
 }
 
 #[test]
+fn test_array_len_integration() {
+    let result = compile_and_execute("../testcases/felis/single/array_len.fe");
+
+    match result {
+        Ok(status) => {
+            println!(
+                "array_len.fe executed successfully with exit code: {:?}",
+                status.code()
+            );
+            // array_len.fe should exit with code 42
+            assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+        }
+        Err(e) => {
+            // Skip test if assembler/linker not available
+            panic!("Skipping array_len.fe integration test: {e}");
+        }
+    }
+}
+
+#[test]
 fn test_array_2_integration() {
     let result = compile_and_execute("../testcases/felis/single/array_2.fe");
 

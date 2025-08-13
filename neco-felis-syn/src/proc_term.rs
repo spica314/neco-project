@@ -47,19 +47,6 @@ impl Parse for ProcTerm<PhaseParse> {
             }
         }
 
-        if let Some(proc_term_field_access) = ProcTermFieldAccess::parse(tokens, i)? {
-            // Check for postfix dereference
-            if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
-                ProcTerm::FieldAccess(proc_term_field_access.clone()),
-                tokens,
-                i,
-            )? {
-                return Ok(Some(deref_term));
-            } else {
-                return Ok(Some(ProcTerm::FieldAccess(proc_term_field_access)));
-            }
-        }
-
         if let Some(proc_term_apply) = ProcTermApply::parse(tokens, i)? {
             // Check for postfix dereference
             if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
@@ -70,6 +57,19 @@ impl Parse for ProcTerm<PhaseParse> {
                 return Ok(Some(deref_term));
             } else {
                 return Ok(Some(ProcTerm::Apply(proc_term_apply)));
+            }
+        }
+
+        if let Some(proc_term_field_access) = ProcTermFieldAccess::parse(tokens, i)? {
+            // Check for postfix dereference
+            if let Some(deref_term) = ProcTermDereference::try_parse_postfix(
+                ProcTerm::FieldAccess(proc_term_field_access.clone()),
+                tokens,
+                i,
+            )? {
+                return Ok(Some(deref_term));
+            } else {
+                return Ok(Some(ProcTerm::FieldAccess(proc_term_field_access)));
             }
         }
 

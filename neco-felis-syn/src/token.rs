@@ -11,6 +11,10 @@ impl TokenKeyword {
         &self.s
     }
 
+    pub fn pos(&self) -> &Pos {
+        &self.pos
+    }
+
     pub fn parse_keyword(
         tokens: &[Token],
         i: &mut usize,
@@ -40,6 +44,10 @@ pub struct TokenVariable {
 impl TokenVariable {
     pub fn s(&self) -> &str {
         &self.s
+    }
+
+    pub fn new(pos: Pos, s: String) -> Self {
+        Self { pos, s }
     }
 }
 

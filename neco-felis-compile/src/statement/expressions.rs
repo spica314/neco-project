@@ -123,6 +123,61 @@ pub fn compile_proc_apply(
     variable_arrays: &HashMap<String, String>,
     output: &mut String,
 ) -> Result<(), CompileError> {
+    // Handle field access apply (e.g., points.#len ())
+    if let ProcTerm::FieldAccess(field_access) = &*apply.f {
+        // Check if this is an array length operation
+        if field_access.field.s() == "#len" {
+            // Ensure we have no arguments or only unit argument
+            if apply.args.len() > 1 || (apply.args.len() == 1 && !matches!(apply.args[0], ProcTerm::Unit(_))) {
+                return Err(CompileError::UnsupportedConstruct(format!(
+                    "Array length operation expects no arguments or unit argument, got {} args",
+                    apply.args.len()
+                )));
+            }
+            
+            // Generate code to get array length
+            let array_name = field_access.object.s();
+            if let Some(array_info) = arrays.get(array_name) {
+                // Static array - use compile-time size if available
+                if let Some(size) = array_info.size {
+                    output.push_str(&format!(
+                        "    mov rax, {}\n",
+                        size
+                    ));
+                    return Ok(());
+                } else {
+                    return Err(CompileError::UnsupportedConstruct(format!(
+                        "Static array {} has no size information", array_name
+                    )));
+                }
+            } else if let Some(_array_type) = variable_arrays.get(array_name) {
+                // This is a variable that holds a dynamically allocated array
+                // The size is stored in a variable named "{array_name}_size"
+                let size_var_name = format!("{}_size", array_name);
+                if let Some(&size_offset) = variables.get(&size_var_name) {
+                    // Load the array size from memory into rax
+                    output.push_str(&format!(
+                        "    mov rax, qword ptr [rbp - 8 - {}]\n",
+                        size_offset - 8
+                    ));
+                    return Ok(());
+                } else {
+                    return Err(CompileError::UnsupportedConstruct(format!(
+                        "Size variable not found for array: {}", array_name
+                    )));
+                }
+            } else {
+                return Err(CompileError::UnsupportedConstruct(format!(
+                    "Unknown array variable: {}", array_name
+                )));
+            }
+        } else {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "Unsupported field access operation: {}", field_access.field.s()
+            )));
+        }
+    }
+    
     if let ProcTerm::Variable(var) = &*apply.f {
         if let Some(builtin) = builtins.get(var.variable.s()) {
             match builtin.as_str() {

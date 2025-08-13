@@ -178,4 +178,54 @@ mod test {
             }
         }
     }
+
+    #[test]
+    fn test_parse_array_len() {
+        let mut file_id_generator = FileIdGenerator::new();
+        let file_id = file_id_generator.generate_file_id();
+        let s = std::fs::read_to_string("../testcases/felis/single/array_len.fe").unwrap();
+        let tokens = Token::lex(&s, file_id);
+
+        println!("Total tokens: {}", tokens.len());
+        for (i, token) in tokens.iter().enumerate() {
+            println!("{i}: {token:?}");
+        }
+
+        let mut i = 0;
+        let result = File::parse(&tokens, &mut i);
+        
+        // Debug: Print status
+        if i >= 44 {
+            println!("Stopped at token {i}, trying to parse remaining tokens as ItemProc");
+        }
+
+        match result {
+            Ok(Some(file)) => {
+                println!("Parsed successfully up to token {i} of {}", tokens.len());
+                if i < tokens.len() {
+                    println!("Remaining tokens: {:?}", &tokens[i..]);
+                }
+                assert_debug_snapshot!(file);
+
+                // Complete file parsing
+                assert_eq!(i, tokens.len()); // Should have parsed all tokens
+            }
+            Ok(None) => {
+                println!("Parsing returned None at token {i} of {}", tokens.len());
+                println!(
+                    "Tokens around position: {:?}",
+                    &tokens[i.saturating_sub(3)..tokens.len().min(i + 3)]
+                );
+                panic!("Parsing returned None");
+            }
+            Err(e) => {
+                println!("Parse error at token {i} of {}: {:?}", tokens.len(), e);
+                println!(
+                    "Tokens around position: {:?}",
+                    &tokens[i.saturating_sub(3)..tokens.len().min(i + 3)]
+                );
+                panic!("Parse error: {e:?}");
+            }
+        }
+    }
 }

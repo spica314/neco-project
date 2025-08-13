@@ -25,6 +25,7 @@ impl<P: Phase> ProcTermFieldAccess<P> {
 impl Parse for ProcTermFieldAccess<PhaseParse> {
     fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
         let mut k = *i;
+        
 
         // Parse object (variable)
         let Some(object) = TokenVariable::parse(tokens, &mut k)? else {
@@ -36,8 +37,23 @@ impl Parse for ProcTermFieldAccess<PhaseParse> {
             return Ok(None);
         };
 
-        // Parse field name
-        let Some(field) = TokenVariable::parse(tokens, &mut k)? else {
+        // Parse field name (can be either a variable or keyword like #len)
+        let field = if let Some(variable) = TokenVariable::parse(tokens, &mut k)? {
+            variable
+        } else if k < tokens.len() {
+            // Check if it's a keyword token
+            if let Token::Keyword(keyword) = &tokens[k] {
+                // Create a pseudo-variable with the keyword content including #
+                let field_token = TokenVariable::new(
+                    keyword.pos().clone(),
+                    format!("#{}", keyword.s())
+                );
+                k += 1; // Advance past the keyword
+                field_token
+            } else {
+                return Err(ParseError::Unknown("expected field name after '.'"));
+            }
+        } else {
             return Err(ParseError::Unknown("expected field name after '.'"));
         };
 

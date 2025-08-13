@@ -278,8 +278,10 @@ cuda_context_ok:
     pub fn compile_proc(&mut self, proc: &ItemProc<PhaseParse>) -> Result<(), CompileError> {
         // Check if this is a PTX procedure
         if proc.ptx_modifier.is_some() {
+            // eprintln!("DEBUG: Compiling PTX procedure: {}", proc.name.s());
             return self.compile_ptx_proc(proc);
         }
+        eprintln!("DEBUG: Compiling regular procedure: {}", proc.name.s());
 
         // Extract parameter names from the function type
         let param_names = self.extract_proc_parameters(&proc.ty);
@@ -418,31 +420,43 @@ cuda_context_ok:
     ) -> Result<(), CompileError> {
         match statements {
             Statements::Then(then) => {
-                StatementCompiler::compile_statement(
-                    &then.head,
-                    &mut self.variables,
-                    &mut self.reference_variables,
-                    &self.builtins,
-                    &self.arrays,
-                    &mut self.variable_arrays,
-                    &mut self.stack_offset,
-                    &mut self.output,
-                )?;
+                // Handle CallPtx statements directly in AssemblyCompiler
+                if let Statement::CallPtx(call_ptx) = then.head.as_ref() {
+                    self.compile_call_ptx(call_ptx)?;
+                } else {
+                    StatementCompiler::compile_statement(
+                        &then.head,
+                        &mut self.variables,
+                        &mut self.reference_variables,
+                        &self.builtins,
+                        &self.arrays,
+                        &mut self.variable_arrays,
+                        &mut self.stack_offset,
+                        &mut self.output,
+                    )?;
+                }
                 match &*then.tail {
                     Statements::Nil => Ok(()),
                     _ => self.compile_statements(&then.tail),
                 }
             }
-            Statements::Statement(statement) => StatementCompiler::compile_statement(
-                statement,
-                &mut self.variables,
-                &mut self.reference_variables,
-                &self.builtins,
-                &self.arrays,
-                &mut self.variable_arrays,
-                &mut self.stack_offset,
-                &mut self.output,
-            ),
+            Statements::Statement(statement) => {
+                // Handle CallPtx statements directly in AssemblyCompiler
+                if let Statement::CallPtx(call_ptx) = statement.as_ref() {
+                    self.compile_call_ptx(call_ptx)
+                } else {
+                    StatementCompiler::compile_statement(
+                        statement,
+                        &mut self.variables,
+                        &mut self.reference_variables,
+                        &self.builtins,
+                        &self.arrays,
+                        &mut self.variable_arrays,
+                        &mut self.stack_offset,
+                        &mut self.output,
+                    )
+                }
+            }
             Statements::Nil => Ok(()),
         }
     }
@@ -581,14 +595,285 @@ cuda_context_ok:
     }
 
     pub fn compile_ptx_proc(&mut self, proc: &ItemProc<PhaseParse>) -> Result<(), CompileError> {
+        eprintln!(
+            "DEBUG: Starting PTX compilation for function: {}",
+            proc.name.s()
+        );
         let mut ptx_compiler = PtxCompiler::new();
         ptx_compiler.builtins = self.builtins.clone();
 
         ptx_compiler.compile_ptx_proc(proc)?;
 
+        eprintln!(
+            "DEBUG: PTX compilation successful. PTX output length: {}",
+            ptx_compiler.ptx_output.len()
+        );
+        eprintln!("DEBUG: PTX functions: {:?}", ptx_compiler.ptx_functions);
+
+        // Add PTX header directives if this is the first PTX function
+        if self.ptx_output.is_empty() {
+            self.ptx_output.push_str(".version 8.8\n");
+            self.ptx_output.push_str(".target sm_52\n");
+            self.ptx_output.push_str(".address_size 64\n\n");
+            eprintln!("DEBUG: Added PTX header directives");
+        }
+
         // Update our state with PTX compiler results
         self.ptx_output.push_str(&ptx_compiler.ptx_output);
         self.ptx_functions.extend(ptx_compiler.ptx_functions);
+
+        eprintln!("DEBUG: Final PTX output length: {}", self.ptx_output.len());
+        eprintln!(
+            "DEBUG: PTX output first 100 chars: {:?}",
+            &self.ptx_output[..self.ptx_output.len().min(100)]
+        );
+
+        Ok(())
+    }
+
+    /// Compile a #call_ptx statement
+    pub fn compile_call_ptx(
+        &mut self,
+        call_ptx: &StatementCallPtx<PhaseParse>,
+    ) -> Result<(), CompileError> {
+        let function_name = call_ptx.function_name.s();
+
+        // Ensure this is a known PTX function
+        if !self.ptx_functions.contains(&function_name.to_string()) {
+            return Err(CompileError::UnsupportedConstruct(format!(
+                "Unknown PTX function: {function_name}"
+            )));
+        }
+
+        // Handle arguments
+        let (has_array, array_var_name, array_info) = if !call_ptx.args.is_empty() {
+            // Extract array name from the argument
+            let array_var_name = match &call_ptx.args[0] {
+                ProcTerm::Variable(var) => var.variable.s(),
+                _ => {
+                    return Err(CompileError::UnsupportedConstruct(
+                        "call_ptx expects array variable as argument".to_string(),
+                    ));
+                }
+            };
+
+            // Get array info
+            let array_type_name = self.variable_arrays.get(array_var_name).ok_or_else(|| {
+                CompileError::UnsupportedConstruct(format!(
+                    "Unknown array variable: {array_var_name}"
+                ))
+            })?;
+
+            let array_info = self.arrays.get(array_type_name).ok_or_else(|| {
+                CompileError::UnsupportedConstruct(format!("Unknown array type: {array_type_name}"))
+            })?;
+
+            (true, array_var_name, array_info.clone())
+        } else {
+            // No arguments - create dummy info
+            (
+                false,
+                "",
+                ArrayInfo {
+                    element_type: String::new(),
+                    field_names: vec![],
+                    field_types: vec![],
+                    dimension: 1,
+                    size: None,
+                },
+            )
+        };
+
+        // Generate CUDA API calls
+        self.output.push_str("    # call_ptx implementation\n");
+
+        // Load PTX module if not already loaded
+        self.output.push_str("    # Load PTX module\n");
+        self.output
+            .push_str(&format!("    lea rdi, ptx_code_{function_name}[rip]\n"));
+        self.output.push_str("    lea rsi, __cu_module[rip]\n");
+        self.output.push_str("    call cuModuleLoadData@PLT\n");
+        self.output.push_str("    test eax, eax\n");
+        self.output.push_str("    jz module_load_ok\n");
+        self.output
+            .push_str("    # cuModuleLoadData failed - print error and exit\n");
+        self.output.push_str("    mov     rax, 1\n");
+        self.output.push_str("    mov     rdi, 2\n");
+        self.output
+            .push_str("    mov     rsi, offset cuda_module_error\n");
+        self.output.push_str("    mov     rdx, 21\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("    mov     rax, 60\n");
+        self.output.push_str("    mov     rdi, 4\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("module_load_ok:\n");
+
+        // Get function from module
+        self.output.push_str("    # Get function from module\n");
+        self.output.push_str("    lea rdi, __cu_function[rip]\n");
+        self.output
+            .push_str("    mov rsi, QWORD PTR __cu_module[rip]\n");
+        self.output.push_str(&format!(
+            "    lea rdx, ptx_function_name_{function_name}[rip]\n"
+        ));
+        self.output.push_str("    call cuModuleGetFunction@PLT\n");
+        self.output.push_str("    test eax, eax\n");
+        self.output.push_str("    jz function_get_ok\n");
+        self.output
+            .push_str("    # cuModuleGetFunction failed - print error and exit\n");
+        self.output.push_str("    mov     rax, 1\n");
+        self.output.push_str("    mov     rdi, 2\n");
+        self.output
+            .push_str("    mov     rsi, offset cuda_function_error\n");
+        self.output.push_str("    mov     rdx, 22\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("    mov     rax, 60\n");
+        self.output.push_str("    mov     rdi, 5\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("function_get_ok:\n");
+
+        if has_array {
+            // Allocate device memory for each field
+            let field_count = array_info.field_names.len();
+            for (i, field_name) in array_info.field_names.iter().enumerate() {
+                self.output.push_str(&format!(
+                    "    # Allocate device memory for field {field_name}\n"
+                ));
+                self.output
+                    .push_str(&format!("    lea rdi, device_ptr_{}[rip]\n", i + 1));
+
+                // Calculate size based on array size and element type
+                // For now, assume 65536 elements and 8 bytes per element
+                self.output.push_str("    mov rsi, 524288\n"); // 65536 * 8
+                self.output.push_str("    call cuMemAlloc_v2@PLT\n");
+            }
+
+            // Copy data to device
+            for (i, field_name) in array_info.field_names.iter().enumerate() {
+                self.output
+                    .push_str(&format!("    # Copy {field_name} data to device\n"));
+                self.output.push_str(&format!(
+                    "    mov rdi, QWORD PTR device_ptr_{}[rip]\n",
+                    i + 1
+                ));
+
+                // Get host pointer for this field
+                let field_ptr_var = format!("{array_var_name}_{field_name}_ptr");
+                if let Some(&offset) = self.variables.get(&field_ptr_var) {
+                    self.output.push_str(&format!(
+                        "    mov rsi, QWORD PTR [rbp - 8 - {}]\n",
+                        offset - 8
+                    ));
+                }
+
+                self.output.push_str("    mov rdx, 524288\n"); // Size
+                self.output.push_str("    call cuMemcpyHtoD_v2@PLT\n");
+            }
+
+            // Set up kernel parameters
+            self.output.push_str("    # Set up kernel parameters\n");
+            for i in 1..=field_count {
+                self.output
+                    .push_str(&format!("    lea rax, device_ptr_{i}[rip]\n"));
+                self.output.push_str(&format!(
+                    "    mov QWORD PTR [rbp - 8 - {}], rax\n",
+                    200 + (i - 1) * 8
+                ));
+            }
+        }
+
+        // Launch kernel
+        self.output.push_str("    # Launch kernel\n");
+
+        self.output.push_str("    sub rsp, 8\n");
+
+        self.output
+            .push_str("    mov rdi, QWORD PTR __cu_function[rip]\n");
+
+        // Grid dimensions
+        self.output
+            .push_str(&format!("    mov rsi, {}\n", call_ptx.grid_dim_x.s()));
+        self.output
+            .push_str(&format!("    mov rdx, {}\n", call_ptx.grid_dim_y.s()));
+        self.output
+            .push_str(&format!("    mov rcx, {}\n", call_ptx.grid_dim_z.s()));
+
+        // Block dimensions
+        self.output
+            .push_str(&format!("    mov r8, {}\n", call_ptx.block_dim_x.s()));
+        self.output
+            .push_str(&format!("    mov r9, {}\n", call_ptx.block_dim_y.s()));
+        self.output
+            .push_str(&format!("    push {}\n", call_ptx.block_dim_z.s()));
+
+        // Extra (reverse stack order)
+        self.output.push_str("    push 0\n");
+
+        // Kernel params (reverse stack order)
+        if has_array && !array_info.field_names.is_empty() {
+            self.output.push_str("    lea rax, [rbp - 8 -  216]\n");
+            self.output.push_str("    push rax\n");
+        } else {
+            self.output.push_str("    push 0\n"); // NULL params
+        }
+
+        // Shared memory and stream (reverse stack order)
+        self.output.push_str("    push 0\n"); // sharedMemBytes
+        self.output.push_str("    push 0\n"); // stream
+
+        self.output.push_str("    call cuLaunchKernel@PLT\n");
+        self.output.push_str("    add rsp, 48\n"); // Clean up stack
+        self.output.push_str("    test eax, eax\n");
+        self.output.push_str("    jz kernel_launch_ok\n");
+        self.output
+            .push_str("    # cuLaunchKernel failed - print error and exit\n");
+        self.output.push_str("    mov     rax, 1\n");
+        self.output.push_str("    mov     rdi, 2\n");
+        self.output
+            .push_str("    mov     rsi, offset cuda_launch_error\n");
+        self.output.push_str("    mov     rdx, 22\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("    mov     rax, 60\n");
+        self.output.push_str("    mov     rdi, 6\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("kernel_launch_ok:\n");
+
+        // Synchronize
+        self.output.push_str("    call cuCtxSynchronize@PLT\n");
+
+        if has_array {
+            // Copy results back
+            for (i, field_name) in array_info.field_names.iter().enumerate() {
+                self.output
+                    .push_str(&format!("    # Copy {field_name} data back from device\n"));
+
+                // Get host pointer for this field
+                let field_ptr_var = format!("{array_var_name}_{field_name}_ptr");
+                if let Some(&offset) = self.variables.get(&field_ptr_var) {
+                    self.output.push_str(&format!(
+                        "    mov rdi, QWORD PTR [rbp - 8 - {}]\n",
+                        offset - 8
+                    ));
+                }
+
+                self.output.push_str(&format!(
+                    "    mov rsi, QWORD PTR device_ptr_{}[rip]\n",
+                    i + 1
+                ));
+                self.output.push_str("    mov rdx, 524288\n"); // Size
+                self.output.push_str("    call cuMemcpyDtoH_v2@PLT\n");
+            }
+
+            // Free device memory
+            let field_count = array_info.field_names.len();
+            for i in 1..=field_count {
+                self.output
+                    .push_str(&format!("    # Free device memory {i}\n"));
+                self.output
+                    .push_str(&format!("    mov rdi, QWORD PTR device_ptr_{i}[rip]\n"));
+                self.output.push_str("    call cuMemFree_v2@PLT\n");
+            }
+        }
 
         Ok(())
     }

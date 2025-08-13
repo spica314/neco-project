@@ -5,3 +5,5 @@ target
 .local
 
 **/.claude/settings.local.json
+
+.tmp

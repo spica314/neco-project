@@ -909,7 +909,6 @@ fn test_print_num3_integration() {
 }
 
 #[test]
-#[ignore]
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_1() {
     let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_1.fe");

@@ -196,29 +196,30 @@ cuda_context_ok:
                 return Err(CompileError::EntrypointNotFound);
             }
 
+            // Add CUDA error messages in rodata section
+            self.output.push_str("\n.section .rodata\n");
+
+            // Add CUDA error messages (always needed when use_ptx is true)
+            self.output.push_str("cuda_init_error:\n");
+            self.output.push_str("    .asciz \"CUDA init failed\\n\"\n");
+            self.output.push_str("cuda_device_error:\n");
+            self.output
+                .push_str("    .asciz \"CUDA device failed\\n\"\n");
+            self.output.push_str("cuda_context_error:\n");
+            self.output
+                .push_str("    .asciz \"CUDA context failed\\n\"\n");
+            self.output.push_str("cuda_module_error:\n");
+            self.output
+                .push_str("    .asciz \"PTX module load failed\\n\"\n");
+            self.output.push_str("cuda_function_error:\n");
+            self.output
+                .push_str("    .asciz \"PTX function get failed\\n\"\n");
+            self.output.push_str("cuda_launch_error:\n");
+            self.output
+                .push_str("    .asciz \"PTX kernel launch failed\\n\"\n");
+
             // Add PTX code as data
             if !self.ptx_output.is_empty() {
-                self.output.push_str("\n.section .rodata\n");
-
-                // Add CUDA error messages
-                self.output.push_str("cuda_init_error:\n");
-                self.output.push_str("    .asciz \"CUDA init failed\\n\"\n");
-                self.output.push_str("cuda_device_error:\n");
-                self.output
-                    .push_str("    .asciz \"CUDA device failed\\n\"\n");
-                self.output.push_str("cuda_context_error:\n");
-                self.output
-                    .push_str("    .asciz \"CUDA context failed\\n\"\n");
-                self.output.push_str("cuda_module_error:\n");
-                self.output
-                    .push_str("    .asciz \"PTX module load failed\\n\"\n");
-                self.output.push_str("cuda_function_error:\n");
-                self.output
-                    .push_str("    .asciz \"PTX function get failed\\n\"\n");
-                self.output.push_str("cuda_launch_error:\n");
-                self.output
-                    .push_str("    .asciz \"PTX kernel launch failed\\n\"\n");
-
                 // Add PTX function names
                 for func_name in &self.ptx_functions {
                     self.output

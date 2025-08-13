@@ -101,11 +101,11 @@
     #let r0 = ps .r 0 .*;
     #let g0 = ps .g 0 .*;
     #let b0 = ps .b 0 .*;
-    print_num3 r;
+    print_num3 r0;
     print_c 32;
-    print_num3 g;
+    print_num3 g0;
     print_c 32;
-    print_num3 b;
+    print_num3 b0;
     print_c 10;
 
 

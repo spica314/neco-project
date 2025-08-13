@@ -50,7 +50,10 @@ yes "a" | cargo insta review  # Accept all snapshots in review (non-interactive)
 
 ### Development
 ```bash
-# Complete check (format, lint, test)
+# Complete check with automatic fixes (format, lint, test)
+tools/fix-and-check.sh
+
+# Check only (without fixes)
 tools/check.sh
 
 # Generate coverage report
@@ -193,8 +196,9 @@ Felis supports dependent types with syntax for:
 - Follow CIC typing rules precisely in kernel implementation
 
 ### Task Completion
-- **Always run `tools/check.sh`** after completing tasks to verify format, lint, and tests pass
+- **Always run `tools/fix-and-check.sh`** after completing tasks to automatically fix and verify format, lint, and tests pass
 - This ensures code quality before considering a task complete
+- The script automatically fixes newlines, formatting, and attempts to fix clippy warnings before running all checks
 
 ## Trees That Grow Architecture
 

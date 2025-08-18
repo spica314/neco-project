@@ -139,14 +139,9 @@ __cu_device_ptr:
     call    cuInit@PLT
     test    eax, eax
     jz      cuda_init_ok
-    # cuInit failed - print error and exit
-    mov     rax, 1
-    mov     rdi, 2
-    mov     rsi, offset cuda_init_error
-    mov     rdx, 17
-    syscall
-    mov     rax, 60
-    mov     rdi, 1
+    # cuInit failed - exit with CUresult status code
+    mov     edi, 5     # Move CUresult to exit code
+    mov     rax, 231     # sys_exit_group
     syscall
 cuda_init_ok:
     # cuDeviceGet(&cu_device, 0)
@@ -155,14 +150,9 @@ cuda_init_ok:
     call    cuDeviceGet@PLT
     test    eax, eax
     jz      cuda_device_ok
-    # cuDeviceGet failed - print error and exit
-    mov     rax, 1
-    mov     rdi, 2
-    mov     rsi, offset cuda_device_error
-    mov     rdx, 20
-    syscall
-    mov     rax, 60
-    mov     rdi, 2
+    # cuDeviceGet failed - exit with CUresult status code
+    mov     edi, 6     # Move CUresult to exit code
+    mov     rax, 231     # sys_exit_group
     syscall
 cuda_device_ok:
     # cuCtxCreate_v2(&cu_context, 0, cu_device)
@@ -173,14 +163,9 @@ cuda_device_ok:
     call    cuCtxCreate_v2@PLT
     test    eax, eax
     jz      cuda_context_ok
-    # cuCtxCreate_v2 failed - print error and exit
-    mov     rax, 1
-    mov     rdi, 2
-    mov     rsi, offset cuda_context_error
-    mov     rdx, 21
-    syscall
-    mov     rax, 60
-    mov     rdi, 3
+    # cuCtxCreate_v2 failed - exit with CUresult status code
+    mov     edi, 7     # Move CUresult to exit code
+    mov     rax, 231     # sys_exit_group
     syscall
 cuda_context_ok:
 "#;
@@ -220,6 +205,13 @@ cuda_context_ok:
 
             // Add PTX code as data
             if !self.ptx_output.is_empty() {
+                // Validate PTX code with ptxas before including it
+                if let Err(e) = self.validate_ptx_code() {
+                    eprintln!("PTX validation failed: {e}");
+                    return Err(CompileError::UnsupportedConstruct(format!(
+                        "PTX validation failed: {e}"
+                    )));
+                }
                 // Add PTX function names
                 for func_name in &self.ptx_functions {
                     self.output
@@ -231,12 +223,12 @@ cuda_context_ok:
                 // Add PTX code
                 for func_name in &self.ptx_functions {
                     self.output.push_str(&format!("ptx_code_{func_name}:\n"));
-                    self.output.push_str("    .asciz \"\\\n");
+                    self.output.push_str("    .asciz \"");
 
                     // Escape the PTX code for assembly string literal
                     let ptx_lines: Vec<&str> = self.ptx_output.lines().collect();
                     for line in ptx_lines {
-                        self.output.push_str(&format!("{line}\\n\\\n"));
+                        self.output.push_str(&format!("{line}\\n"));
                     }
 
                     self.output.push_str("\"\n");
@@ -687,24 +679,24 @@ cuda_context_ok:
         // Generate CUDA API calls
         self.output.push_str("    # call_ptx implementation\n");
 
+        // self.output.push_str("    sub rsp, 8\n");
+
         // Load PTX module if not already loaded
         self.output.push_str("    # Load PTX module\n");
+        // self.output.push_str(&format!("    mov rax, QWORD PTR ptx_code_{function_name}[rip]\n"));
+        // self.output.push_str("    mov rsi, rax\n");
         self.output
-            .push_str(&format!("    lea rdi, ptx_code_{function_name}[rip]\n"));
-        self.output.push_str("    lea rsi, __cu_module[rip]\n");
+            .push_str(&format!("    lea rsi, ptx_code_{function_name}[rip]\n"));
+        self.output.push_str("    lea rdi, __cu_module[rip]\n");
         self.output.push_str("    call cuModuleLoadData@PLT\n");
         self.output.push_str("    test eax, eax\n");
         self.output.push_str("    jz module_load_ok\n");
         self.output
-            .push_str("    # cuModuleLoadData failed - print error and exit\n");
-        self.output.push_str("    mov     rax, 1\n");
-        self.output.push_str("    mov     rdi, 2\n");
+            .push_str("    # cuModuleLoadData failed - exit with CUresult status code\n");
         self.output
-            .push_str("    mov     rsi, offset cuda_module_error\n");
-        self.output.push_str("    mov     rdx, 21\n");
-        self.output.push_str("    syscall\n");
-        self.output.push_str("    mov     rax, 60\n");
-        self.output.push_str("    mov     rdi, 4\n");
+            .push_str("    mov     edi, 8     # Move CUresult to exit code\n");
+        self.output
+            .push_str("    mov     rax, 231     # sys_exit_group\n");
         self.output.push_str("    syscall\n");
         self.output.push_str("module_load_ok:\n");
 
@@ -720,15 +712,11 @@ cuda_context_ok:
         self.output.push_str("    test eax, eax\n");
         self.output.push_str("    jz function_get_ok\n");
         self.output
-            .push_str("    # cuModuleGetFunction failed - print error and exit\n");
-        self.output.push_str("    mov     rax, 1\n");
-        self.output.push_str("    mov     rdi, 2\n");
+            .push_str("    # cuModuleGetFunction failed - exit with CUresult status code\n");
         self.output
-            .push_str("    mov     rsi, offset cuda_function_error\n");
-        self.output.push_str("    mov     rdx, 22\n");
-        self.output.push_str("    syscall\n");
-        self.output.push_str("    mov     rax, 60\n");
-        self.output.push_str("    mov     rdi, 5\n");
+            .push_str("    mov     edi, 9     # Move CUresult to exit code\n");
+        self.output
+            .push_str("    mov     rax, 231     # sys_exit_group\n");
         self.output.push_str("    syscall\n");
         self.output.push_str("function_get_ok:\n");
 
@@ -746,6 +734,16 @@ cuda_context_ok:
                 // For now, assume 65536 elements and 8 bytes per element
                 self.output.push_str("    mov rsi, 524288\n"); // 65536 * 8
                 self.output.push_str("    call cuMemAlloc_v2@PLT\n");
+                self.output.push_str("    test eax, eax\n");
+                self.output.push_str(&format!("    jz mem_alloc_ok_{i}\n"));
+                self.output
+                    .push_str("    # cuMemAlloc_v2 failed - exit with CUresult status code\n");
+                self.output
+                    .push_str("    mov     edi, 10     # Move CUresult to exit code\n");
+                self.output
+                    .push_str("    mov     rax, 231     # sys_exit_group\n");
+                self.output.push_str("    syscall\n");
+                self.output.push_str(&format!("mem_alloc_ok_{i}:\n"));
             }
 
             // Copy data to device
@@ -768,13 +766,26 @@ cuda_context_ok:
 
                 self.output.push_str("    mov rdx, 524288\n"); // Size
                 self.output.push_str("    call cuMemcpyHtoD_v2@PLT\n");
+                self.output.push_str("    test eax, eax\n");
+                self.output
+                    .push_str(&format!("    jz mem_copy_htod_ok_{i}\n"));
+                self.output
+                    .push_str("    # cuMemcpyHtoD_v2 failed - exit with CUresult status code\n");
+                self.output
+                    .push_str("    mov     edi, 11     # Move CUresult to exit code\n");
+                self.output
+                    .push_str("    mov     rax, 231     # sys_exit_group\n");
+                self.output.push_str("    syscall\n");
+                self.output.push_str(&format!("mem_copy_htod_ok_{i}:\n"));
             }
 
             // Set up kernel parameters
             self.output.push_str("    # Set up kernel parameters\n");
             for i in 1..=field_count {
-                self.output
-                    .push_str(&format!("    lea rax, device_ptr_{i}[rip]\n"));
+                self.output.push_str(&format!(
+                    "    lea rax, device_ptr_{}[rip]\n",
+                    field_count + 1 - i
+                ));
                 self.output.push_str(&format!(
                     "    mov QWORD PTR [rbp - 8 - {}], rax\n",
                     200 + (i - 1) * 8
@@ -803,8 +814,6 @@ cuda_context_ok:
             .push_str(&format!("    mov r8, {}\n", call_ptx.block_dim_x.s()));
         self.output
             .push_str(&format!("    mov r9, {}\n", call_ptx.block_dim_y.s()));
-        self.output
-            .push_str(&format!("    push {}\n", call_ptx.block_dim_z.s()));
 
         // Extra (reverse stack order)
         self.output.push_str("    push 0\n");
@@ -820,26 +829,34 @@ cuda_context_ok:
         // Shared memory and stream (reverse stack order)
         self.output.push_str("    push 0\n"); // sharedMemBytes
         self.output.push_str("    push 0\n"); // stream
+        self.output
+            .push_str(&format!("    push {}\n", call_ptx.block_dim_z.s()));
 
         self.output.push_str("    call cuLaunchKernel@PLT\n");
         self.output.push_str("    add rsp, 48\n"); // Clean up stack
         self.output.push_str("    test eax, eax\n");
         self.output.push_str("    jz kernel_launch_ok\n");
         self.output
-            .push_str("    # cuLaunchKernel failed - print error and exit\n");
-        self.output.push_str("    mov     rax, 1\n");
-        self.output.push_str("    mov     rdi, 2\n");
+            .push_str("    # cuLaunchKernel failed - exit with CUresult status code\n");
         self.output
-            .push_str("    mov     rsi, offset cuda_launch_error\n");
-        self.output.push_str("    mov     rdx, 22\n");
-        self.output.push_str("    syscall\n");
-        self.output.push_str("    mov     rax, 60\n");
-        self.output.push_str("    mov     rdi, 6\n");
+            .push_str("    mov     edi, 12     # Move CUresult to exit code\n");
+        self.output
+            .push_str("    mov     rax, 231     # sys_exit_group\n");
         self.output.push_str("    syscall\n");
         self.output.push_str("kernel_launch_ok:\n");
 
         // Synchronize
         self.output.push_str("    call cuCtxSynchronize@PLT\n");
+        self.output.push_str("    test eax, eax\n");
+        self.output.push_str("    jz ctx_sync_ok\n");
+        self.output
+            .push_str("    # cuCtxSynchronize failed - exit with CUresult status code\n");
+        self.output
+            .push_str("    mov     edi, 13     # Move CUresult to exit code\n");
+        self.output
+            .push_str("    mov     rax, 231     # sys_exit_group\n");
+        self.output.push_str("    syscall\n");
+        self.output.push_str("ctx_sync_ok:\n");
 
         if has_array {
             // Copy results back
@@ -862,6 +879,17 @@ cuda_context_ok:
                 ));
                 self.output.push_str("    mov rdx, 524288\n"); // Size
                 self.output.push_str("    call cuMemcpyDtoH_v2@PLT\n");
+                self.output.push_str("    test eax, eax\n");
+                self.output
+                    .push_str(&format!("    jz mem_copy_dtoh_ok_{i}\n"));
+                self.output
+                    .push_str("    # cuMemcpyDtoH_v2 failed - exit with CUresult status code\n");
+                self.output
+                    .push_str("    mov     edi, 14     # Move CUresult to exit code\n");
+                self.output
+                    .push_str("    mov     rax, 231     # sys_exit_group\n");
+                self.output.push_str("    syscall\n");
+                self.output.push_str(&format!("mem_copy_dtoh_ok_{i}:\n"));
             }
 
             // Free device memory
@@ -872,9 +900,57 @@ cuda_context_ok:
                 self.output
                     .push_str(&format!("    mov rdi, QWORD PTR device_ptr_{i}[rip]\n"));
                 self.output.push_str("    call cuMemFree_v2@PLT\n");
+                self.output.push_str("    test eax, eax\n");
+                self.output.push_str(&format!("    jz mem_free_ok_{i}\n"));
+                self.output
+                    .push_str("    # cuMemFree_v2 failed - exit with CUresult status code\n");
+                self.output
+                    .push_str("    mov     edi, 15     # Move CUresult to exit code\n");
+                self.output
+                    .push_str("    mov     rax, 231     # sys_exit_group\n");
+                self.output.push_str("    syscall\n");
+                self.output.push_str(&format!("mem_free_ok_{i}:\n"));
             }
         }
 
+        Ok(())
+    }
+
+    /// Validate PTX code using ptxas
+    fn validate_ptx_code(&self) -> Result<(), String> {
+        use std::io::Write;
+        use std::process::Command;
+        use tempfile::NamedTempFile;
+
+        // Create a temporary file to write the PTX code
+        let mut temp_file =
+            NamedTempFile::new().map_err(|e| format!("Failed to create temporary file: {e}"))?;
+
+        // Write PTX code to temporary file
+        temp_file
+            .write_all(self.ptx_output.as_bytes())
+            .map_err(|e| format!("Failed to write PTX code to temporary file: {e}"))?;
+
+        // Get the path to the temporary file
+        let temp_path = temp_file.path();
+
+        // Run ptxas to validate the PTX code
+        let output = Command::new("ptxas")
+            .arg("--compile-only")  // Only compile, don't generate output
+            .arg("--gpu-name=sm_52")  // Target architecture
+            .arg(temp_path)
+            .output()
+            .map_err(|e| format!("Failed to run ptxas: {e}. Make sure CUDA toolkit is installed and ptxas is in PATH."))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            return Err(format!(
+                "ptxas validation failed:\nSTDOUT: {stdout}\nSTDERR: {stderr}"
+            ));
+        }
+
+        eprintln!("PTX validation successful");
         Ok(())
     }
 }

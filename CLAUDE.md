@@ -63,6 +63,15 @@ tools/generate-coverage-report.sh
 tools/check-newlines.sh
 ```
 
+### Running Rust Code
+```bash
+# Run the compiler binary with cargo run
+cargo run -p neco-felis-compile -- [arguments]
+
+# IMPORTANT: Do NOT directly execute binaries from ./target/debug/
+# Always use `cargo run` to ensure proper environment and dependencies
+```
+
 ## Architecture Notes
 
 ### Data Flow

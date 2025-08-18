@@ -1,5 +1,5 @@
 use super::*;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use tempfile::TempDir;
 
 #[test]
@@ -181,7 +181,6 @@ fn compile_and_execute_with_output(
 }
 
 /// Helper function to compile, assemble, link, and execute a Felis program
-#[cfg(feature = "has-ptx-device")]
 fn compile_and_execute_with_ptx(
     file_path: &str,
 ) -> Result<std::process::ExitStatus, Box<dyn std::error::Error>> {
@@ -226,14 +225,13 @@ fn compile_and_execute_with_ptx(
     }
 
     // Step 4: Execute the program
-    let exec_status = Command::new(&exe_file).status()?;
+    let exec_status = Command::new(&exe_file).stdout(Stdio::null()).status()?;
     // std::thread::sleep(std::time::Duration::from_secs(50));
 
     Ok(exec_status)
 }
 
 /// Helper function to compile, assemble, link, and execute a Felis program with PTX and output capture
-#[cfg(feature = "has-ptx-device")]
 fn compile_and_execute_with_ptx_output(
     file_path: &str,
 ) -> Result<std::process::Output, Box<dyn std::error::Error>> {
@@ -851,7 +849,7 @@ fn test_print_c_integration() {
     match result {
         Ok(output) => {
             println!("print_c.fe executed successfully");
-            println!("stdout: {:?}", String::from_utf8_lossy(&output.stdout));
+            // println!("stdout: {:?}", String::from_utf8_lossy(&output.stdout));
             println!("stderr: {:?}", String::from_utf8_lossy(&output.stderr));
             println!("exit code: {:?}", output.status.code());
 
@@ -883,7 +881,7 @@ fn test_print_num3_integration() {
     match result {
         Ok(output) => {
             println!("print_num3.fe executed successfully");
-            println!("stdout: {:?}", String::from_utf8_lossy(&output.stdout));
+            // println!("stdout: {:?}", String::from_utf8_lossy(&output.stdout));
             println!("stderr: {:?}", String::from_utf8_lossy(&output.stderr));
             println!("exit code: {:?}", output.status.code());
 
@@ -958,7 +956,7 @@ fn test_ptx_2_output() {
     match result {
         Ok(output) => {
             println!("ptx_2.fe executed successfully");
-            println!("stdout: {:?}", String::from_utf8_lossy(&output.stdout));
+            // println!("stdout: {:?}", String::from_utf8_lossy(&output.stdout));
             println!("stderr: {:?}", String::from_utf8_lossy(&output.stderr));
             println!("exit code: {:?}", output.status.code());
 
@@ -973,7 +971,7 @@ fn test_ptx_2_output() {
             // The program outputs the value at ps.r[0], which should be 0 for thread_id 0
             let expected_output = "0";
             let actual_output = String::from_utf8_lossy(&output.stdout);
-            eprintln!("actual_output = {actual_output:?}");
+            // eprintln!("actual_output = {actual_output:?}");
             let _ = std::fs::write("/tmp/a.ppm", actual_output.as_bytes());
             assert_eq!(
                 actual_output, expected_output,
@@ -995,7 +993,7 @@ fn test_ptx_3_output() {
     match result {
         Ok(output) => {
             println!("ptx_3.fe executed successfully");
-            println!("stdout: {:?}", String::from_utf8_lossy(&output.stdout));
+            // println!("stdout: {:?}", String::from_utf8_lossy(&output.stdout));
             println!("stderr: {:?}", String::from_utf8_lossy(&output.stderr));
             println!("exit code: {:?}", output.status.code());
 
@@ -1010,7 +1008,7 @@ fn test_ptx_3_output() {
             // The program outputs the value at ps.r[0], which should be 0 for thread_id 0
             let expected_output = "P3\n2 2\n255\n0 0 51\n255 0 51\n0 255 51\n255 255 51\n";
             let actual_output = String::from_utf8_lossy(&output.stdout);
-            eprintln!("actual_output = {actual_output:?}");
+            // eprintln!("actual_output = {actual_output:?}");
             // std::fs::write("/tmp/a.ppm", actual_output.as_bytes());
             assert_eq!(
                 actual_output, expected_output,
@@ -1019,6 +1017,27 @@ fn test_ptx_3_output() {
         }
         Err(e) => {
             panic!("Skipping ptx_3.fe output integration test: {e}");
+        }
+    }
+}
+
+#[test]
+#[ignore]
+#[cfg(feature = "has-ptx-device")]
+fn test_ptx_4() {
+    let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_4.fe");
+
+    match result {
+        Ok(status) => {
+            println!(
+                "ptx_4.fe executed successfully with exit code: {:?}",
+                status.code()
+            );
+            // ptx_4.fe should exit with code 42
+            assert_eq!(status.code(), Some(42), "Program should exit with code 42");
+        }
+        Err(e) => {
+            panic!("ptx_4.fe integration test failed: {e}");
         }
     }
 }

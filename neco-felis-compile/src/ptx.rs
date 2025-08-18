@@ -44,6 +44,7 @@ impl PtxCompiler {
         self.ptx_functions.push(proc.name.s().to_string());
 
         // Start PTX function
+        self.ptx_output.push_str("    	// .globl	f\n");
         self.ptx_output
             .push_str(&format!(".visible .entry {}(\n", proc.name.s()));
 
@@ -118,9 +119,9 @@ impl PtxCompiler {
         has_params: bool,
     ) -> Result<(), CompileError> {
         // Initialize PTX registers for parameters with higher limit
-        self.ptx_output.push_str("    .reg .u64 %rd<100>;\n");
-        self.ptx_output.push_str("    .reg .u32 %r<100>;\n");
-        self.ptx_output.push_str("    .reg .f32 %f<100>;\n");
+        self.ptx_output.push_str("    .reg .b64 %rd<100>;\n");
+        self.ptx_output.push_str("    .reg .b32 %r<100>;\n");
+        self.ptx_output.push_str("    .reg .b32 %f<100>;\n");
         self.ptx_output.push('\n');
 
         // Load parameters only if there are any
@@ -128,6 +129,12 @@ impl PtxCompiler {
             self.ptx_output.push_str("    ld.param.u64 %rd1, [ps_r];\n");
             self.ptx_output.push_str("    ld.param.u64 %rd2, [ps_g];\n");
             self.ptx_output.push_str("    ld.param.u64 %rd3, [ps_b];\n");
+            self.ptx_output
+                .push_str("    cvta.to.global.u64 %rd1, %rd1;\n");
+            self.ptx_output
+                .push_str("    cvta.to.global.u64 %rd2, %rd2;\n");
+            self.ptx_output
+                .push_str("    cvta.to.global.u64 %rd3, %rd3;\n");
             self.ptx_output.push('\n');
         }
 

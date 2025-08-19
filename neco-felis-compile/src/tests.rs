@@ -927,7 +927,6 @@ fn test_ptx_1() {
 }
 
 #[test]
-#[ignore]
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_2() {
     let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_2.fe");
@@ -1022,7 +1021,6 @@ fn test_ptx_3_output() {
 }
 
 #[test]
-#[ignore]
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_4() {
     let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_4.fe");

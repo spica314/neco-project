@@ -98,17 +98,6 @@
 
     #call_ptx f ps 256 1 1 256 1 1;
 
-    #let r0 = ps .r 0 .*;
-    #let g0 = ps .g 0 .*;
-    #let b0 = ps .b 0 .*;
-    print_num3 r0;
-    print_c 32;
-    print_num3 g0;
-    print_c 32;
-    print_num3 b0;
-    print_c 10;
-
-
     print_c 80;
     print_c 51;
     print_c 10;

@@ -101,6 +101,7 @@ File {
                                 column: 27,
                             },
                             s: "->",
+                            after_whitespace: true,
                         },
                         to: ArrowDep(
                             TermArrowDep {
@@ -168,6 +169,7 @@ File {
                                         column: 38,
                                     },
                                     s: "->",
+                                    after_whitespace: true,
                                 },
                                 to: ArrowNodep(
                                     TermArrowNodep {
@@ -195,6 +197,7 @@ File {
                                                 column: 43,
                                             },
                                             s: "->",
+                                            after_whitespace: true,
                                         },
                                         to: Variable(
                                             TermVariable {
@@ -316,6 +319,7 @@ File {
                                         column: 24,
                                     },
                                     s: "->",
+                                    after_whitespace: true,
                                 },
                                 to: ArrowDep(
                                     TermArrowDep {
@@ -383,6 +387,7 @@ File {
                                                 column: 35,
                                             },
                                             s: "->",
+                                            after_whitespace: true,
                                         },
                                         to: Apply(
                                             TermApply {
@@ -629,6 +634,7 @@ File {
                                         column: 12,
                                     },
                                     s: "->",
+                                    after_whitespace: true,
                                 },
                                 to: Variable(
                                     TermVariable {
@@ -769,6 +775,7 @@ File {
                                 column: 29,
                             },
                             s: "->",
+                            after_whitespace: true,
                         },
                         to: ArrowDep(
                             TermArrowDep {
@@ -836,6 +843,7 @@ File {
                                         column: 42,
                                     },
                                     s: "->",
+                                    after_whitespace: true,
                                 },
                                 to: Variable(
                                     TermVariable {
@@ -921,6 +929,7 @@ File {
                                         column: 11,
                                     },
                                     s: "=>",
+                                    after_whitespace: true,
                                 },
                                 body: Variable(
                                     TermVariable {
@@ -973,6 +982,7 @@ File {
                                         column: 13,
                                     },
                                     s: "=>",
+                                    after_whitespace: true,
                                 },
                                 body: Apply(
                                     TermApply {

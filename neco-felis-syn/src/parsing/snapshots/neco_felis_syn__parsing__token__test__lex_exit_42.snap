@@ -164,6 +164,7 @@ expression: tokens
                 column: 17,
             },
             s: "->",
+            after_whitespace: true,
         },
     ),
     ParenL(

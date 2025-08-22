@@ -152,6 +152,7 @@ File {
                                         column: 12,
                                     },
                                     s: "->",
+                                    after_whitespace: true,
                                 },
                                 to: Variable(
                                     TermVariable {

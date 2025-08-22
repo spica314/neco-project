@@ -66,6 +66,7 @@ impl Parse for TokenVariable {
 pub struct TokenOperator {
     pos: Pos,
     s: String,
+    after_whitespace: bool,
 }
 
 impl TokenOperator {
@@ -76,6 +77,38 @@ impl TokenOperator {
     ) -> Result<Option<Self>, ParseError> {
         if let Token::Operator(token_operator) = &tokens[*i]
             && token_operator.s == s
+        {
+            *i += 1;
+            return Ok(Some(token_operator.clone()));
+        }
+
+        Ok(None)
+    }
+
+    pub fn parse_operator_after_whitespace(
+        tokens: &[Token],
+        i: &mut usize,
+        s: &str,
+    ) -> Result<Option<Self>, ParseError> {
+        if let Token::Operator(token_operator) = &tokens[*i]
+            && token_operator.s == s
+            && token_operator.after_whitespace
+        {
+            *i += 1;
+            return Ok(Some(token_operator.clone()));
+        }
+
+        Ok(None)
+    }
+
+    pub fn parse_operator_after_non_whitespace(
+        tokens: &[Token],
+        i: &mut usize,
+        s: &str,
+    ) -> Result<Option<Self>, ParseError> {
+        if let Token::Operator(token_operator) = &tokens[*i]
+            && token_operator.s == s
+            && !token_operator.after_whitespace
         {
             *i += 1;
             return Ok(Some(token_operator.clone()));
@@ -238,6 +271,22 @@ impl Parse for TokenColon {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TokenColon2 {
+    pos: Pos,
+}
+
+impl Parse for TokenColon2 {
+    fn parse(tokens: &[Token], i: &mut usize) -> Result<Option<Self>, ParseError> {
+        if let Token::Colon2(colon2) = &tokens[*i] {
+            *i += 1;
+            Ok(Some(colon2.clone()))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TokenSemicolon {
     pos: Pos,
 }
@@ -267,6 +316,7 @@ pub enum Token {
     BraceR(TokenBraceR),
     Comma(TokenComma),
     Colon(TokenColon),
+    Colon2(TokenColon2),
     Semicolon(TokenSemicolon),
     String(TokenString),
 }
@@ -453,9 +503,8 @@ impl Token {
                     i += 2;
                     column += 2;
 
-                    let token = Token::Operator(TokenOperator {
+                    let token = Token::Colon2(TokenColon2 {
                         pos: Pos::new(file_id, token_line, token_column),
-                        s: "::".to_string(),
                     });
 
                     tokens.push(token);
@@ -564,6 +613,7 @@ impl Token {
             if is_operator_char(cs[i]) {
                 let token_line = line;
                 let token_column = column;
+                let after_whitespace = i == 0 || cs[i - 1].is_ascii_whitespace();
                 let mut buf = String::new();
                 while i < cs.len() && is_operator_char(cs[i]) {
                     buf.push(cs[i]);
@@ -574,6 +624,7 @@ impl Token {
                 let token = Token::Operator(TokenOperator {
                     pos: Pos::new(file_id, token_line, token_column),
                     s: buf,
+                    after_whitespace,
                 });
 
                 tokens.push(token);

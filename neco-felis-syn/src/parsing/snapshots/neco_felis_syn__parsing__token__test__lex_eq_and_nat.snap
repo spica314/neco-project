@@ -105,6 +105,7 @@ expression: tokens
                 column: 27,
             },
             s: "->",
+            after_whitespace: true,
         },
     ),
     ParenL(
@@ -174,6 +175,7 @@ expression: tokens
                 column: 38,
             },
             s: "->",
+            after_whitespace: true,
         },
     ),
     Variable(
@@ -198,6 +200,7 @@ expression: tokens
                 column: 43,
             },
             s: "->",
+            after_whitespace: true,
         },
     ),
     Variable(
@@ -313,6 +316,7 @@ expression: tokens
                 column: 24,
             },
             s: "->",
+            after_whitespace: true,
         },
     ),
     ParenL(
@@ -382,6 +386,7 @@ expression: tokens
                 column: 35,
             },
             s: "->",
+            after_whitespace: true,
         },
     ),
     Variable(
@@ -603,6 +608,7 @@ expression: tokens
                 column: 12,
             },
             s: "->",
+            after_whitespace: true,
         },
     ),
     Variable(
@@ -741,6 +747,7 @@ expression: tokens
                 column: 29,
             },
             s: "->",
+            after_whitespace: true,
         },
     ),
     ParenL(
@@ -810,6 +817,7 @@ expression: tokens
                 column: 42,
             },
             s: "->",
+            after_whitespace: true,
         },
     ),
     Variable(
@@ -892,6 +900,7 @@ expression: tokens
                 column: 11,
             },
             s: "=>",
+            after_whitespace: true,
         },
     ),
     Variable(
@@ -951,6 +960,7 @@ expression: tokens
                 column: 13,
             },
             s: "=>",
+            after_whitespace: true,
         },
     ),
     Variable(

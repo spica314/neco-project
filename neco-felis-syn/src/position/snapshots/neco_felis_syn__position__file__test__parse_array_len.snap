@@ -566,6 +566,7 @@ File {
                                 column: 17,
                             },
                             s: "->",
+                            after_whitespace: true,
                         },
                         to: Unit(
                             TermUnit {
@@ -636,6 +637,7 @@ File {
                                             column: 17,
                                         },
                                         s: "=",
+                                        after_whitespace: true,
                                     },
                                     value: ConstructorCall(
                                         ProcTermConstructorCall {
@@ -649,7 +651,7 @@ File {
                                                 },
                                                 s: "Points",
                                             },
-                                            double_colon: TokenOperator {
+                                            colon2: TokenColon2 {
                                                 pos: Pos {
                                                     file_id: FileId(
                                                         0,
@@ -657,7 +659,6 @@ File {
                                                     line: 17,
                                                     column: 25,
                                                 },
-                                                s: "::",
                                             },
                                             method: TokenKeyword {
                                                 pos: Pos {
@@ -725,6 +726,7 @@ File {
                                                         column: 11,
                                                     },
                                                     s: ".",
+                                                    after_whitespace: false,
                                                 },
                                                 field: TokenVariable {
                                                     pos: Pos {
@@ -764,6 +766,7 @@ File {
                                                     column: 17,
                                                 },
                                                 s: "<-",
+                                                after_whitespace: true,
                                             },
                                             value: Number(
                                                 ProcTermNumber {
@@ -816,6 +819,7 @@ File {
                                                                 column: 11,
                                                             },
                                                             s: ".",
+                                                            after_whitespace: false,
                                                         },
                                                         field: TokenVariable {
                                                             pos: Pos {
@@ -855,6 +859,7 @@ File {
                                                             column: 17,
                                                         },
                                                         s: "<-",
+                                                        after_whitespace: true,
                                                     },
                                                     value: Number(
                                                         ProcTermNumber {
@@ -907,6 +912,7 @@ File {
                                                                         column: 11,
                                                                     },
                                                                     s: ".",
+                                                                    after_whitespace: false,
                                                                 },
                                                                 field: TokenVariable {
                                                                     pos: Pos {
@@ -946,6 +952,7 @@ File {
                                                                     column: 17,
                                                                 },
                                                                 s: "<-",
+                                                                after_whitespace: true,
                                                             },
                                                             value: Number(
                                                                 ProcTermNumber {
@@ -1007,6 +1014,7 @@ File {
                                                                             column: 21,
                                                                         },
                                                                         s: "=",
+                                                                        after_whitespace: true,
                                                                     },
                                                                     value: Number(
                                                                         ProcTermNumber {
@@ -1068,6 +1076,7 @@ File {
                                                                                     column: 21,
                                                                                 },
                                                                                 s: "=",
+                                                                                after_whitespace: true,
                                                                             },
                                                                             value: Apply(
                                                                                 ProcTermApply {
@@ -1092,6 +1101,7 @@ File {
                                                                                                     column: 29,
                                                                                                 },
                                                                                                 s: ".",
+                                                                                                after_whitespace: false,
                                                                                             },
                                                                                             field: TokenVariable {
                                                                                                 pos: Pos {

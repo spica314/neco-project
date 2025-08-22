@@ -1,12 +1,12 @@
 use crate::{
-    Parse, ParseError, Phase, PhaseParse, ProcTerm, ProcTermNumber, ProcTermVariable,
-    token::{Token, TokenKeyword, TokenOperator, TokenVariable},
+    Parse, ParseError, Phase, PhaseParse, ProcTerm, ProcTermNumber, ProcTermVariable, TokenColon2,
+    token::{Token, TokenKeyword, TokenVariable},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ProcTermConstructorCall<P: Phase> {
     pub type_name: TokenVariable,
-    pub double_colon: TokenOperator,
+    pub colon2: TokenColon2,
     pub method: TokenKeyword, // Changed from TokenVariable to TokenKeyword for #method_name
     pub args: Vec<ProcTerm<P>>,
     pub ext: P::ProcTermConstructorCallExt,
@@ -22,7 +22,7 @@ impl Parse for ProcTermConstructorCall<PhaseParse> {
         };
 
         // Parse "::" operator
-        let Some(double_colon) = TokenOperator::parse_operator(tokens, &mut k, "::")? else {
+        let Some(colon2) = TokenColon2::parse(tokens, &mut k)? else {
             return Ok(None);
         };
 
@@ -54,7 +54,7 @@ impl Parse for ProcTermConstructorCall<PhaseParse> {
 
         let proc_term_constructor_call = ProcTermConstructorCall {
             type_name,
-            double_colon,
+            colon2,
             method,
             args,
             ext: (),

@@ -20,9 +20,9 @@
 
 #array Pixels {
     #item: #struct {
-        r: u64,
-        g: u64,
-        b: u64,
+        r: __u64,
+        g: __u64,
+        b: __u64,
     },
     #dimension: 1,
 }

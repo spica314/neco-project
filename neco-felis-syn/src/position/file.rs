@@ -150,9 +150,9 @@ mod test {
                 // Complete file parsing including #proc block is now working
                 assert_eq!(i, tokens.len()); // Should have parsed all tokens
 
-                // Verify the array was parsed correctly - it should be the 5th item (0-indexed)
-                assert_eq!(file.items.len(), 6);
-                match &file.items[4] {
+                // Verify the array was parsed correctly - it should be the 6th item (0-indexed)
+                assert_eq!(file.items.len(), 7);
+                match &file.items[5] {
                     crate::Item::Array(array) => {
                         assert_eq!(array.name().s(), "Points");
                         assert_eq!(array.fields().len(), 2);

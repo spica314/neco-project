@@ -3,12 +3,13 @@
 #use_builtin "syscall" #as __syscall;
 #use_builtin "f32_add" #as __f32_add;
 #use_builtin "f32_to_u64" #as __f32_to_u64;
+#use_builtin "f32" #as __f32;
 
 #array Points {
     #item: #struct {
-        x: f32,
-        y: f32,
-        z: f32,
+        x: __f32,
+        y: __f32,
+        z: __f32,
     },
     #dimension: 1,
 }

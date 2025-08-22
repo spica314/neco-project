@@ -6,6 +6,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ItemStruct<P: Phase> {
     pub keyword_struct: TokenKeyword,
+    pub name: TokenVariable,
     pub brace_l: TokenBraceL,
     pub fields: Vec<ItemStructField<P>>,
     pub brace_r: TokenBraceR,
@@ -21,6 +22,10 @@ pub struct ItemStructField<P: Phase> {
 }
 
 impl<P: Phase> ItemStruct<P> {
+    pub fn name(&self) -> &TokenVariable {
+        &self.name
+    }
+
     pub fn fields(&self) -> &[ItemStructField<P>] {
         &self.fields
     }
@@ -37,8 +42,12 @@ impl Parse for ItemStruct<PhaseParse> {
             return Ok(None);
         };
 
-        let Some(brace_l) = TokenBraceL::parse(tokens, &mut k)? else {
+        let Some(name) = TokenVariable::parse(tokens, &mut k)? else {
             return Err(ParseError::Unknown("item_struct_1"));
+        };
+
+        let Some(brace_l) = TokenBraceL::parse(tokens, &mut k)? else {
+            return Err(ParseError::Unknown("item_struct_2"));
         };
 
         let mut fields = vec![];
@@ -47,11 +56,12 @@ impl Parse for ItemStruct<PhaseParse> {
         }
 
         let Some(brace_r) = TokenBraceR::parse(tokens, &mut k)? else {
-            return Err(ParseError::Unknown("item_struct_2"));
+            return Err(ParseError::Unknown("item_struct_3"));
         };
 
         let item_struct = ItemStruct {
             keyword_struct,
+            name,
             brace_l,
             fields,
             brace_r,
@@ -105,7 +115,7 @@ mod tests {
     fn test_parse_simple_struct() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = r#"#struct {
+        let s = r#"#struct Vec3 {
     x: f32,
     y: f32,
     z: f32,
@@ -117,6 +127,7 @@ mod tests {
 
         assert!(result.is_some());
         let struct_item = result.unwrap();
+        assert_eq!(struct_item.name.s(), "Vec3");
         assert_eq!(struct_item.fields.len(), 3);
         assert_eq!(struct_item.fields[0].name.s(), "x");
         assert_eq!(struct_item.fields[1].name.s(), "y");
@@ -127,7 +138,7 @@ mod tests {
     fn test_parse_struct_with_trailing_comma() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = r#"#struct {
+        let s = r#"#struct Point2D {
     x: f32,
     y: f32,
 }"#;
@@ -138,6 +149,7 @@ mod tests {
 
         assert!(result.is_some());
         let struct_item = result.unwrap();
+        assert_eq!(struct_item.name.s(), "Point2D");
         assert_eq!(struct_item.fields.len(), 2);
     }
 
@@ -145,7 +157,7 @@ mod tests {
     fn test_parse_empty_struct() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = r#"#struct {
+        let s = r#"#struct Empty {
 }"#;
         let tokens = Token::lex(s, file_id);
 
@@ -154,6 +166,7 @@ mod tests {
 
         assert!(result.is_some());
         let struct_item = result.unwrap();
+        assert_eq!(struct_item.name.s(), "Empty");
         assert_eq!(struct_item.fields.len(), 0);
     }
 
@@ -161,7 +174,7 @@ mod tests {
     fn test_parse_struct_single_field() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = r#"#struct {
+        let s = r#"#struct Counter {
     value: u64
 }"#;
         let tokens = Token::lex(s, file_id);
@@ -171,6 +184,7 @@ mod tests {
 
         assert!(result.is_some());
         let struct_item = result.unwrap();
+        assert_eq!(struct_item.name.s(), "Counter");
         assert_eq!(struct_item.fields.len(), 1);
         assert_eq!(struct_item.fields[0].name.s(), "value");
     }

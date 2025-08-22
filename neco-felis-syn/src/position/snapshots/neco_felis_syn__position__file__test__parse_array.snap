@@ -253,7 +253,7 @@ File {
                             },
                         },
                         value: Struct(
-                            ItemStruct {
+                            TermStruct {
                                 keyword_struct: TokenKeyword {
                                     pos: Pos {
                                         file_id: FileId(
@@ -274,7 +274,7 @@ File {
                                     },
                                 },
                                 fields: [
-                                    ItemStructField {
+                                    TermStructField {
                                         name: TokenVariable {
                                             pos: Pos {
                                                 file_id: FileId(
@@ -321,7 +321,7 @@ File {
                                             },
                                         ),
                                     },
-                                    ItemStructField {
+                                    TermStructField {
                                         name: TokenVariable {
                                             pos: Pos {
                                                 file_id: FileId(
@@ -368,7 +368,7 @@ File {
                                             },
                                         ),
                                     },
-                                    ItemStructField {
+                                    TermStructField {
                                         name: TokenVariable {
                                             pos: Pos {
                                                 file_id: FileId(

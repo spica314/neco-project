@@ -180,6 +180,36 @@ mod test {
     }
 
     #[test]
+    fn test_parse_struct_1() {
+        let mut file_id_generator = FileIdGenerator::new();
+        let file_id = file_id_generator.generate_file_id();
+        let s = std::fs::read_to_string("../testcases/felis/single/struct_1.fe").unwrap();
+        let tokens = Token::lex(&s, file_id);
+
+        let mut i = 0;
+        let file = File::parse(&tokens, &mut i).unwrap().unwrap();
+
+        assert_debug_snapshot!(file);
+        assert_eq!(i, tokens.len());
+
+        // Verify the struct was parsed correctly
+        // Look for the struct item in the parsed items
+        let mut found_struct = false;
+        for item in &file.items {
+            if let crate::Item::Struct(struct_item) = item {
+                assert_eq!(struct_item.name().s(), "Vec3");
+                assert_eq!(struct_item.fields().len(), 3);
+                assert_eq!(struct_item.fields()[0].name.s(), "x");
+                assert_eq!(struct_item.fields()[1].name.s(), "y");
+                assert_eq!(struct_item.fields()[2].name.s(), "z");
+                found_struct = true;
+                break;
+            }
+        }
+        assert!(found_struct, "Vec3 struct not found in parsed items");
+    }
+
+    #[test]
     fn test_parse_array_len() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();

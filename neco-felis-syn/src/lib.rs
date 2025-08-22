@@ -30,6 +30,7 @@ pub mod terms {
     pub mod term_match_branch;
     pub mod term_number;
     pub mod term_paren;
+    pub mod term_struct;
     pub mod term_unit;
     pub mod term_variable;
 }
@@ -95,6 +96,7 @@ pub use terms::term_match::*;
 pub use terms::term_match_branch::*;
 pub use terms::term_number::*;
 pub use terms::term_paren::*;
+pub use terms::term_struct::*;
 pub use terms::term_unit::*;
 pub use terms::term_variable::*;
 

@@ -45,6 +45,7 @@ pub mod proc_terms {
     pub mod proc_term_if;
     pub mod proc_term_number;
     pub mod proc_term_paren;
+    pub mod proc_term_struct_value;
     pub mod proc_term_unit;
     pub mod proc_term_variable;
 }
@@ -108,6 +109,7 @@ pub use proc_terms::proc_term_field_access::*;
 pub use proc_terms::proc_term_if::*;
 pub use proc_terms::proc_term_number::*;
 pub use proc_terms::proc_term_paren::*;
+pub use proc_terms::proc_term_struct_value::*;
 pub use proc_terms::proc_term_unit::*;
 pub use proc_terms::proc_term_variable::*;
 

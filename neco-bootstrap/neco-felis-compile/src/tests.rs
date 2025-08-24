@@ -4,7 +4,7 @@ use tempfile::TempDir;
 
 #[test]
 fn test_compile_exit_42() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/exit_42.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/exit_42.fe").unwrap();
     assert!(assembly.contains(".intel_syntax noprefix"));
     assert!(assembly.contains("mov rax, 231"));
     assert!(assembly.contains("mov rdi, 42"));
@@ -15,7 +15,7 @@ fn test_compile_exit_42() {
 
 #[test]
 fn test_compile_add() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/add.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/add.fe").unwrap();
     println!("Generated assembly for add.fe:\n{assembly}");
 
     // Update expectations based on the new #let syntax
@@ -33,7 +33,7 @@ fn test_compile_add() {
 
 #[test]
 fn test_compile_sub() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/sub.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/sub.fe").unwrap();
     assert!(assembly.contains(".intel_syntax noprefix"));
     assert!(assembly.contains("mov rax, 50"));
     assert!(assembly.contains("mov rbx, 8"));
@@ -46,7 +46,7 @@ fn test_compile_sub() {
 
 #[test]
 fn test_compile_mul() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/mul.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/mul.fe").unwrap();
     assert!(assembly.contains(".intel_syntax noprefix"));
     assert!(assembly.contains("mov rax, 6"));
     assert!(assembly.contains("mov rbx, 7"));
@@ -59,7 +59,7 @@ fn test_compile_mul() {
 
 #[test]
 fn test_compile_div() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/div.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/div.fe").unwrap();
     assert!(assembly.contains(".intel_syntax noprefix"));
     assert!(assembly.contains("mov rax, 84"));
     assert!(assembly.contains("mov rbx, 2"));
@@ -73,7 +73,7 @@ fn test_compile_div() {
 
 #[test]
 fn test_compile_mod() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/mod.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/mod.fe").unwrap();
     assert!(assembly.contains(".intel_syntax noprefix"));
     assert!(assembly.contains("mov rax, 142"));
     assert!(assembly.contains("mov rbx, 100"));
@@ -284,7 +284,7 @@ fn compile_and_execute_with_ptx_output(
 
 #[test]
 fn test_exit_42_integration() {
-    let result = compile_and_execute("../testcases/felis/single/exit_42.fe");
+    let result = compile_and_execute("../../testcases/felis/single/exit_42.fe");
 
     match result {
         Ok(status) => {
@@ -303,7 +303,7 @@ fn test_exit_42_integration() {
 
 #[test]
 fn test_let_integration() {
-    let result = compile_and_execute("../testcases/felis/single/let.fe");
+    let result = compile_and_execute("../../testcases/felis/single/let.fe");
 
     match result {
         Ok(status) => {
@@ -322,7 +322,7 @@ fn test_let_integration() {
 
 #[test]
 fn test_add_integration() {
-    let result = compile_and_execute("../testcases/felis/single/add.fe");
+    let result = compile_and_execute("../../testcases/felis/single/add.fe");
 
     match result {
         Ok(status) => {
@@ -341,7 +341,7 @@ fn test_add_integration() {
 
 #[test]
 fn test_sub_integration() {
-    let result = compile_and_execute("../testcases/felis/single/sub.fe");
+    let result = compile_and_execute("../../testcases/felis/single/sub.fe");
 
     match result {
         Ok(status) => {
@@ -360,7 +360,7 @@ fn test_sub_integration() {
 
 #[test]
 fn test_mul_integration() {
-    let result = compile_and_execute("../testcases/felis/single/mul.fe");
+    let result = compile_and_execute("../../testcases/felis/single/mul.fe");
 
     match result {
         Ok(status) => {
@@ -379,7 +379,7 @@ fn test_mul_integration() {
 
 #[test]
 fn test_div_integration() {
-    let result = compile_and_execute("../testcases/felis/single/div.fe");
+    let result = compile_and_execute("../../testcases/felis/single/div.fe");
 
     match result {
         Ok(status) => {
@@ -398,7 +398,7 @@ fn test_div_integration() {
 
 #[test]
 fn test_mod_integration() {
-    let result = compile_and_execute("../testcases/felis/single/mod.fe");
+    let result = compile_and_execute("../../testcases/felis/single/mod.fe");
 
     match result {
         Ok(status) => {
@@ -417,7 +417,7 @@ fn test_mod_integration() {
 
 #[test]
 fn test_compile_add_f32() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/add_f32.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/add_f32.fe").unwrap();
     assert!(assembly.contains(".intel_syntax noprefix"));
     assert!(assembly.contains("mov eax, 0x42200000")); // 40.0f32
     assert!(assembly.contains("movd xmm0, eax"));
@@ -433,7 +433,7 @@ fn test_compile_add_f32() {
 
 #[test]
 fn test_compile_sub_f32() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/sub_f32.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/sub_f32.fe").unwrap();
     assert!(assembly.contains(".intel_syntax noprefix"));
     assert!(assembly.contains("mov eax, 0x42480000")); // 50.0f32
     assert!(assembly.contains("movd xmm0, eax"));
@@ -449,7 +449,7 @@ fn test_compile_sub_f32() {
 
 #[test]
 fn test_compile_mul_f32() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/mul_f32.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/mul_f32.fe").unwrap();
     assert!(assembly.contains(".intel_syntax noprefix"));
     assert!(assembly.contains("mov eax, 0x40c00000")); // 6.0f32
     assert!(assembly.contains("movd xmm0, eax"));
@@ -465,7 +465,7 @@ fn test_compile_mul_f32() {
 
 #[test]
 fn test_compile_div_f32() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/div_f32.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/div_f32.fe").unwrap();
     assert!(assembly.contains(".intel_syntax noprefix"));
     assert!(assembly.contains("mov eax, 0x42a80000")); // 84.0f32
     assert!(assembly.contains("movd xmm0, eax"));
@@ -481,7 +481,7 @@ fn test_compile_div_f32() {
 
 #[test]
 fn test_add_f32_integration() {
-    let result = compile_and_execute("../testcases/felis/single/add_f32.fe");
+    let result = compile_and_execute("../../testcases/felis/single/add_f32.fe");
 
     match result {
         Ok(status) => {
@@ -500,7 +500,7 @@ fn test_add_f32_integration() {
 
 #[test]
 fn test_sub_f32_integration() {
-    let result = compile_and_execute("../testcases/felis/single/sub_f32.fe");
+    let result = compile_and_execute("../../testcases/felis/single/sub_f32.fe");
 
     match result {
         Ok(status) => {
@@ -519,7 +519,7 @@ fn test_sub_f32_integration() {
 
 #[test]
 fn test_mul_f32_integration() {
-    let result = compile_and_execute("../testcases/felis/single/mul_f32.fe");
+    let result = compile_and_execute("../../testcases/felis/single/mul_f32.fe");
 
     match result {
         Ok(status) => {
@@ -538,7 +538,7 @@ fn test_mul_f32_integration() {
 
 #[test]
 fn test_div_f32_integration() {
-    let result = compile_and_execute("../testcases/felis/single/div_f32.fe");
+    let result = compile_and_execute("../../testcases/felis/single/div_f32.fe");
 
     match result {
         Ok(status) => {
@@ -557,7 +557,7 @@ fn test_div_f32_integration() {
 
 #[test]
 fn test_compile_let_mut() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/let_mut.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/let_mut.fe").unwrap();
     println!("Generated assembly for let_mut.fe:\n{assembly}");
 
     assert!(assembly.contains(".intel_syntax noprefix"));
@@ -575,7 +575,7 @@ fn test_compile_let_mut() {
 
 #[test]
 fn test_let_mut_integration() {
-    let result = compile_and_execute("../testcases/felis/single/let_mut.fe");
+    let result = compile_and_execute("../../testcases/felis/single/let_mut.fe");
 
     match result {
         Ok(status) => {
@@ -594,7 +594,7 @@ fn test_let_mut_integration() {
 
 #[test]
 fn test_compile_array() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/array.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/array.fe").unwrap();
     println!("Generated assembly for array.fe:\n{assembly}");
 
     assert!(assembly.contains(".intel_syntax noprefix"));
@@ -625,7 +625,7 @@ fn test_compile_array() {
 
 #[test]
 fn test_if_1_integration() {
-    let result = compile_and_execute("../testcases/felis/single/if_1.fe");
+    let result = compile_and_execute("../../testcases/felis/single/if_1.fe");
 
     match result {
         Ok(status) => {
@@ -644,7 +644,7 @@ fn test_if_1_integration() {
 
 #[test]
 fn test_if_2_integration() {
-    let result = compile_and_execute("../testcases/felis/single/if_2.fe");
+    let result = compile_and_execute("../../testcases/felis/single/if_2.fe");
 
     match result {
         Ok(status) => {
@@ -663,7 +663,7 @@ fn test_if_2_integration() {
 
 #[test]
 fn test_array_integration() {
-    let result = compile_and_execute("../testcases/felis/single/array.fe");
+    let result = compile_and_execute("../../testcases/felis/single/array.fe");
 
     match result {
         Ok(status) => {
@@ -682,7 +682,7 @@ fn test_array_integration() {
 
 #[test]
 fn test_array_len_integration() {
-    let result = compile_and_execute("../testcases/felis/single/array_len.fe");
+    let result = compile_and_execute("../../testcases/felis/single/array_len.fe");
 
     match result {
         Ok(status) => {
@@ -702,7 +702,7 @@ fn test_array_len_integration() {
 
 #[test]
 fn test_array_2_integration() {
-    let result = compile_and_execute("../testcases/felis/single/array_2.fe");
+    let result = compile_and_execute("../../testcases/felis/single/array_2.fe");
 
     match result {
         Ok(status) => {
@@ -722,7 +722,7 @@ fn test_array_2_integration() {
 
 #[test]
 fn test_array_3_integration() {
-    let result = compile_and_execute("../testcases/felis/single/array_3.fe");
+    let result = compile_and_execute("../../testcases/felis/single/array_3.fe");
 
     match result {
         Ok(status) => {
@@ -742,7 +742,7 @@ fn test_array_3_integration() {
 
 #[test]
 fn test_array_4_integration() {
-    let result = compile_and_execute_with_output("../testcases/felis/single/array_4.fe");
+    let result = compile_and_execute_with_output("../../testcases/felis/single/array_4.fe");
 
     match result {
         Ok(output) => {
@@ -759,7 +759,7 @@ fn test_array_4_integration() {
 
 #[test]
 fn test_loop_break() {
-    let result = compile_and_execute("../testcases/felis/single/loop_break.fe");
+    let result = compile_and_execute("../../testcases/felis/single/loop_break.fe");
 
     match result {
         Ok(status) => {
@@ -777,7 +777,7 @@ fn test_loop_break() {
 
 #[test]
 fn test_compile_proc_call() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/proc_call.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/proc_call.fe").unwrap();
     assert!(assembly.contains(".intel_syntax noprefix"));
     assert!(assembly.contains("main:"));
     assert!(assembly.contains("f:"));
@@ -798,7 +798,7 @@ fn test_compile_proc_call() {
 
 #[test]
 fn test_compile_print_c() {
-    let assembly = compile_file_to_assembly("../testcases/felis/single/print_c.fe").unwrap();
+    let assembly = compile_file_to_assembly("../../testcases/felis/single/print_c.fe").unwrap();
     assert!(assembly.contains(".intel_syntax noprefix"));
     assert!(assembly.contains("main:"));
     assert!(assembly.contains("print_c:"));
@@ -825,7 +825,7 @@ fn test_compile_print_c() {
 
 #[test]
 fn test_proc_call_integration() {
-    let result = compile_and_execute("../testcases/felis/single/proc_call.fe");
+    let result = compile_and_execute("../../testcases/felis/single/proc_call.fe");
 
     match result {
         Ok(status) => {
@@ -844,7 +844,7 @@ fn test_proc_call_integration() {
 
 #[test]
 fn test_print_c_integration() {
-    let result = compile_and_execute_with_output("../testcases/felis/single/print_c.fe");
+    let result = compile_and_execute_with_output("../../testcases/felis/single/print_c.fe");
 
     match result {
         Ok(output) => {
@@ -876,7 +876,7 @@ fn test_print_c_integration() {
 
 #[test]
 fn test_print_num3_integration() {
-    let result = compile_and_execute_with_output("../testcases/felis/single/print_num3.fe");
+    let result = compile_and_execute_with_output("../../testcases/felis/single/print_num3.fe");
 
     match result {
         Ok(output) => {
@@ -909,7 +909,7 @@ fn test_print_num3_integration() {
 #[test]
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_1() {
-    let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_1.fe");
+    let result = compile_and_execute_with_ptx("../../testcases/felis/single/ptx_1.fe");
 
     match result {
         Ok(status) => {
@@ -929,7 +929,7 @@ fn test_ptx_1() {
 #[test]
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_2() {
-    let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_2.fe");
+    let result = compile_and_execute_with_ptx("../../testcases/felis/single/ptx_2.fe");
 
     match result {
         Ok(status) => {
@@ -950,7 +950,7 @@ fn test_ptx_2() {
 #[ignore]
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_2_output() {
-    let result = compile_and_execute_with_ptx_output("../testcases/felis/single/ptx_2.fe");
+    let result = compile_and_execute_with_ptx_output("../../testcases/felis/single/ptx_2.fe");
 
     match result {
         Ok(output) => {
@@ -987,7 +987,7 @@ fn test_ptx_2_output() {
 #[ignore]
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_3_output() {
-    let result = compile_and_execute_with_ptx_output("../testcases/felis/single/ptx_3.fe");
+    let result = compile_and_execute_with_ptx_output("../../testcases/felis/single/ptx_3.fe");
 
     match result {
         Ok(output) => {
@@ -1023,7 +1023,7 @@ fn test_ptx_3_output() {
 #[test]
 #[cfg(feature = "has-ptx-device")]
 fn test_ptx_4() {
-    let result = compile_and_execute_with_ptx("../testcases/felis/single/ptx_4.fe");
+    let result = compile_and_execute_with_ptx("../../testcases/felis/single/ptx_4.fe");
 
     match result {
         Ok(status) => {

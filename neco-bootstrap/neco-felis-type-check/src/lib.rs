@@ -366,7 +366,7 @@ mod tests {
     #[test]
     fn test_type_check_eq_and_nat() {
         let file_contents =
-            std::fs::read_to_string("../testcases/felis/single/eq_and_nat.fe").unwrap();
+            std::fs::read_to_string("../../testcases/felis/single/eq_and_nat.fe").unwrap();
         let result = type_check_file(&file_contents);
         assert!(result.is_ok(), "Type checking failed: {result:?}");
     }
@@ -374,7 +374,7 @@ mod tests {
     #[test]
     fn test_type_check_eq_and_nat_fail_1() {
         let file_contents =
-            std::fs::read_to_string("../testcases/felis/single/eq_and_nat_fail_1.fe").unwrap();
+            std::fs::read_to_string("../../testcases/felis/single/eq_and_nat_fail_1.fe").unwrap();
         let result = type_check_file(&file_contents);
         eprintln!("result = {result:?}");
         assert!(
@@ -386,7 +386,7 @@ mod tests {
     #[test]
     fn test_type_check_eq_and_nat_fail_2() {
         let file_contents =
-            std::fs::read_to_string("../testcases/felis/single/eq_and_nat_fail_2.fe").unwrap();
+            std::fs::read_to_string("../../testcases/felis/single/eq_and_nat_fail_2.fe").unwrap();
         let result = type_check_file(&file_contents);
         assert!(
             result.is_err(),
@@ -397,7 +397,7 @@ mod tests {
     #[test]
     fn test_type_check_eq_and_nat_fail_3() {
         let file_contents =
-            std::fs::read_to_string("../testcases/felis/single/eq_and_nat_fail_3.fe").unwrap();
+            std::fs::read_to_string("../../testcases/felis/single/eq_and_nat_fail_3.fe").unwrap();
         let result = type_check_file(&file_contents);
         assert!(
             result.is_err(),
@@ -408,7 +408,7 @@ mod tests {
     #[test]
     fn test_type_check_eq_and_nat_fail_4() {
         let file_contents =
-            std::fs::read_to_string("../testcases/felis/single/eq_and_nat_fail_4.fe").unwrap();
+            std::fs::read_to_string("../../testcases/felis/single/eq_and_nat_fail_4.fe").unwrap();
         let result = type_check_file(&file_contents);
         assert!(
             result.is_err(),
@@ -419,7 +419,8 @@ mod tests {
     #[test]
     fn test_type_check_eq_and_nat_correct_2() {
         let file_contents =
-            std::fs::read_to_string("../testcases/felis/single/eq_and_nat_correct_2.fe").unwrap();
+            std::fs::read_to_string("../../testcases/felis/single/eq_and_nat_correct_2.fe")
+                .unwrap();
         let result = type_check_file(&file_contents);
         assert!(result.is_ok(), "Type checking failed: {result:?}");
     }
@@ -427,7 +428,8 @@ mod tests {
     #[test]
     fn test_type_check_eq_and_nat_correct_3() {
         let file_contents =
-            std::fs::read_to_string("../testcases/felis/single/eq_and_nat_correct_3.fe").unwrap();
+            std::fs::read_to_string("../../testcases/felis/single/eq_and_nat_correct_3.fe")
+                .unwrap();
         let result = type_check_file(&file_contents);
         assert!(result.is_ok(), "Type checking failed: {result:?}");
     }

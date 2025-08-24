@@ -39,7 +39,7 @@ mod test {
     fn test_parse_inductive_eq() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = std::fs::read_to_string("../testcases/felis/single/inductive_eq.fe").unwrap();
+        let s = std::fs::read_to_string("../../testcases/felis/single/inductive_eq.fe").unwrap();
         let tokens = Token::lex(&s, file_id);
 
         let mut i = 0;
@@ -53,7 +53,7 @@ mod test {
     fn test_parse_inductive_nat() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = std::fs::read_to_string("../testcases/felis/single/inductive_nat.fe").unwrap();
+        let s = std::fs::read_to_string("../../testcases/felis/single/inductive_nat.fe").unwrap();
         let tokens = Token::lex(&s, file_id);
 
         let mut i = 0;
@@ -67,7 +67,7 @@ mod test {
     fn test_parse_eq_and_nat() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = std::fs::read_to_string("../testcases/felis/single/eq_and_nat.fe").unwrap();
+        let s = std::fs::read_to_string("../../testcases/felis/single/eq_and_nat.fe").unwrap();
         let tokens = Token::lex(&s, file_id);
 
         let mut i = 0;
@@ -81,7 +81,7 @@ mod test {
     fn test_parse_exit_42() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = std::fs::read_to_string("../testcases/felis/single/exit_42.fe").unwrap();
+        let s = std::fs::read_to_string("../../testcases/felis/single/exit_42.fe").unwrap();
         let tokens = Token::lex(&s, file_id);
 
         let mut i = 0;
@@ -95,7 +95,7 @@ mod test {
     fn test_parse_let_mut() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = std::fs::read_to_string("../testcases/felis/single/let_mut.fe").unwrap();
+        let s = std::fs::read_to_string("../../testcases/felis/single/let_mut.fe").unwrap();
         let tokens = Token::lex(&s, file_id);
 
         let mut i = 0;
@@ -133,7 +133,7 @@ mod test {
     fn test_parse_array() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = std::fs::read_to_string("../testcases/felis/single/array.fe").unwrap();
+        let s = std::fs::read_to_string("../../testcases/felis/single/array.fe").unwrap();
         let tokens = Token::lex(&s, file_id);
 
         let mut i = 0;
@@ -183,7 +183,7 @@ mod test {
     fn test_parse_struct_1() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = std::fs::read_to_string("../testcases/felis/single/struct_1.fe").unwrap();
+        let s = std::fs::read_to_string("../../testcases/felis/single/struct_1.fe").unwrap();
         let tokens = Token::lex(&s, file_id);
 
         let mut i = 0;
@@ -213,7 +213,7 @@ mod test {
     fn test_parse_struct_2() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = std::fs::read_to_string("../testcases/felis/single/struct_2.fe").unwrap();
+        let s = std::fs::read_to_string("../../testcases/felis/single/struct_2.fe").unwrap();
         let tokens = Token::lex(&s, file_id);
 
         let mut i = 0;
@@ -255,7 +255,7 @@ mod test {
     fn test_parse_array_len() {
         let mut file_id_generator = FileIdGenerator::new();
         let file_id = file_id_generator.generate_file_id();
-        let s = std::fs::read_to_string("../testcases/felis/single/array_len.fe").unwrap();
+        let s = std::fs::read_to_string("../../testcases/felis/single/array_len.fe").unwrap();
         let tokens = Token::lex(&s, file_id);
 
         println!("Total tokens: {}", tokens.len());

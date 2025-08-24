@@ -51,16 +51,16 @@ yes "a" | cargo insta review  # Accept all snapshots in review (non-interactive)
 ### Development
 ```bash
 # Complete check with automatic fixes (format, lint, test)
-tools/fix-and-check.sh
+ci-scripts/fix-and-check.sh
 
 # Check only (without fixes)
-tools/check.sh
+ci-scripts/check.sh
 
 # Generate coverage report
-tools/generate-coverage-report.sh
+neco-bootstrap/ci-scripts/generate-coverage-report.sh
 
 # Check newlines at end of files
-tools/check-newlines.sh
+ci-scripts/check-newlines.sh
 ```
 
 ### Running Rust Code
@@ -87,7 +87,7 @@ Felis source → `neco-felis-syn` (parsing) → `neco-felis-rename` (scope resol
 - **Unit tests**: Place tests at end of implementation files, one assertion per test function
 - **Integration tests**: Use testcases in `/testcases/felis/single/` with both positive and negative cases (24 test files)
 - **Snapshot testing**: `neco-felis-syn` uses `insta` for parser output validation
-- **Coverage reporting**: Use `tools/generate-coverage-report.sh` to generate coverage reports with `cargo llvm-cov`
+- **Coverage reporting**: Use `neco-bootstrap/ci-scripts/generate-coverage-report.sh` to generate coverage reports with `cargo llvm-cov`
 - **Test categories**: Basic CIC features, arithmetic operations (add, sub, mul, div, mod), floating-point arithmetic, arrays, structs, conditionals, let bindings, correctness variants, and failure cases
 
 ## File Structure
@@ -205,7 +205,7 @@ Felis supports dependent types with syntax for:
 - Follow CIC typing rules precisely in kernel implementation
 
 ### Task Completion
-- **Always run `tools/fix-and-check.sh`** after completing tasks to automatically fix and verify format, lint, and tests pass
+- **Always run `ci-scripts/check.sh --fix`** after completing tasks to automatically fix and verify format, lint, and tests pass
 - This ensures code quality before considering a task complete
 - The script automatically fixes newlines, formatting, and attempts to fix clippy warnings before running all checks
 
